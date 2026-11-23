@@ -2,7 +2,7 @@
 
 ## Trải nghiệm
 
-Mặc định khi chạy trên terminal tương tác, mở màn tiêu đề MÂY NHỎ với phong
+Mặc định khi chạy trên terminal tương tác, mở màn tiêu đề MOSSBROOK MEADOW với phong
 cảnh ASCII và menu Tiếp tục / Hành trình mới – tạo nhân vật / Xem intro /
 Hướng dẫn / Thoát. Tiếp tục hiển thị tên nhân vật/nông trại/ngày/cấp và chỉ
 vào đúng file lưu được chọn. File hỏng hiển thị lỗi, không tự ghi đè.
@@ -14,7 +14,7 @@ Có bản xem trước, chỉnh lại hoặc xác nhận bắt đầu. Esc/0/Ctr
 xác nhận không đổi save cũ. Chỉ khi xác nhận cuối mới tạo Farm, sao lưu file
 cũ và ghi file mới nguyên tử. Nếu ghi lỗi báo rõ và vẫn ở menu, không launch.
 
-Intro3trang: lá thư về nông trại; chuyến xe vào Mây Nhỏ; lời chào của Lan
+Intro3trang: lá thư về nông trại; chuyến xe vào Mossbrook Meadow; lời chào của Lan
 và các phím cơ bản/đường tới ruộng. Nội dung dùng tên người chơi, nông trại,
 xuất thân. Enter/Space tiếp, Backspace/P quay lại, S/Q/Esc bỏ qua. Không tự
 delay. Xem intro ở menu chỉ preview; không đổi save. Chơi mới tự intro một
@@ -41,7 +41,7 @@ name24, intro_seenbool trước tạo Farm.
 
 `start_screen.py`: StartupResult(farm:Farm|None,created=False),
 run_startup(save_path:Path,*,graphical:bool,color=True,clear_screen=True,
-default_name='Mây Nhỏ',force_new=False,force_intro=False)->StartupResult.
+default_name='Mossbrook Meadow',force_new=False,force_intro=False)->StartupResult.
 run_startup trả farm=None khi thoát/hủyCtrlC/EOF ở title/wizard.
 Có thể thêm lớp/hàm công khai cho kiểm thử, không import curses trừ khi
 graphical. Lớp curses tái dùng ExplorerGame._put/_reader/fit_text/wrap_cells

@@ -280,7 +280,7 @@ def draw_status_bar(ui, height: int, width: int, controls: str,
                     'red' if error else 'green')
         else:
             ui._put(height - 1, 1,
-                    ellipsize('Mây Nhỏ · một cuộc sống chậm giữa mây trời',
+                    ellipsize('Mossbrook Meadow · một cuộc sống chậm giữa mây trời',
                               max(1, width - 2), unicode=unicode), 'dim')
 
 

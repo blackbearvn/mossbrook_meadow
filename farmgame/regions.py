@@ -60,7 +60,7 @@ REGIONS = {
         (76, 7), (75, 5, 77, 8)),
     'hill': Region(
         'hill', 'Đồi Gió', '^', '^',
-        'Đỉnh đồi lộng gió, nhìn được toàn cảnh Mây Nhỏ.',
+        'Đỉnh đồi lộng gió, nhìn được toàn cảnh Mossbrook Meadow.',
         (72, 6), (69, 2, 80, 12)),
     'field': Region(
         'field', 'Ruộng Cánh Đồng', ':', ':',

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Start Nông trại Mây Nhỏ with Python 3.10 or newer."""
+"""Start Mossbrook Meadow with Python 3.10 or newer."""
 
 import argparse
 import os
@@ -17,14 +17,14 @@ ROOT = Path(__file__).resolve().parent
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Nông trại Mây Nhỏ — game nông trại tiếng Việt trên terminal.",
+        description="Mossbrook Meadow — game nông trại tiếng Việt trên terminal.",
         epilog="WASD đi, E tương tác, Z khung rộng, N nhiệm vụ, O auto, G hình, C nhân vật, M bản đồ, I túi, T tân thủ, Q lưu và về menu; mỏ khoáng ở Đồi Gió.",
     )
     parser.add_argument("--save", type=Path, default=ROOT / "saves" / "farm.json",
                         metavar="PATH", help="đường dẫn file lưu JSON")
     parser.add_argument("--new", action="store_true",
                         help="bắt đầu ván mới, sao lưu ván cũ trước")
-    parser.add_argument("--name", default="Mây Nhỏ", metavar="NAME",
+    parser.add_argument("--name", default="Mossbrook Meadow", metavar="NAME",
                         help="tên nông trại cho ván mới (tối đa 28 ký tự)")
     parser.add_argument("--no-color", action="store_true", help="tắt màu ANSI")
     parser.add_argument("--ascii", action="store_true",

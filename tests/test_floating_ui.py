@@ -365,14 +365,14 @@ class StartScreenFloatingTests(unittest.TestCase):
         ui._curses = curses_namespace()
         ui._colors = {}
         room, scroll = ui.paint(
-            'MÂY NHỎ · Một cuộc sống chậm giữa mây trời',
+            'MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời',
             ['Dòng giới thiệu', '1. Tiếp tục'], 'Enter: chọn', selected=1)
         lines = ui._screen.lines()
         rendered = '\n'.join(lines)
         self.assertTrue(lines[0].startswith('─'))
-        self.assertIn('MÂY NHỎ', lines[0])
+        self.assertIn('MOSSBROOK MEADOW', lines[0])
         self.assertIn('╭', lines[1])
-        self.assertIn('◆ MÂY NHỎ', lines[1])
+        self.assertIn('◆ MOSSBROOK MEADOW', lines[1])
         self.assertIn('› 1. Tiếp tục', rendered)
         self.assertIn('Enter: chọn', rendered)
         self.assertGreaterEqual(room, 1)

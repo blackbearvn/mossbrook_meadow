@@ -40,7 +40,7 @@ TextUI TTY chữchạytừtừ, có reveal/skip không chờ hết trang bằng 
 termios/select (Windows có thể msvcrt), luônrestoreinputmode khiinterrupt.
 
 `credits.py` + `credits.txt`: credits_lines()->tuple[str,...] >=101nonempty
-dòng meaningful, khônglặpdòngđệmcưỡngép; tác giả ghi 'Chủ dự án Mây Nhỏ',
+dòng meaningful, khônglặpdòngđệmcưỡngép; tác giả ghi 'Chủ dự án Mossbrook Meadow',
 'Hỗ trợ lập trình: Codex', không tự bịa tênngười/nhóm. Dữ liệu gồm sáng
 tạo/phát triển/nội dung/gameplay/map/NPC/âm hưởngterminal/test/triân.
 play_curses_credits(ui)->None: paint/viewer, tựcuộn0.45s/dòng, Space pause,

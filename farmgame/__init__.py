@@ -1,1 +1,1 @@
-"""Nông trại Mây Nhỏ — a dependency-free terminal farming game."""
+"""Mossbrook Meadow — a dependency-free terminal farming game."""

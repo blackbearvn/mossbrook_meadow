@@ -463,7 +463,7 @@ def location_name(farm: 'Farm') -> str:
             region = 'Hầm Quặng'
         return f'Mỏ Khoáng / {region}'
     if 75 <= farm.player_x <= 77 and 5 <= farm.player_y <= 8:
-        return 'Làng Mây Nhỏ / Cửa Mỏ'
+        return 'Làng Mossbrook Meadow / Cửa Mỏ'
     if getattr(farm, 'map_pages', False):
         from .pages import page_for_coord
         page = page_for_coord(farm.player_x, farm.player_y)
@@ -496,4 +496,4 @@ def location_name(farm: 'Farm') -> str:
         region = 'Suối'
     else:
         region = 'Đường làng'
-    return f'Làng Mây Nhỏ / {region}'
+    return f'Làng Mossbrook Meadow / {region}'

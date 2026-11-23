@@ -56,11 +56,11 @@ def intro_pages(farm: 'Farm') -> list[tuple[str, str]]:
     return [
         ('Lá thư trong nắng',
          f'Gửi {farm.player_name},\n\n'
-         f'Nông trại {farm.name} đang chờ bạn ở Mây Nhỏ. Hàng rào có thể đã cũ, '
+         f'Nông trại {farm.name} đang chờ bạn ở Mossbrook Meadow. Hàng rào có thể đã cũ, '
          'nhưng đất vẫn mềm và khu vườn vẫn đón nắng mỗi sớm. '
          'Hãy đến khi bạn sẵn lòng bắt đầu một mùa mới.\n\n'
          'Trong phong thư còn một chiếc chìa khóa nhỏ, ấm lên trong lòng bàn tay.'),
-        ('Chuyến xe đến Mây Nhỏ',
+        ('Chuyến xe đến Mossbrook Meadow',
          f'{farm.player_name} nhìn những triền đồi trôi qua ô cửa xe. '
          f'{memories[farm.background]}\n\n'
          f'Xuất thân: {BACKGROUNDS[farm.background]}. Chiếc xe dừng bên khu nhà đầu làng, '

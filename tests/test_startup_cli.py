@@ -30,7 +30,7 @@ class StartupCLITests(unittest.TestCase):
         for command in ('0\n', ''):
             result = self.launch(command)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn('MÂY NHỎ', result.stdout)
+            self.assertIn('MOSSBROOK MEADOW', result.stdout)
             self.assertFalse(self.path.exists())
 
     def test_new_character_keeps_custom_identity_and_enters_game(self):
@@ -73,7 +73,7 @@ class StartupCLITests(unittest.TestCase):
         result = self.launch('1\n0\n0\n1\n')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertGreaterEqual(
-            result.stdout.count('MÂY NHỎ · Một cuộc sống chậm giữa mây trời'), 2)
+            result.stdout.count('MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời'), 2)
         self.assertIn('THOÁT GAME?', result.stdout)
         self.assertIn('Trở về menu chính.', result.stdout)
 

@@ -134,7 +134,7 @@ class CursesUI(ExplorerGame):
         self._screen.erase()
         height, width = self._screen.getmaxyx()
         if height < 6 or width < 20:
-            self._put(0, 0, tui.ellipsize('M Â Y  N H Ỏ', width,
+            self._put(0, 0, tui.ellipsize('MOSSBROOK', width,
                                           unicode=self.unicode_map), 'green', True)
             self._put(1, 0, tui.ellipsize(title, width,
                                           unicode=self.unicode_map), 'yellow', True)
@@ -156,7 +156,7 @@ class CursesUI(ExplorerGame):
         # its shadow at the bottom of the terminal.
         g = tui.glyphs(self.unicode_map)
         self._put(0, 0, g['h'] * width, 'shadow')
-        self._put(0, 1, f" {g['icon']} MÂY NHỎ ", 'dim')
+        self._put(0, 1, f" {g['icon']} MOSSBROOK MEADOW ", 'dim')
         margin_x = 2 if width >= 44 else 1 if width >= 22 else 0
         margin_y = 1 if height >= 8 else 0
         rect = tui.Rect(margin_x, margin_y, width - 2 * margin_x,
@@ -309,7 +309,7 @@ class CursesUI(ExplorerGame):
         self._screen.erase()
         g = tui.glyphs(self.unicode_map)
         self._put(0, 0, g['h'] * width, 'shadow')
-        self._put(0, 1, f" {g['icon']} MÂY NHỎ ", 'dim')
+        self._put(0, 1, f" {g['icon']} MOSSBROOK MEADOW ", 'dim')
         margin_x = 2 if width >= 56 else 1 if width >= 40 else 0
         margin_y = 1 if height >= 10 else 0
         rect = tui.Rect(margin_x, margin_y, width - 2 * margin_x,
@@ -323,7 +323,7 @@ class CursesUI(ExplorerGame):
         else:
             footer = f'{nav} chọn · Enter · {side} · B · Esc'
         body = tui.draw_panel(
-            self, rect, title='TẠO NHÂN VẬT · MÂY NHỎ', footer=footer,
+            self, rect, title='TẠO NHÂN VẬT · MOSSBROOK MEADOW', footer=footer,
             unicode=self.unicode_map, accent='magenta', title_color='yellow',
             footer_color='cyan', shadow=margin_x > 0, bounds=(height, width))
         two_col = body.width >= 54 and body.height >= 10
@@ -375,7 +375,7 @@ class CursesUI(ExplorerGame):
         try:
             farm_name = normalize_name(default_name, 28, 'Tên nông trại')
         except ValueError:
-            farm_name = 'Mây Nhỏ'
+            farm_name = 'Mossbrook Meadow'
         profile = dict(player_name='Người làm vườn', farm_name=farm_name,
                        avatar='@', outfit='green', background='gardener')
         selected = 0
@@ -432,7 +432,7 @@ class CursesUI(ExplorerGame):
         while True:
             width = max(4, self._screen.getmaxyx()[1] - 6)
             heading = []
-            if title == 'MÂY NHỎ · Một cuộc sống chậm giữa mây trời':
+            if title == 'MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời':
                 if self._screen.getmaxyx()[0] >= 25:
                     heading.extend(LANDSCAPE)
                     heading.append('')
@@ -599,7 +599,7 @@ def confirm_exit(ui) -> bool:
             'THOÁT GAME?',
             [('1', 'Thoát game'), ('0', 'Ở lại')],
             body=('Tiến trình đã lưu vẫn còn trong file.\n'
-                  'Bạn có chắc muốn đóng Mây Nhỏ không?'),
+                  'Bạn có chắc muốn đóng Mossbrook Meadow không?'),
             default='0')
     except (EOFError, KeyboardInterrupt, StopIteration):
         # A redirected/closed menu input means the caller intended to leave.
@@ -624,7 +624,7 @@ def _startup(ui, save_path, default_name, force_new, force_intro, skip_intro):
             choice, force_new = '2', False
         else:
             dash = '–' if getattr(ui, 'unicode_map', True) else '-'
-            choice = ui.choose('MÂY NHỎ · Một cuộc sống chậm giữa mây trời',
+            choice = ui.choose('MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời',
                                [('1', 'Tiếp tục'),
                                 ('2', f'Hành trình mới {dash} tạo nhân vật'),
                                 ('3', 'Credit nhà phát triển'),
@@ -671,11 +671,11 @@ def _startup(ui, save_path, default_name, force_new, force_intro, skip_intro):
         if choice == '3':
             ui.credits()
         elif choice == '4':
-            ui.reader('Những ngày đầu ở Mây Nhỏ', HELP)
+            ui.reader('Những ngày đầu ở Mossbrook Meadow', HELP)
 
 
 def run_startup(save_path: Path, *, graphical: bool, color=True, clear_screen=True,
-                default_name='Mây Nhỏ', force_new=False, force_intro=False,
+                default_name='Mossbrook Meadow', force_new=False, force_intro=False,
                 skip_intro=False) -> StartupResult:
     """Return a chosen farm only after a successful final-confirmation save."""
     try:

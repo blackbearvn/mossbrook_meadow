@@ -51,7 +51,7 @@ class Plot:
 
 @dataclass(slots=True)
 class Farm:
-    name: str = "Mây Nhỏ"
+    name: str = "Mossbrook Meadow"
     day: int = 1
     coins: int = 120
     energy: int = 20
@@ -288,7 +288,7 @@ class Farm:
         advice = ("Mưa sẽ tưới toàn bộ ruộng, có thể dành sức đi câu."
                   if self.forecast == "rainy"
                   else "Nhớ tưới cây trước khi ngủ; mây không thay cho nước tưới.")
-        return (f"TV MÂY NHỎ · Dự báo ngày {self.day + 1}: "
+        return (f"TV MOSSBROOK · Dự báo ngày {self.day + 1}: "
                 f"{WEATHER[self.forecast]}. {advice}")
 
     def buy_seeds(self, crop: str, quantity: int) -> str:

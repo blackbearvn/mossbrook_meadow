@@ -268,7 +268,7 @@ class WorldTests(unittest.TestCase):
                              ((96, 22), 'Thung Lũng Đông'), ((110, 10), 'Đồi Trà'),
                              ((100, 50), 'Bãi Bồi')):
             farm = Farm(player_x=point[0], player_y=point[1])
-            self.assertEqual(world.location_name(farm), f'Làng Mây Nhỏ / {label}')
+            self.assertEqual(world.location_name(farm), f'Làng Mossbrook Meadow / {label}')
 
     def test_old_static_walkable_positions_still_load_at_all_field_sizes(self):
         # Row bitmasks captured from the previous 80x36 map (all sizes).

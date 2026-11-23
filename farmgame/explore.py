@@ -115,7 +115,7 @@ class ExplorerGame:
         self.color = bool(color) and "NO_COLOR" not in os.environ
         self.clear_screen = clear_screen
         self.play_intro = intro
-        self.messages: list[str] = ["Chào mừng đến Mây Nhỏ! WASD di chuyển, E tương tác, H trợ giúp."]
+        self.messages: list[str] = ["Chào mừng đến Mossbrook Meadow! WASD di chuyển, E tương tác, H trợ giúp."]
         self.map_expanded = False
         self.return_to_menu = False
         self.quit_to_menu = True
@@ -369,7 +369,7 @@ class ExplorerGame:
         location = f"{place} {world.location_name(farm)} · ({farm.player_x}, {farm.player_y})"
         self._put(0, 0, tui.ellipsize(location, width, unicode=self.unicode_map),
                   "yellow", True)
-        brand = f"{g['icon']} MÂY NHỎ"
+        brand = f"{g['icon']} MOSSBROOK MEADOW"
         if width >= tui.cells(location) + tui.cells(brand) + 4:
             self._put(0, width - tui.cells(brand) - 1, brand, 'dim')
         status_color = ('red' if farm.hp <= max(1, farm.max_hp // 3)
@@ -2936,8 +2936,8 @@ class ExplorerGame:
             lines = [line.replace('←→/↑↓', 'A/D/W/S')
                       .replace('↑↓', 'W/S').replace('←→', 'A/D')
                       .replace('–', '-') for line in lines]
-        index = self._choose("SỔ TAY MÂY NHỎ",
+        index = self._choose("SỔ TAY MOSSBROOK",
                              ["Trở lại làng", "Đọc toàn bộ sổ tay (cuộn)"],
                              lines, close_keys=('h', 'H'))
         if index == 1:
-            self._reader("SỔ TAY MÂY NHỎ", chr(10).join(lines))
+            self._reader("SỔ TAY MOSSBROOK", chr(10).join(lines))

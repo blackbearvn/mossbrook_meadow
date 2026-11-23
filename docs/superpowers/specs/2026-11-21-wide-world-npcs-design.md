@@ -46,7 +46,7 @@ trạng thái cũ. Kiểm tra friendship 0..10, talked_on 0..farm.day.
 `world.py`: VILLAGE_WIDTH=80, VILLAGE_HEIGHT=36, giữ API cũ. Di chuyển phải
 kiểm tra NPC đang chiếm ô đích bằng npc_at. context ưu tiên cửa/nội thất,
 sau đó NPC, rồi ruộng/hồ/rừng; trả ('npc', 'E: trò chuyện với ...') khi phù hợp.
-location_name trả 'Làng Mây Nhỏ / <khu vực>' hoặc 'Trong nhà'. Export
+location_name trả 'Làng Mossbrook Meadow / <khu vực>' hoặc 'Trong nhà'. Export
 LANDMARKS dict key -> (nhãn, (x,y)): farm(10,7), home(4,3), shop(26,3),
 barn(15,6), meadow(39,10), square(55,20), forest(20,25), lake(53,28), hill(72,6).
 Giữ glyph cũ, thêm hoa ',' (walkable); cầu là '=' ưu tiên hơn nước.
