@@ -38,6 +38,7 @@ QUESTS = {
     'cook': QuestDefinition('Nấu một món ăn', 1, 16, 4),
     'dungeon': QuestDefinition('Hạ quái trong Hang Sâu', 1, 25, 6),
     'animal': QuestDefinition('Mua vật nuôi mới', 1, 20, 4),
+    'buy_feed': QuestDefinition('Mua thức ăn chăn nuôi', 1, 12, 3),
 }
 
 

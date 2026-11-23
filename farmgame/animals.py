@@ -136,7 +136,9 @@ def buy_animal(farm: "Farm", kind: str, name: str | None = None) -> str:
 
 
 def buy_feed(farm: "Farm", quantity: int) -> str:
-    return farm.buy_item("feed", quantity)
+    message = farm.buy_item("feed", quantity)
+    record_daily(farm, 'buy_feed')
+    return message
 
 
 def feed_animals(farm: "Farm") -> str:
