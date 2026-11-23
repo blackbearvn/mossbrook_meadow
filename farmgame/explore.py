@@ -419,7 +419,7 @@ class ExplorerGame:
             pass
 
     def _draw(self, refresh=True, size=None):
-        from .map_art import map_cell, map_legend
+        from .map_art import _static_cell, map_cell, map_legend
         from .map_view import map_layout, frame_lines, objective_line, status_line
         from .artwork import symbol
         from . import pages
@@ -468,15 +468,32 @@ class ExplorerGame:
             for row in range(layout.rows):
                 self._put(layout.y + row, layout.x - 1, side, 'cyan')
                 self._put(layout.y + row, layout.x + layout.cols * layout.cell, side, 'cyan')
+        from .villagers import NPCS
+        npc_points = ({npc.position for npc in NPCS.values()}
+                      if farm.area == 'village' else set())
+        player = (farm.player_x, farm.player_y)
         for row in range(layout.rows):
+            y = row + layout.top
             for col in range(layout.cols):
-                x, y = col + layout.left, row + layout.top
+                x = col + layout.left
                 tile = (grid[y][x] if 0 <= y < len(grid)
                         and 0 <= x < len(grid[y]) else '#')
-                art = map_cell(farm, x, y, unicode=self.unicode_map,
-                               path=path, tile=tile)
+                # Only a few cells can change between frames.  Everything
+                # else uses the cached static art, avoiding per-cell NPC and
+                # plot lookups on very wide terminals.
+                dynamic = ((x, y) == player or (x, y) in path
+                           or (farm.area == 'village'
+                               and ((x, y) in npc_points or tile == ':'))
+                           or (farm.area == 'mine' and tile == 'R'))
+                if dynamic:
+                    art = map_cell(farm, x, y, unicode=self.unicode_map,
+                                   path=path, tile=tile)
+                else:
+                    art = _static_cell(farm.area, farm.size, self.unicode_map,
+                                       x, y, tile)
                 self._put(row + layout.y, layout.x + col * layout.cell,
-                          art.glyph + (art.tail if layout.cell == 2 else ''), art.color, art.bold)
+                          art.glyph + (art.tail if layout.cell == 2 else ''),
+                          art.color, art.bold)
         legends = map_legend(farm, unicode=self.unicode_map)
         if expanded:
             _, hint = world.context(farm)

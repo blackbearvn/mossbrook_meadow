@@ -48,6 +48,9 @@ def objective_line(farm, width, *, unicode=True):
     return tiny
 
 
+MAX_MAP_CELLS = 1800
+
+
 def map_layout(farm, width, height, *, reserved_rows=9, expanded=False):
     """Frame the camera; ``expanded`` swaps to narrow cells for a wide view."""
     from .explore import viewport
@@ -75,8 +78,19 @@ def map_layout(farm, width, height, *, reserved_rows=9, expanded=False):
         # viewport reserves nine rows for curses; text supplies its own HUD.
         max(1, height - border - reserved_rows) + 9,
         cell=cell_override)
+    # A huge terminal can otherwise ask for tens of thousands of map cells;
+    # each cell needs a glyph and colour lookup.  Keep the frame full-width but
+    # cap its height so redraws stay smooth during held-key movement and auto.
+    capped = cols * rows > MAX_MAP_CELLS
+    if capped:
+        rows = max(8, MAX_MAP_CELLS // max(1, cols))
+        top = max(0, min(farm.player_y - rows // 2, area_height - rows))
     x = max(0, (width - cols * cell - border) // 2) + int(framed)
-    return MapLayout(left, top, cols, rows, cell, x, 3 + int(framed), framed)
+    y = 3 + int(framed)
+    if capped:
+        footer_top = max(y, height - 6)
+        y = max(y, y + max(0, footer_top - y - rows) // 2)
+    return MapLayout(left, top, cols, rows, cell, x, y, framed)
 
 
 def cells(text):

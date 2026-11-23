@@ -40,6 +40,17 @@ class MapPageTests(unittest.TestCase):
         self.assertGreater(layout.left, 30)
         self.assertEqual(world.location_name(farm), 'Quảng Trường')
 
+    def test_huge_terminal_keeps_width_but_caps_the_map_cells(self):
+        from farmgame.map_view import MAX_MAP_CELLS
+
+        farm = Farm(map_pages=True, player_x=10, player_y=7)
+        layout = map_layout(farm, 200, 60)
+        self.assertEqual(layout.cols * layout.cell, 198)
+        self.assertLessEqual(layout.cols * layout.rows, MAX_MAP_CELLS)
+        self.assertGreaterEqual(layout.rows, 8)
+        self.assertLessEqual(layout.top, farm.player_y)
+        self.assertGreater(layout.top + layout.rows, farm.player_y)
+
     def test_walking_over_a_page_edge_enters_the_next_map(self):
         farm = Farm(map_pages=True, player_x=31, player_y=7)
         self.assertEqual(world.location_name(farm), 'Khu Sinh Sống')
