@@ -456,8 +456,9 @@ def move(farm: 'Farm', direction: str) -> bool:
     """Turn even at obstacles; a successful step costs no energy or time.
 
     In page mode a walkable step over a page boundary enters the neighbouring
-    page.  Coordinates remain global, so plots, NPCs and old saves keep their
-    existing positions while the camera only shows one page at a time.
+    page only where a road crosses the border.  Coordinates remain global, so
+    plots, NPCs and old saves keep their existing positions while the frame
+    can still show nearby parts of the wider world.
     """
     _validate_farm(farm)
     if direction not in _DIRECTIONS:

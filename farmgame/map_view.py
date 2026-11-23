@@ -57,39 +57,24 @@ def map_layout(farm, width, height, *, reserved_rows=9, expanded=False):
         # plus one spare row below the bottom border so a final newline never
         # scrolls the terminal.
         reserved_rows = 4
-    page = None
-    if getattr(farm, 'map_pages', False) and farm.area == 'village':
-        from .pages import page_for_coord
-        page = page_for_coord(farm.player_x, farm.player_y)
-    if page is not None:
-        page_w, page_h = page.width, page.height
-        local_x = farm.player_x - page.bounds[0]
-        local_y = farm.player_y - page.bounds[1]
-        framed = width >= 30 and height >= 14
-        border = 2 if framed else 0
-        left, top, cols, rows, cell = viewport(
-            page_w, page_h, local_x, local_y,
-            max(1, width - border),
-            max(1, height - border - reserved_rows) + 9,
-            cell=cell_override)
-        # Convert the page-local camera back to global village coordinates.
-        left += page.bounds[0]
-        top += page.bounds[1]
+    # Page mode still names the current area and gates walking across page
+    # borders, but the camera fills the whole terminal frame.  Small legacy
+    # pages used to shrink the frame to their own bounds, leaving wide unused
+    # margins on a normal terminal.
+    if farm.area == 'home':
+        area_width, area_height = world.HOME_WIDTH, world.HOME_HEIGHT
+    elif farm.area == 'mine':
+        area_width, area_height = world.MINE_WIDTH, world.MINE_HEIGHT
     else:
-        if farm.area == 'home':
-            area_width, area_height = world.HOME_WIDTH, world.HOME_HEIGHT
-        elif farm.area == 'mine':
-            area_width, area_height = world.MINE_WIDTH, world.MINE_HEIGHT
-        else:
-            area_width, area_height = world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT
-        framed = width >= 30 and height >= 14
-        border = 2 if framed else 0
-        left, top, cols, rows, cell = viewport(
-            area_width, area_height, farm.player_x, farm.player_y,
-            max(1, width - border),
-            # viewport reserves nine rows for curses; text supplies its own HUD.
-            max(1, height - border - reserved_rows) + 9,
-            cell=cell_override)
+        area_width, area_height = world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT
+    framed = width >= 30 and height >= 14
+    border = 2 if framed else 0
+    left, top, cols, rows, cell = viewport(
+        area_width, area_height, farm.player_x, farm.player_y,
+        max(1, width - border),
+        # viewport reserves nine rows for curses; text supplies its own HUD.
+        max(1, height - border - reserved_rows) + 9,
+        cell=cell_override)
     x = max(0, (width - cols * cell - border) // 2) + int(framed)
     return MapLayout(left, top, cols, rows, cell, x, 3 + int(framed), framed)
 

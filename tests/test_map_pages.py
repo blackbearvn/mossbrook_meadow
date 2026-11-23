@@ -1,4 +1,4 @@
-"""Page mode clips the camera to one map and transitions across its edge."""
+"""Page mode names the local map and gates transitions across its edge."""
 
 import tempfile
 import unittest
@@ -23,19 +23,22 @@ class MapPageTests(unittest.TestCase):
             self.assertGreaterEqual(page.width, 1)
             self.assertGreaterEqual(page.height, 1)
 
-    def test_camera_is_clipped_to_the_current_page(self):
+    def test_small_page_still_uses_the_whole_map_frame(self):
         farm = Farm(map_pages=True, player_x=30, player_y=7)
         layout = map_layout(farm, 80, 24)
         page = pages.page_for_coord(30, 7)
-        self.assertEqual(layout.left, page.bounds[0])
-        self.assertLessEqual(layout.cols, page.width)
-        self.assertLessEqual(layout.rows, page.height)
+        self.assertGreater(layout.cols, page.width)
+        self.assertEqual(layout.cols * layout.cell, 78)
+        lake = Farm(map_pages=True, player_x=53, player_y=28)
+        lake_layout = map_layout(lake, 80, 24)
+        self.assertGreater(lake_layout.rows,
+                           pages.page_for_coord(53, 28).height)
         self.assertEqual(world.location_name(farm), 'Khu Sinh Sống')
 
         farm.player_x, farm.player_y = 55, 20
         layout = map_layout(farm, 80, 24)
-        self.assertGreaterEqual(layout.left, 40)
-        self.assertLessEqual(layout.left + layout.cols - 1, 79)
+        self.assertGreater(layout.left, 30)
+        self.assertEqual(world.location_name(farm), 'Quảng Trường')
 
     def test_walking_over_a_page_edge_enters_the_next_map(self):
         farm = Farm(map_pages=True, player_x=31, player_y=7)
