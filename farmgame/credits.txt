@@ -1,0 +1,150 @@
+MÂY NHỎ · CREDIT REDEYE STUDIO
+REDEYE STUDIO
+b14ckb34rvn · Lập trình
+TeaM1lk · Đồ họa
+so'dly · Đồ họa
+Hoàng Lê · Âm thanh
+BrosHill · Cốt truyện
+MoiMoi · Đồ họa
+Fanta de Son · Đồ họa
+Một cuộc sống chậm được kể bằng chữ và những lựa chọn nhỏ.
+Những dòng này ghi lại tinh thần và công việc phía sau trò chơi.
+Ý TƯỞNG VÀ ĐỊNH HƯỚNG
+Mây Nhỏ bắt đầu từ mong muốn có một góc bình yên trong terminal.
+Người chơi được mời dựng xây cuộc sống theo nhịp của riêng mình.
+Một ngày làm vườn có thể đáng nhớ nhờ những việc rất bình thường.
+Sự tiến bộ được tìm thấy trong mảnh ruộng và các cuộc gặp gỡ.
+Không gian nhỏ vẫn có thể chứa những câu chuyện đủ ấm áp.
+Tiếng Việt là ngôn ngữ của lời chào, chỉ dẫn và cuộc trò chuyện.
+Sự gần gũi được đặt vào cách gọi tên đồ vật và con người.
+Cảm giác trở về được nuôi bằng những địa điểm dần trở nên quen thuộc.
+Các lựa chọn nhẹ nhàng giúp người chơi tự định hình hành trình.
+Một khởi đầu mới luôn dành chỗ cho sự tò mò.
+SÁNG TẠO VÀ NỘI DUNG
+Bối cảnh thôn quê gợi những khoảng nghỉ giữa cuộc sống bận rộn.
+Lời giới thiệu mở cửa vào thế giới sau khi người chơi chọn bắt đầu.
+Nhân vật mới có tên riêng để câu chuyện gần với người chơi hơn.
+Tên nông trại làm mảnh đất trở thành một nơi có ký ức.
+Ngoại hình và xuất thân tạo những nét đầu tiên cho nhân vật.
+Những đoạn văn ngắn được viết để dễ đọc trên màn hình nhỏ.
+Câu chữ ưu tiên sự rõ ràng khi hướng dẫn một hành động mới.
+Giọng kể dịu nhẹ giữ mạch cảm xúc của cuộc sống nơi làng quê.
+Các thông báo phản hồi giúp mỗi thao tác có kết quả dễ nhận biết.
+Phần mở đầu nhường quyền lật trang cho người đang đọc.
+CHĂM SÓC MẢNH VƯỜN
+Luống đất là nơi người chơi bắt đầu biến dự định thành việc làm.
+Gieo hạt đặt xuống một lời hẹn cho những ngày tiếp theo.
+Tưới cây nối công sức hôm nay với mùa thu hoạch phía trước.
+Theo dõi cây lớn lên giúp thời gian trong trò chơi có hình dáng.
+Thu hoạch đem lại cảm giác hoàn thành một vòng chăm sóc.
+Túi đồ lưu giữ những thứ nhặt được và sản phẩm tự tay làm ra.
+Quản lý vật phẩm giúp người chơi chuẩn bị cho một ngày mới.
+Chi tiêu là một phần của việc lựa chọn điều muốn phát triển trước.
+Tích lũy thành quả mở thêm những dự định cho nông trại.
+Nâng cấp tạo động lực để quay lại với những công việc quen thuộc.
+NHỊP SỐNG VÀ HÀNH TRÌNH
+Mỗi ngày mở ra cơ hội sắp xếp lại việc cần làm.
+Người chơi có thể dành thời gian khám phá trước khi về ruộng.
+Một chuyến đi ngắn cũng có thể dẫn đến cuộc gặp bất ngờ.
+Những hoạt động nhỏ tạo nên cảm giác bận rộn vừa đủ.
+Tiến trình được hình thành qua nhiều lần trở lại thế giới.
+Việc nhìn lại túi đồ giúp lên kế hoạch cho hành động kế tiếp.
+Thông tin nhân vật cho thấy những thay đổi đã đạt được.
+Các hướng dẫn luôn hướng về việc giúp người chơi tự quyết định.
+Thành quả của một ngày là lý do để mong chờ ngày sau.
+Nhịp sống chậm dành chỗ cho cả làm việc và ngắm nhìn.
+THẾ GIỚI VÀ BẢN ĐỒ
+Bản đồ kết nối những địa điểm bằng các lối đi có thể khám phá.
+Quảng trường là điểm hẹn để làm quen với không gian chung.
+Mảnh ruộng là nơi trở về sau những bước chân quanh làng.
+Các ký hiệu địa hình giúp đọc thế giới qua những hàng chữ.
+Vị trí nhân vật cho người chơi một điểm tựa giữa bản đồ.
+Đường đi được nhận biết bằng quan sát và thử từng hướng di chuyển.
+Mỗi địa điểm góp thêm một lý do để bước ra khỏi nông trại.
+Thông tin tương tác giúp nhận ra điều có thể làm ở gần mình.
+Bản đồ tổng thể hỗ trợ tìm đường khi các lối rẽ còn lạ.
+Một thế giới quen dần sẽ biến việc đi lại thành thói quen dễ chịu.
+DÂN LÀNG VÀ NHỮNG CUỘC GẶP
+Dân làng mang đến cảm giác có người cùng sống trong thế giới này.
+Lời chào là bước đầu để một người lạ trở thành gương mặt quen.
+Hội thoại bổ sung sắc thái cho những nơi đã đi qua.
+Các cuộc trò chuyện khuyến khích người chơi dừng bước và lắng nghe.
+Danh sách dân làng giúp nhớ lại những người đã gặp.
+Mỗi lần tương tác là một dịp tìm hiểu thêm cuộc sống quanh mình.
+Nhân vật phụ góp phần làm nông trại gắn với cộng đồng.
+Những lời nói bình dị giữ không khí gần gũi của làng quê.
+Sự quan tâm bắt đầu từ việc chủ động tìm đến trò chuyện.
+Ký ức về một nơi thường gắn với người đã chào mình ở đó.
+HỆ THỐNG VÀ PHÁT TRIỂN
+Các phần của trò chơi cùng phục vụ một vòng chơi dễ theo dõi.
+Dữ liệu nhân vật giữ lại những lựa chọn khi bắt đầu hành trình.
+Trạng thái nông trại ghi nhận công sức chăm sóc qua từng ngày.
+Kho vật phẩm cho phép xem lại những gì đang mang theo.
+Hệ thống tiến triển kết nối hành động với thành quả tích lũy.
+Lưu tiến trình giúp những buổi chơi ngắn nối tiếp được với nhau.
+Tiếp tục ván đưa người chơi trở lại câu chuyện đang dang dở.
+Tạo ván mới cần sự xác nhận trước khi bắt đầu hành trình khác.
+Thông báo lỗi cần đủ rõ để người chơi biết nên làm gì tiếp.
+Tách phần trình bày giúp cùng một thế giới có nhiều cách tiếp cận.
+GIAO DIỆN TERMINAL
+Những hàng chữ tạo nên cảnh vật mà trí tưởng tượng có thể nối dài.
+Bàn phím đem lại cách điều khiển trực tiếp cho từng hành động.
+Phím mũi tên giúp việc đi lại trở nên quen thuộc ngay từ đầu.
+Các phím tắt đưa thông tin thường dùng đến gần người chơi hơn.
+Màu sắc làm nổi bật điểm cần chú ý khi terminal hỗ trợ.
+Giao diện văn bản vẫn dành chỗ cho người thích đọc theo từng dòng.
+Tiêu đề giúp nhận biết mình đang ở màn hình nào.
+Chỉ dẫn ở chân màn hình nhắc lại thao tác có thể dùng ngay.
+Cuộn nội dung giúp đoạn dài còn đọc được trong cửa sổ thấp.
+Chia dòng theo bề rộng giữ văn bản trong giới hạn màn hình.
+CHỮ VIẾT VÀ KHẢ NĂNG ĐỌC
+Dấu tiếng Việt là một phần không thể thiếu của tên gọi và câu chuyện.
+Chữ hiện dần đem lại khoảng thở cho phần mở đầu.
+Người đọc có thể hiện cả trang khi muốn đi nhanh hơn.
+Quay lại trang trước cho phép xem lại điều vừa bỏ lỡ.
+Bỏ qua mở đầu giúp những lần chơi sau đi thẳng vào cuộc sống mới.
+Thay đổi kích thước cửa sổ cần giữ nội dung tiếp tục đọc được.
+Các dòng credit có thể cuộn tự động với tốc độ chậm rãi.
+Tạm dừng giúp dành thêm thời gian cho một đoạn muốn đọc kỹ.
+Đi về đầu hoặc cuối giúp tìm lại vị trí trong phần ghi công.
+Trang cuối chờ người đọc thay vì khép lại câu chuyện thay họ.
+KIỂM TRA VÀ CHẤT LƯỢNG
+Kiểm tra thao tác gieo trồng giúp giữ vòng chăm sóc nhất quán.
+Kiểm tra túi đồ theo dõi việc thêm và sử dụng vật phẩm.
+Kiểm tra tiến triển giúp phát hiện những thay đổi ngoài dự kiến.
+Kiểm tra hội thoại giữ các cuộc trò chuyện có thể mở và khép lại.
+Kiểm tra bản đồ theo dõi vị trí và những bước di chuyển.
+Kiểm tra lưu và tải bảo vệ tính liên tục của hành trình.
+Kiểm tra khởi đầu theo dõi lựa chọn tạo mới và tiếp tục.
+Kiểm tra bàn phím giúp các chỉ dẫn khớp với hành động thực tế.
+Kiểm tra cửa sổ hẹp chú ý những chữ dễ bị khuất khỏi màn hình.
+Kiểm tra phần ghi công bảo đảm những dòng cuối vẫn có thể đọc hết.
+CHĂM CHÚT TRẢI NGHIỆM
+Một thông báo ngắn nên trả lời được điều vừa xảy ra.
+Một menu dễ hiểu giúp người mới có thể tự bước tiếp.
+Một thao tác hủy cần đưa người chơi về nơi quen thuộc.
+Một trang hướng dẫn hữu ích bắt đầu từ nhu cầu đang có.
+Một màn hình ổn định giúp người đọc tập trung vào nội dung.
+Một lỗi được tìm thấy là cơ hội làm chuyến trở lại dễ chịu hơn.
+Sự nhất quán trong cách gọi tên giảm những lần phải đoán ý.
+Khoảng trống giữa các phần giúp mắt nghỉ khi đọc nhiều chữ.
+Những cải thiện nhỏ cộng lại thành cảm giác dễ sử dụng.
+Việc hoàn thiện trò chơi luôn bắt đầu bằng quan sát cách nó vận hành.
+LỜI CẢM ƠN
+Cảm ơn bạn đã chọn dành một phần thời gian cho Mây Nhỏ.
+Cảm ơn người đọc những chỉ dẫn trước khi gieo hạt đầu tiên.
+Cảm ơn người dừng lại trò chuyện với một cư dân trong làng.
+Cảm ơn người khám phá các lối đi rồi tìm đường trở về ruộng.
+Cảm ơn những lần kiên nhẫn thử lại một thao tác chưa quen.
+Cảm ơn sự chú ý dành cho những chi tiết nhỏ giữa các dòng chữ.
+Cảm ơn những góp ý giúp việc chơi trở nên rõ ràng hơn.
+Cảm ơn những báo lỗi có đủ ngữ cảnh để tìm ra nguyên nhân.
+Cảm ơn người quay lại sau một ngày dài để chăm mảnh vườn.
+Cảm ơn bạn đã đọc đến những dòng cuối của phần ghi công.
+HẸN GẶP LẠI GIỮA MÂY TRỜI
+Mảnh đất đang chờ một bàn tay chăm sóc.
+Con đường quen vẫn dành chỗ cho bước chân ngày mai.
+Một hạt giống nhỏ có thể mở đầu cho nhiều điều tốt đẹp.
+Mong mỗi lần trở lại đều mang theo một chút bình yên.
+Chúc bạn tìm được nhịp sống của riêng mình trong Mây Nhỏ.
+CẢM ƠN REDEYE STUDIO VÀ TẤT CẢ NGƯỜI ĐÃ ĐỒNG HÀNH
