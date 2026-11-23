@@ -111,46 +111,64 @@ class Gear:
     effect: str
 
 
-MAX_GEAR = 5
+MAX_GEAR = 4  # internal index; display rank is level + 1 (five tiers)
+RARITY_NAMES = ('Bình thường', 'Hiếm', 'Sử thi', 'Truyền thuyết', 'Huyền thoại')
+RARITY_COLORS = ('white', 'cyan', 'magenta', 'yellow', 'red')
 GEAR = {
-    "pickaxe": Gear(
-        "Cuốc mỏ", "⚒", "P",
-        "Rèn cuốc để đào quặng nhanh hơn và nhận thêm khoáng sản.",
+    "hat": Gear(
+        "Mũ thợ mỏ", "^", "H",
+        "Chiếc mũ bảo vệ đầu khi vào mỏ và giúp đào quặng hiệu quả hơn.",
         "Mỗi bậc giảm sức đào và tăng lượng quặng nhận được."),
     "sword": Gear(
-        "Kiếm rèn", "⚔", "/",
-        "Vũ khí cần có để bước vào hang sâu.",
-        "Mỗi bậc tăng mạnh sát thương khi chiến đấu."),
+        "Kiếm rèn", "/", "/",
+        "Vũ khí cần có để bước vào Hang Sâu.",
+        "Mỗi bậc tăng sát thương khi chiến đấu."),
     "armor": Gear(
-        "Giáp da", "⛊", "A",
-        "Áo giáp bảo vệ bạn trong những tầng hang nguy hiểm.",
-        "Mỗi bậc tăng máu tối đa và giảm sát thương nhận vào."),
+        "Giáp da", "A", "A",
+        "Áo giáp bảo vệ thân mình trong những tầng hang nguy hiểm.",
+        "Mỗi bậc tăng máu tối đa và phòng thủ."),
+    "pants": Gear(
+        "Quần da", "|", "|",
+        "Quần bọc da giúp chịu đòn tốt hơn khi đi sâu vào lòng đất.",
+        "Mỗi bậc tăng máu tối đa và phòng thủ."),
+    "shoes": Gear(
+        "Giày da", "_", "_",
+        "Đôi giày bền giữ bước chân vững trên đá ẩm của hang sâu.",
+        "Mỗi bậc tăng máu tối đa và phòng thủ."),
 }
 
-
-# One recipe per level; the key ``coins`` is the forge fee, every other key is
-# an ordinary item consumed from the backpack.
+# Four upgrades per slot: Bình thường → Hiếm → Sử thi → Truyền thuyết →
+# Huyền thoại.  ``coins`` is the forge fee; every other key is an item.
 FORGE_RECIPES = {
-    "pickaxe": (
+    "hat": (
         {"da": 3, "quang_dong": 1, "coins": 20},
         {"da": 4, "quang_dong": 3, "coins": 45},
         {"da": 3, "quang_dong": 4, "quang_sat": 2, "coins": 80},
-        {"quang_sat": 4, "quang_vang": 1, "coins": 140},
         {"quang_sat": 3, "quang_vang": 3, "kim_cuong": 1, "coins": 240},
     ),
     "sword": (
         {"da": 2, "quang_dong": 2, "coins": 30},
         {"quang_dong": 3, "quang_sat": 2, "coins": 70},
         {"quang_sat": 4, "quang_vang": 1, "coins": 120},
-        {"quang_sat": 2, "quang_vang": 3, "kim_cuong": 1, "coins": 200},
         {"quang_vang": 4, "kim_cuong": 2, "coins": 320},
     ),
     "armor": (
         {"da": 4, "quang_dong": 1, "coins": 25},
         {"quang_dong": 5, "coins": 50},
         {"quang_dong": 5, "quang_sat": 3, "coins": 90},
-        {"quang_sat": 4, "quang_vang": 2, "coins": 150},
         {"quang_sat": 5, "quang_vang": 3, "kim_cuong": 1, "coins": 260},
+    ),
+    "pants": (
+        {"da": 3, "quang_dong": 1, "coins": 22},
+        {"quang_dong": 3, "da": 3, "coins": 45},
+        {"quang_sat": 3, "quang_dong": 3, "coins": 85},
+        {"quang_sat": 5, "quang_vang": 2, "kim_cuong": 1, "coins": 250},
+    ),
+    "shoes": (
+        {"da": 2, "quang_dong": 1, "coins": 18},
+        {"quang_dong": 2, "da": 2, "coins": 40},
+        {"quang_sat": 2, "quang_dong": 2, "coins": 75},
+        {"quang_vang": 3, "kim_cuong": 1, "coins": 210},
     ),
 }
 

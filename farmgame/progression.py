@@ -92,6 +92,11 @@ def gain_xp(farm: 'Farm', amount: int) -> str:
     if levels:
         message += (f' LÊN CẤP {farm.level}! Nhận {levels} điểm thuộc tính'
                     f' và {2 * levels} điểm tay nghề. Mở bảng nhân vật để nâng cấp.')
+        # If every stat is already maxed, retire any points above the reserve
+        # immediately instead of letting the counters grow during a long run.
+        retired = settle_excess_points(farm)
+        if retired:
+            message += f' Điểm dư vượt mức đã đổi thành {retired} xu.'
     return message
 
 
@@ -183,11 +188,17 @@ def character_lines(farm: 'Farm') -> list[str]:
               else 'Mỗi lần lên cấp: +1 điểm thuộc tính, +2 điểm tay nghề.'),
              'Mỗi lần nâng tốn 1 điểm tương ứng; tối đa bậc 5.',
              f'Xuất thân: {BACKGROUNDS[farm.background]} · Áo: {OUTFITS[farm.outfit]}']
+    retired_attributes = getattr(farm, 'retired_attribute_points', 0)
+    retired_skills = getattr(farm, 'retired_skill_points', 0)
+    if retired_attributes or retired_skills:
+        lines.append(f'Điểm dư đã đổi: {retired_attributes} thuộc tính, '
+                     f'{retired_skills} tay nghề.')
     for definitions, values in ((ATTRIBUTES, farm.attributes), (SKILLS, farm.skills)):
         for key, definition in definitions.items():
             lines.append(f'{definition.name}: {values[key]}/5 — {definition.description}')
     from .catalog import GEAR
+    from .forge import tier_label
     for key, info in GEAR.items():
-        lines.append(f'{info.name}: bậc {farm.gear.get(key, 0)}/5 — {info.effect}')
+        lines.append(f'{info.name}: {tier_label(farm.gear.get(key, 0))} — {info.effect}')
     lines.append(f'Hang Sâu: kỷ lục tầng {farm.dungeon_best}/5.')
     return lines

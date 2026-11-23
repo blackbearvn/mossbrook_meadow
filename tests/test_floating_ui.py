@@ -219,7 +219,7 @@ class FloatingDialogTests(unittest.TestCase):
     def test_inventory_chest_filter_switches_to_crop_and_transfer_hint(self):
         game = self.game(24, 80)
         game.farm.chest['crop:ca_rot'] = 4
-        game._read = Mock(side_effect=['3', 'q'])
+        game._read = Mock(side_effect=['\t', '\t', 'q'])
         game._inventory(True)
         rendered = '\n'.join(game._screen.lines())
         self.assertIn('RƯƠNG · GỬI / RÚT', rendered)
@@ -231,7 +231,7 @@ class FloatingDialogTests(unittest.TestCase):
     def test_inventory_sheet_enter_withdraws_selected_chest_item(self, save):
         game = self.game(24, 80)
         game.farm.chest['crop:ca_rot'] = 4
-        game._read = Mock(side_effect=['3', '\n', '2', '\n', 'q'])
+        game._read = Mock(side_effect=['\t', '\t', '\n', '2', '\n', 'q'])
         game._inventory(True)
         self.assertEqual(game.farm.chest['crop:ca_rot'], 2)
         self.assertEqual(game.farm.produce['ca_rot'], 2)
@@ -247,7 +247,7 @@ class FloatingDialogTests(unittest.TestCase):
         self.assertNotIn('↑↓', rendered)
         self.assertNotIn('–', rendered)
         self.assertIn('W/S', lines[-2])
-        self.assertIn('1b Tất cả', rendered)
+        self.assertIn('b Tất cả', rendered)
 
     @patch('farmgame.explore.save_game')
     def test_home_kitchen_opens_cooking_and_cooks_selected_recipe(self, save):
@@ -317,7 +317,7 @@ class FloatingDialogTests(unittest.TestCase):
         self.assertIn('Hạt Cà rốt', rendered)
         self.assertIn('( # )', rendered)
         self.assertIn('8 xu', rendered)
-        self.assertIn('Tab hoặc 1–5', game._screen.lines()[-2])
+        self.assertIn('Tab/Shift+Tab đổi quầy', game._screen.lines()[-2])
 
     def test_reader_keeps_body_status_and_bottom_controls_inside_panel(self):
         game = self.game(10, 22)

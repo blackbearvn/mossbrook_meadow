@@ -31,6 +31,15 @@ class ProgressionOverflowTests(unittest.TestCase):
         self.assertEqual(farm.skill_points, POINT_SOFT_CAP)
         self.assertEqual(settle_excess_points(farm), 0)
 
+    def test_level_up_retires_new_overflow_without_a_reload(self):
+        farm = maxed_farm()
+        settle_excess_points(farm)
+        coins = farm.coins
+        farm.award_xp(40)
+        self.assertLessEqual(farm.attribute_points, POINT_SOFT_CAP)
+        self.assertLessEqual(farm.skill_points, POINT_SOFT_CAP)
+        self.assertGreater(farm.coins, coins)
+
     def test_exchange_clears_the_reserve_only_when_everything_is_maxed(self):
         farm = maxed_farm()
         settle_excess_points(farm)

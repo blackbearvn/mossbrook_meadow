@@ -248,6 +248,26 @@ def _fill_new_inventory(data: dict) -> dict:
             data[field] = {**dict.fromkeys(expected, 0), **value}
     return data
 
+def _migrate_gear(raw: object) -> object:
+    """Map the old three-slot gear shape onto the five-slot equipment set."""
+    if not isinstance(raw, dict):
+        return raw
+    data = dict(raw)
+    current = set(GEAR)
+    legacy = 'pickaxe' in data or (bool(data) and set(data) < current)
+    if 'pickaxe' in data:
+        old_pickaxe = data.pop('pickaxe')
+        if not data.get('hat'):
+            data['hat'] = old_pickaxe
+    if legacy and data and set(data) <= current:
+        data = {key: data.get(key, 0) for key in GEAR}
+        for key, value in data.items():
+            # Schema-seven saves could hold rank 5; the new ladder ends at 4.
+            if value == MAX_GEAR + 1:
+                data[key] = MAX_GEAR
+    return data
+
+
 def _decode_farm(data: object) -> Farm:
     expected = {f.name for f in fields(Farm)}
     if isinstance(data, dict):
@@ -265,6 +285,15 @@ def _decode_farm(data: object) -> Farm:
     if not isinstance(data, dict) or set(data) != expected:
         raise ValueError("Thiếu dữ liệu nông trại hoặc có trường không hỗ trợ.")
     data = _fill_new_inventory(data)
+    raw_gear = data.get('gear')
+    legacy_gear = (isinstance(raw_gear, dict)
+                   and ('pickaxe' in raw_gear
+                        or (bool(raw_gear) and set(raw_gear) < set(GEAR))))
+    old_armor = (raw_gear.get('armor', 0)
+                 if legacy_gear and isinstance(raw_gear, dict) else 0)
+    if type(old_armor) is not int:
+        old_armor = 0
+    data['gear'] = _migrate_gear(raw_gear)
     if normalize_name(data['player_name'], 24, 'Tên người chơi') != data['player_name']:
         raise ValueError('Tên người chơi phải chuẩn hóa NFC và không có khoảng trắng thừa.')
     for key, choices in (('avatar', AVATARS), ('outfit', OUTFITS),
@@ -314,7 +343,15 @@ def _decode_farm(data: object) -> Farm:
         raise ValueError('Dữ liệu trang bị không hợp lệ.')
     for value in gear.values():
         _integer(value, maximum=MAX_GEAR)
-    max_hp = 20 + 4 * gear.get('armor', 0) + 2 * (data['xp'] // 40)
+    max_hp = (20 + 4 * gear.get('armor', 0)
+              + 2 * gear.get('pants', 0)
+              + gear.get('shoes', 0)
+              + 2 * (data['xp'] // 40))
+    if (legacy_gear and type(data.get('hp')) is int
+            and max_hp < data['hp'] <= 20 + 4 * old_armor + 2 * (data['xp'] // 40)):
+        # A rank-five old armour set had more health than the new five-tier
+        # ladder; keep the save loadable without accepting impossible values.
+        data['hp'] = max_hp
     _integer(data['hp'], 1, max_hp)
     _integer(data['dungeon_best'], maximum=5)
     mine_used = data['mine_used']

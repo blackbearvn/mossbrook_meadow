@@ -7,6 +7,7 @@ two-column tiles, or use just the glyph when the terminal needs a tighter map.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -28,11 +29,16 @@ class MapCell:
 
     def __post_init__(self) -> None:
         for char in (self.glyph, self.tail):
-            if (not isinstance(char, str) or len(char) != 1
-                    or not char.isprintable()
-                    or unicodedata.category(char).startswith(('C', 'M'))
-                    or unicodedata.east_asian_width(char) in 'WF'):
+            if not isinstance(char, str) or not _valid_cell_char(char):
                 raise ValueError('Map glyphs must occupy one printable terminal cell.')
+
+
+@lru_cache(maxsize=512)
+def _valid_cell_char(char: object) -> bool:
+    return (isinstance(char, str) and len(char) == 1
+            and char.isprintable()
+            and not unicodedata.category(char).startswith(('C', 'M'))
+            and unicodedata.east_asian_width(char) not in 'WF')
 
 
 _ARROWS = {'up': '↑', 'down': '↓', 'left': '←', 'right': '→'}
@@ -103,9 +109,9 @@ def terrain_glyph(tile: str, *, unicode: bool = True) -> str:
     return _TERRAIN.get(tile, tile) if unicode else tile
 
 
-def _line_cell(farm: Farm, x: int, y: int, *, unicode: bool,
+def _line_cell(area: str, size: int, x: int, y: int, *, unicode: bool,
                wall: bool = False) -> MapCell:
-    grid = world.terrain_grid(farm.area, farm.size)
+    grid = world.terrain_grid(area, size)
     height, width = len(grid), len(grid[0])
     mask = 0
     connections = '#D' if wall else '='
@@ -147,17 +153,81 @@ def _building_cell(x: int, y: int, *, unicode: bool) -> MapCell | None:
     return None
 
 
+@lru_cache(maxsize=4096)
+def _static_cell(area: str, size: int, unicode: bool, x: int, y: int,
+                 tile: str) -> MapCell:
+    """Cache terrain art that does not depend on changing farm state."""
+    if tile == '=':
+        return _line_cell(area, size, x, y, unicode=unicode)
+    if tile == '#':
+        if area == 'village':
+            building = _building_cell(x, y, unicode=unicode)
+            if building is not None:
+                return building
+        elif area == 'home' and 0 <= x < world.HOME_WIDTH and 0 <= y < world.HOME_HEIGHT:
+            return _line_cell(area, size, x, y, unicode=unicode, wall=True)
+    if tile == 'T':
+        if unicode:
+            texture = (x * 13 + y * 7) % 23
+            glyph = '♠' if texture == 0 else ('♤' if texture == 1 else '♣')
+            return MapCell(glyph, 'forest', bold=glyph != '♣')
+        texture = (x * 13 + y * 7) % 19
+        glyph = 'Y' if texture == 0 else ('t' if texture == 1 else 'T')
+        return MapCell(glyph, 'forest', bold=glyph == 'Y')
+    if tile == ',':
+        texture = (x * 11 + y * 17) % 13
+        if unicode:
+            glyph = '❀' if texture == 0 else ('✾' if texture == 1 else '✿')
+            return MapCell(glyph, 'flower', bold=texture < 2)
+        glyph = '%' if texture == 0 else ('*' if texture == 4 else ',')
+        return MapCell(glyph, 'flower', bold=glyph != ',')
+    if tile == '.':
+        texture = (x * 17 + y * 31) % 29
+        if texture < 2:
+            glyph = '.'
+        elif texture == 2:
+            glyph = '`'
+        elif texture == 3:
+            glyph = '"'
+        elif texture == 4:
+            glyph = "'"
+        elif texture == 5:
+            glyph = ';'
+        else:
+            glyph = ' '
+        return MapCell(glyph, 'grass')
+    if tile == 's':
+        return MapCell('·' if unicode else 's', 'sand')
+    if tile in ('~', 'S'):
+        texture = (x * 7 + y * 11) % 23
+        wave = ('≋' if texture == 0 else '≈') if unicode else '~'
+        return MapCell(wave, 'lake' if tile == '~' else 'sea', tail=wave)
+    if area == 'village' and tile in 'HMB':
+        return MapCell(tile, _COLORS[tile], True,
+                       tail='─' if unicode else '-')
+    if area == 'home' and tile == 'D':
+        return MapCell('⇥' if unicode else 'D', 'cyan', True,
+                       tail='─' if unicode else '-')
+    return MapCell(terrain_glyph(tile, unicode=unicode), _COLORS.get(tile, 'green'))
+
+
 def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
-             path=frozenset()) -> MapCell:
-    """Style a logical tile without progressing quests, crops, time, or RNG."""
-    # Validate through the world before an actor or route can mask bad inputs.
-    tile = world.tile_at(farm.area, x, y, farm.size)
+             path=frozenset(), tile: str | None = None) -> MapCell:
+    """Style a logical tile without progressing quests, crops, time, or RNG.
+
+    The renderer can pass an already-validated ``tile`` from a cached terrain
+    grid, which avoids repeating coordinate validation for every visible cell.
+    """
+    if tile is None:
+        # Validate through the world before an actor or route can mask bad inputs.
+        tile = world.tile_at(farm.area, x, y, farm.size)
     if (x, y) == (farm.player_x, farm.player_y):
         arrows = _ARROWS if unicode else _ASCII_ARROWS
         return MapCell(farm.avatar, farm.outfit, True, arrows.get(farm.facing, ' '))
-    npc = npc_at(x, y, farm.area)
-    if npc is not None:
-        return MapCell(npc.glyph, 'magenta', True)
+    if farm.area == 'village':
+        npc = npc_at(x, y, farm.area)
+        if npc is not None:
+            return MapCell(npc.glyph, 'magenta', True)
     if farm.area == 'village' and tile == ':':
         coordinate = world.plot_at(x, y, farm.size)
         plot = farm.plots[coordinate]
@@ -185,69 +255,7 @@ def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
                  'quang_vang': 'sand', 'kim_cuong': 'flower'}[kind]
         glyph = ('✦' if kind == 'kim_cuong' else '◆') if unicode else '*'
         return MapCell(glyph, color, bold=kind in ('quang_vang', 'kim_cuong'))
-    if tile == '=':
-        return _line_cell(farm, x, y, unicode=unicode)
-    if tile == '#':
-        if farm.area == 'village':
-            building = _building_cell(x, y, unicode=unicode)
-            if building is not None:
-                return building
-        elif (farm.area == 'home' and 0 <= x < world.HOME_WIDTH
-              and 0 <= y < world.HOME_HEIGHT):
-            return _line_cell(farm, x, y, unicode=unicode, wall=True)
-    if tile == 'T':
-        if unicode:
-            texture = (x * 13 + y * 7) % 23
-            glyph = '♠' if texture == 0 else ('♤' if texture == 1 else '♣')
-            return MapCell(glyph, 'forest', bold=glyph != '♣')
-        # A stable mix of pines, broadleaf trees and saplings keeps the
-        # ASCII forest readable without turning it into visual noise.
-        texture = (x * 13 + y * 7) % 19
-        glyph = 'Y' if texture == 0 else ('t' if texture == 1 else 'T')
-        return MapCell(glyph, 'forest', bold=glyph == 'Y')
-    if tile == ',':
-        texture = (x * 11 + y * 17) % 13
-        if unicode:
-            glyph = '❀' if texture == 0 else ('✾' if texture == 1 else '✿')
-            return MapCell(glyph, 'flower', bold=texture < 2)
-        glyph = '%' if texture == 0 else ('*' if texture == 4 else ',')
-        return MapCell(glyph, 'flower', bold=glyph != ',')
-    if tile == '.':
-        # Coordinate texture is sparse and stable, without touching random state.
-        texture = (x * 17 + y * 31) % 29
-        if texture < 2:
-            glyph = '.'
-        elif texture == 2:
-            glyph = '`'
-        elif texture == 3:
-            glyph = '"'
-        elif texture == 4:
-            glyph = "'"
-        elif texture == 5:
-            glyph = ';'
-        else:
-            glyph = ' '
-        return MapCell(glyph, 'grass')
-    if tile == 's':
-        # Keep every beach cell visible: a space would erase the golden
-        # foreground colour and make the coast look like a gap in the map.
-        return MapCell('·' if unicode else 's', 'sand')
-    if tile in ('~', 'S'):
-        # Lake and sea share wave shapes but get different semantic colours.
-        texture = (x * 7 + y * 11) % 23
-        wave = ('≋' if texture == 0 else '≈') if unicode else '~'
-        return MapCell(wave, 'lake' if tile == '~' else 'sea', tail=wave)
-    if farm.area == 'village' and tile in 'HMB':
-        # Doors sit on the bottom edge of their buildings.  Joining them to the
-        # wall keeps the house readable as one solid footprint.
-        return MapCell(tile, _COLORS[tile], True,
-                       tail='─' if unicode else '-')
-    if farm.area == 'home' and tile == 'D':
-        # The exit is a doorway in the bottom wall, not a hole in it.
-        return MapCell('⇥' if unicode else 'D', 'cyan', True,
-                       tail='─' if unicode else '-')
-    return MapCell(terrain_glyph(tile, unicode=unicode), _COLORS.get(tile, 'green'))
-
+    return _static_cell(farm.area, farm.size, unicode, x, y, tile)
 
 def map_legend(farm: Farm, *, unicode: bool = True) -> list[str]:
     """One or two compact Vietnamese lines matching the active symbol palette."""

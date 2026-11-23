@@ -55,6 +55,9 @@ TOPICS = {
     'village': 'Chuyện quanh làng',
     'dream': 'Ước mơ',
     'memory': 'Kỷ niệm',
+    'festival': 'Lễ hội mùa',
+    'secret': 'Điều chưa kể',
+    'future': 'Chuyện ngày mai',
 }
 BOND_TITLES = ((0, 'Người mới quen'), (3, 'Bạn quen'),
                (6, 'Bạn thân'), (9, 'Tri kỷ'))
@@ -219,6 +222,61 @@ _CLOSE = {
 }
 
 
+_STORY = {
+    'festival': {
+        'lan': ('Lễ hội là dịp để tiệm mở cửa muộn hơn. Mình đang chuẩn bị một quầy hạt nhỏ và chỗ ngồi cho người mỏi chân.',
+                'Nếu bạn rảnh, ghé phụ mình xếp túi hạt. Làm cùng nhau thì việc nhỏ cũng thành vui.',
+                'Mình học được rằng lễ hội không cần hoành tráng, chỉ cần ai đi ngang cũng thấy được chào.'),
+        'tu': ('Lễ hội năm nay bác muốn kể chuyện bên hồ. Một cái ghế, một ấm trà, nghe tiếng nước là đủ.',
+               'Bác đang tập kể ngắn lại. Chuyện dài quá thì người nghe mỏi, mà chuyện hay thì cần chỗ để thở.',
+               'Bác mong lễ hội xong, có đứa trẻ sẽ nhớ một câu chuyện và kể lại cho người khác.'),
+        'an': ('Mình đang trồng một con đường hoa cho lễ hội. Hoa phải nở đúng dịp, nên mình chăm từng ngày.',
+               'Mình muốn người đi qua sẽ chậm lại một chút. Đôi khi một bông hoa đẹp làm người ta nhớ cả buổi.',
+               'Mình học được rằng chuẩn bị cho một ngày vui cũng là cách sống chậm lại.'),
+        'mai': ('Mình đang chọn sách cho góc đọc ở lễ hội. Sách phải mở được ngay, không cần đọc từ đầu.',
+                'Mình sẽ để một cuốn sổ trắng cho ai muốn ghi lại chuyện của mình. Lễ hội cũng là một trang để viết tiếp.',
+                'Mình mong sau lễ hội, sổ làng có thêm vài giọng nói mới.'),
+        'son': ('Mình đang dọn một lối ngắn qua rừng cho khách lễ hội. Lối phải dễ đi mà vẫn giữ được vẻ tự nhiên.',
+                'Mình thích nhất là khoảng thời gian trước lễ hội, khi mọi người cùng chuẩn bị mà chưa vội.',
+                'Mình mong khách đi xong sẽ hiểu rừng cần được giữ sạch, không chỉ đẹp để ngắm.'),
+    },
+    'secret': {
+        'lan': ('Mình có một túi hạt giống của người bạn cũ, vẫn chưa dám gieo. Mỗi lần mở ngăn kéo lại thấy nao.',
+                'Mình sợ gieo rồi hoa sẽ tàn, nhưng cất mãi thì hạt cũng ngủ quên. Có lẽ mình cần một người cùng quyết.',
+                'Mình đang học cách giữ ký ức mà không biến nó thành một thứ phải canh chừng.'),
+        'tu': ('Bác có một chỗ trên hồ chưa dẫn ai tới. Không phải vì bí mật, mà vì bác chưa biết có nên mở lòng.',
+               'Bác từng hứa với một người sẽ giữ chỗ ấy yên. Giữ lời hứa đôi khi cũng là giữ một phần của mình.',
+               'Bác nghĩ rồi sẽ có ngày dẫn một người thật đáng tin tới đó.'),
+        'an': ('Mình có một luống hoa không bao giờ cắt. Mẹ mình trồng nó trước khi đi, và mình chưa sẵn sàng thay đổi.',
+                'Mình học được rằng chăm một thứ gì đó không có nghĩa là phải giữ nó mãi như cũ.',
+                'Có lẽ một ngày mình sẽ hái một bông, nhưng hôm nay thì chưa.'),
+        'mai': ('Mình có một cuốn sổ chưa đưa vào thư viện. Trong đó có những chuyện mình nghe được khi chưa xin phép.',
+                 'Mình đang nghĩ cách sửa sai mà không làm người trong chuyện bị tổn thương thêm.',
+                 'Viết chuyện của người khác là một việc nặng hơn mình tưởng lúc mới bắt đầu.'),
+        'son': ('Mình giữ một cây thông già bị sét đánh, chỉ vì chim vẫn làm tổ trong đó. Nó không đẹp theo cách thông thường.',
+                'Có người khuyên mình chặt đi cho gọn lối. Mình vẫn chưa nỡ, dù biết rừng cần được chăm.',
+                'Mình đang tìm cách vừa giữ cây, vừa giữ lối đi an toàn cho người sau.'),
+    },
+    'future': {
+        'lan': ('Mình muốn tiệm có thêm chỗ ngồi uống trà, để người ghé không phải vội đi ngay.',
+                'Mình đang dành dụm và đo lại khoảng hiên. Việc nhỏ thôi, nhưng mình muốn làm cho cẩn thận.',
+                'Mình mong một ngày tiệm là nơi người trong làng ghé không chỉ để mua, mà để kể nhau nghe một chuyện.'),
+        'tu': ('Bác muốn dạy câu cho đứa trẻ trong làng. Không phải để chúng thành thợ câu, chỉ để biết ngồi yên.',
+                'Bác đang chuẩn bị một cần câu ngắn và một chỗ nước cạn. Bắt đầu nhỏ thì dễ đi tiếp.',
+                'Bác mong có thêm người biết nhìn mặt hồ, để câu chuyện của làng không chỉ nằm trong miệng người già.'),
+        'an': ('Mình muốn biến bãi đất sau vườn thành nơi ươm cây. Mình đã vẽ vài kiểu nhà lưới ra giấy.',
+                 'Mình học được rằng vườn không cần đông cây, chỉ cần mỗi cây có chỗ để lớn.',
+                 'Mình mong sau này, người trong làng có thể tới xin một cây con và trồng tiếp ở nhà.'),
+        'mai': ('Mình muốn viết một cuốn sách về Mossbrook Meadow từ những chuyện nhỏ nhất.',
+                'Mình đang thử viết mỗi ngày một trang. Có hôm chỉ được một câu, nhưng vẫn là một câu thật.',
+                'Mình mong cuốn sách ấy không kết thúc bằng một dấu chấm, mà bằng một trang trắng cho người đọc viết tiếp.'),
+        'son': ('Mình muốn trồng thêm cây bản địa ven lối mòn, để rừng vừa đẹp vừa dễ đi.',
+                'Mình đang chọn loại cây không cần chăm nhiều mà vẫn nuôi được chim và côn trùng.',
+                'Mình mong lối đi mình để lại sẽ còn dùng được lâu sau khi mình không còn dọn rừng mỗi ngày.'),
+    },
+}
+
+
 def empty_friendships() -> dict[str, int]:
     return dict.fromkeys(NPCS, 0)
 
@@ -227,10 +285,13 @@ def empty_talked_on() -> dict[str, int]:
     return dict.fromkeys(NPCS, 0)
 
 
+NPC_POSITIONS = {npc.position: npc for npc in NPCS.values()}
+
+
 def npc_at(x: int, y: int, area: str = 'village') -> NPC | None:
     if area != 'village':
         return None
-    return next((npc for npc in NPCS.values() if npc.position == (x, y)), None)
+    return NPC_POSITIONS.get((x, y))
 
 
 def nearby_npc(farm: 'Farm') -> NPC | None:
@@ -266,6 +327,9 @@ def talk(farm: 'Farm', npc_id: str, topic: str = 'greet') -> str:
     if topic == 'greet':
         line = (_RAIN[npc_id] if farm.weather == 'rainy' else
                 _GREETINGS[npc_id][(farm.day - 1) % len(_GREETINGS[npc_id])])
+    elif topic in _STORY:
+        choices = _STORY[topic][npc_id]
+        line = choices[(farm.day - 1) % len(choices)]
     else:
         choices = {'work': _WORK, 'village': _VILLAGE,
                    'dream': _DREAMS, 'memory': _MEMORIES}[topic][npc_id]

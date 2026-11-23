@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import unicodedata
+from functools import lru_cache
 from pathlib import Path
 
 from .catalog import CROPS, WEATHER, ITEMS
@@ -17,14 +18,36 @@ from .storage import SaveError, save_game
 from . import tui, world
 
 
+@lru_cache(maxsize=1024)
+def _cell_width(char: str) -> int:
+    """Cached display width, with -1 marking a control character."""
+    if unicodedata.combining(char) or unicodedata.category(char).startswith("M"):
+        return 0
+    if unicodedata.category(char).startswith("C"):
+        return -1
+    return 2 if unicodedata.east_asian_width(char) in "WF" else 1
+
+
 def fit_text(text: str, width: int) -> str:
     """Clip by terminal cells, retaining Vietnamese combining marks."""
+    if width <= 0:
+        return ""
+    text = str(text)
+    # Single map glyphs are the hottest path; _cell_width is cached by char.
+    if len(text) == 1:
+        cells = _cell_width(text)
+        if cells < 0:
+            return " " if width >= 1 else ""
+        return text if cells <= width else ""
+    # Ordinary ASCII UI labels need no per-character Unicode work.
+    if text.isascii() and text.isprintable() and len(text) <= width:
+        return text
     result = []
     used = 0
-    for char in str(text):
-        if unicodedata.category(char).startswith("C"):
-            char = " "
-        cells = 0 if unicodedata.combining(char) else (2 if unicodedata.east_asian_width(char) in "WF" else 1)
+    for char in text:
+        cells = _cell_width(char)
+        if cells < 0:
+            char, cells = " ", 1
         if used + cells > width:
             break
         result.append(char)
@@ -126,6 +149,7 @@ class ExplorerGame:
         self._colors = {}
         self._save_error = ""
         self._dim_base = False
+        self._last_move_save = 0.0
         from .map_art import supports_unicode
         self.unicode_map = not ascii_only and supports_unicode()
         from .tutorial_ui import TutorialCoach
@@ -207,6 +231,10 @@ class ExplorerGame:
         screen.keypad(True)
         screen.timeout(100)
         try:
+            screen.mousemask(self._curses.BUTTON1_CLICKED)
+        except (AttributeError, self._curses.error):
+            pass
+        try:
             self._curses.curs_set(0)
         except self._curses.error:
             pass
@@ -247,6 +275,19 @@ class ExplorerGame:
         except self._curses.error:
             return None
 
+    def _mouse_click(self):
+        """Return a left-click event, or ``None`` for another mouse event."""
+        if self._curses is None:
+            return None
+        try:
+            event = self._curses.getmouse()
+        except (AttributeError, self._curses.error):
+            return None
+        clicked = getattr(self._curses, 'BUTTON1_CLICKED', 0)
+        if clicked and not (getattr(event, 'bstate', 0) & clicked):
+            return None
+        return event
+
     def handle_key(self, key):
         """One immediate key; returns False only after a successful save/quit."""
         directions = {"w": "up", "a": "left", "s": "down", "d": "right"}
@@ -277,7 +318,13 @@ class ExplorerGame:
                         if after is not None and after.key != before_page:
                             self._log(f'Đã sang {after.name}.')
                 self.coach.sync()
-                self._save()  # Facing changes even when a wall blocks movement.
+                # Holding a movement key should not rewrite the JSON save ten
+                # times a second.  Position/facing is checkpointed periodically;
+                # Q, P and all meaningful actions still save immediately.
+                now = time.monotonic()
+                if now - self._last_move_save >= 0.75:
+                    if self._save():
+                        self._last_move_save = now
         elif key == "q":
             if not self._save():
                 return True
@@ -392,6 +439,7 @@ class ExplorerGame:
                 self._refresh()
             return
         layout = map_layout(farm, width, height, expanded=expanded)
+        grid = world.terrain_grid(farm.area, farm.size)
         path = (self.activities.path_points() if self.activities.running
                 else self.coach.path_points())
         if layout.framed:
@@ -406,7 +454,10 @@ class ExplorerGame:
         for row in range(layout.rows):
             for col in range(layout.cols):
                 x, y = col + layout.left, row + layout.top
-                art = map_cell(farm, x, y, unicode=self.unicode_map, path=path)
+                tile = (grid[y][x] if 0 <= y < len(grid)
+                        and 0 <= x < len(grid[y]) else '#')
+                art = map_cell(farm, x, y, unicode=self.unicode_map,
+                               path=path, tile=tile)
                 self._put(row + layout.y, layout.x + col * layout.cell,
                           art.glyph + (art.tail if layout.cell == 2 else ''), art.color, art.bold)
         legends = map_legend(farm, unicode=self.unicode_map)
@@ -1039,8 +1090,8 @@ class ExplorerGame:
                               symbol, weather_icon)
         from .catalog import GEAR, MAX_GEAR, WEATHER
         from .forge import (attack_power, defense_power, gear_lines,
-                            mining_bonus, mining_energy_cost, recipe_for,
-                            recipe_label)
+                            mining_bonus, mining_energy_cost, rarity_color,
+                            rarity_name, recipe_for, recipe_label, tier_label)
         from .identity import BACKGROUNDS, OUTFITS
         from .inventory import inventory_rows
         definitions = self._character_definitions()
@@ -1051,6 +1102,8 @@ class ExplorerGame:
         bag_selected = 0
         bag_offset = 0
         gear_keys = list(GEAR)
+        self._gear_boxes = {}
+        tooltip = False
         while True:
             height, width = self._screen.getmaxyx()
             if height < 20 or width < 64:
@@ -1071,19 +1124,19 @@ class ExplorerGame:
             status_nav = f'{nav}/W/S' if self.unicode_map else 'W/S'
             if tab == 0:
                 controls = (f'{status_nav} chọn · 1–7 chọn nhanh · Enter nâng · '
-                            'Tab đổi tab · Space hồ sơ · Esc đóng'
+                            'Tab/Shift+Tab đổi tab · Space hồ sơ · Esc đóng'
                             if width >= 80 else
                             f'{status_nav} chọn · Enter nâng · Tab · Space · Esc')
             elif tab == 1:
-                controls = (f'{status_nav} chọn · A/D hoặc Tab đổi tab · '
-                            'Enter xem đầy đủ · Esc đóng'
+                controls = (f'{status_nav} chọn ô · 1–5 chọn nhanh · Enter tooltip · '
+                            'Space đầy đủ · Tab/Shift+Tab đổi tab · Esc đóng'
                             if width >= 80 else
-                            f'{status_nav} chọn · A/D đổi tab · Esc đóng')
+                            f'{status_nav} chọn ô · Enter tooltip · Tab đổi tab · Esc')
             else:
-                controls = (f'{status_nav} chọn · A/D hoặc Tab đổi tab · '
+                controls = (f'{status_nav} chọn · Tab/Shift+Tab đổi tab · '
                             'I mở túi đầy đủ · Esc đóng'
                             if width >= 80 else
-                            f'{status_nav} chọn · A/D đổi tab · Esc đóng')
+                            f'{status_nav} chọn · Tab đổi tab · Esc đóng')
             body = tui.draw_panel(
                 self, rect,
                 title=(f'HỒ SƠ NÔNG DÂN · {self.farm.avatar} {self.farm.player_name}'
@@ -1198,60 +1251,75 @@ class ExplorerGame:
                         break
                     self._put(detail_y + 1 + offset, right_x, line, 'cyan')
             elif tab == 1:
-                row = top
-                self._put(row, right_x, ' TRANG BỊ ', 'dim')
-                row += 1
+                self._put(top, right_x, ' TRANG BỊ · 5 Ô ', 'dim')
+                slot_w = 11
+                slot_h = 4
+                slot_cols = 3 if right_w >= 35 else 2
+                slot_top = top + 1
+                slot_gap = 1
+                inner = slot_w - 2
+
+                def centered(text, width):
+                    text = tui.ellipsize(text, width, unicode=self.unicode_map)
+                    left = max(0, (width - tui.cells(text)) // 2)
+                    return (' ' * left + text
+                            + ' ' * max(0, width - left - tui.cells(text)))
+
                 for index, key in enumerate(gear_keys):
                     info = GEAR[key]
                     rank = self.farm.gear.get(key, 0)
                     icon = info.icon if self.unicode_map else info.ascii_icon
-                    if row >= bottom - 5:
-                        break
-                    text = (f'{g["arrow"] if index == gear_selected else " "} '
-                            f'{icon} {info.name:<8} {pips(rank, unicode=self.unicode_map)} '
-                            f'{rank}/{MAX_GEAR}')
-                    if index == gear_selected:
-                        self._put(row, right_x, ' ' * right_w, 'selected')
-                        self._put(row, right_x,
-                                  tui.ellipsize(text, max(1, right_w - 1),
-                                                unicode=self.unicode_map), 'selected', True)
-                    else:
-                        self._put(row, right_x,
-                                  tui.ellipsize(text, max(1, right_w - 1),
-                                                unicode=self.unicode_map))
-                    row += 1
-                    effect = wrap_cells(info.effect, max(2, right_w - 3))
-                    if row < bottom - 5 and effect:
-                        self._put(row, right_x + 2,
-                                  tui.ellipsize(effect[0], max(1, right_w - 3),
-                                                unicode=self.unicode_map), 'dim')
-                        row += 1
+                    active = index == gear_selected
+                    bx = right_x + (index % slot_cols) * (slot_w + slot_gap)
+                    by = slot_top + (index // slot_cols) * (slot_h + slot_gap)
+                    border_color = 'yellow' if active else rarity_color(rank)
+                    number = str(index + 1)
+                    mark = g['arrow'] if active else ' '
+                    top_rule = (g['tl'] + g['h'] * 3 + mark + number
+                                + g['h'] * (inner - 5) + g['tr'])
+                    self._put(by, bx, top_rule, border_color, active)
+                    self._put(by + 1, bx,
+                              g['v'] + centered(f'{icon} {pips(rank + 1, unicode=self.unicode_map)}',
+                                                inner) + g['v'],
+                              border_color, active)
+                    self._put(by + 2, bx,
+                              g['v'] + centered(info.name, inner) + g['v'],
+                              border_color, active)
+                    self._put(by + 3, bx,
+                              g['bl'] + g['h'] * inner + g['br'],
+                              border_color, active)
+                    self._gear_boxes[index] = (bx, by, slot_w, slot_h)
+
+                detail_y = max(slot_top + 2 * (slot_h + slot_gap),
+                               bottom - 6)
+                if detail_y < bottom - 1:
+                    self._put(detail_y, right_x, g['h'] * right_w, 'dim')
+                    key = gear_keys[gear_selected]
+                    info = GEAR[key]
+                    rank = self.farm.gear.get(key, 0)
                     recipe = recipe_for(self.farm, key)
-                    if row < bottom - 5:
-                        next_text = ('Đã đạt bậc tối đa.' if recipe is None
-                                     else 'Kế: ' + recipe_label(recipe))
-                        self._put(row, right_x + 2,
-                                  tui.ellipsize(next_text, max(1, right_w - 3),
-                                                unicode=self.unicode_map), 'cyan')
-                        row += 1
-                if row < bottom - 3:
-                    self._put(row, right_x, g['h'] * right_w, 'dim')
-                    row += 1
-                summary = (
-                    f'Sát thương {attack_power(self.farm)} · '
-                    f'phòng thủ {defense_power(self.farm)}',
-                    f'Đào {mining_energy_cost(self.farm)} sức · '
-                    f'thêm {mining_bonus(self.farm)} quặng · '
-                    f'máu tối đa {self.farm.max_hp}',
-                    'Rèn tại lò rèn trong mỏ: đứng cạnh F rồi nhấn E.',
-                )
-                for line in summary:
-                    if row >= bottom - 1:
-                        break
-                    self._put(row, right_x,
-                              tui.ellipsize(line, max(1, right_w - 1),
-                                            unicode=self.unicode_map), 'cyan')
-                    row += 1
+                    detail = [
+                        tui.ellipsize(f'{info.name} · {tier_label(rank)}',
+                                      max(1, right_w - 1),
+                                      unicode=self.unicode_map),
+                        tui.ellipsize(info.effect, max(1, right_w - 1),
+                                      unicode=self.unicode_map),
+                    ]
+                    if recipe is None:
+                        detail.append(f'Đã đạt {rarity_name(rank)}; không còn bậc cao hơn.')
+                    else:
+                        detail.append(tui.ellipsize(
+                            f'Kế tiếp {rarity_name(rank + 1)}: {recipe_label(recipe)}',
+                            max(1, right_w - 1), unicode=self.unicode_map))
+                    detail.append(
+                        f'Sát thương {attack_power(self.farm)} · '
+                        f'phòng thủ {defense_power(self.farm)} · '
+                        f'máu {self.farm.max_hp}')
+                    for offset, line in enumerate(detail):
+                        if detail_y + 1 + offset >= bottom:
+                            break
+                        self._put(detail_y + 1 + offset, right_x, line,
+                                  'cyan' if offset else rarity_color(rank))
             else:
                 total = sum(row[2] for row in bag_rows)
                 value = sum(sale_price(self.farm, key) * bag
@@ -1301,17 +1369,34 @@ class ExplorerGame:
                             break
                         self._put(detail_y + 1 + offset, right_x, line, 'dim')
 
+            if tooltip:
+                self._gear_tooltip(gear_keys[gear_selected])
             self._draw_status_bar(height, width, controls)
             self._refresh()
 
             key_name = self._read()
+            if tooltip:
+                # Curses returns None on the normal screen timeout; that must
+                # not count as a key press or the tooltip would flash and close.
+                if key_name is not None:
+                    tooltip = False
+                continue
+            if (tab == 1
+                    and key_name == getattr(self._curses, 'KEY_MOUSE', -1)):
+                event = self._mouse_click()
+                if event is not None:
+                    for index, (bx, by, bw, bh) in self._gear_boxes.items():
+                        if bx <= event.x < bx + bw and by <= event.y < by + bh:
+                            gear_selected = index
+                            tooltip = True
+                            break
+                continue
             if key_name in ('q', 'Q', 'c', 'C', '\x1b'):
                 return
-            if key_name == '\t' or key_name in ('d', 'D', getattr(self._curses, 'KEY_RIGHT', -1)):
+            if key_name == '\t':
                 tab = (tab + 1) % len(tabs)
                 continue
-            if key_name in ('a', 'A', getattr(self._curses, 'KEY_LEFT', -1),
-                            getattr(self._curses, 'KEY_BTAB', -1)):
+            if key_name == getattr(self._curses, 'KEY_BTAB', -1):
                 tab = (tab - 1) % len(tabs)
                 continue
             if tab == 2 and key_name in ('i', 'I'):
@@ -1320,6 +1405,10 @@ class ExplorerGame:
             if tab == 0 and key_name in (' ', 'i', 'I'):
                 self._reader('HỒ SƠ NÔNG DÂN · TOÀN BỘ CHỈ SỐ',
                              '\n\n'.join(character_lines(self.farm)))
+                continue
+            if tab == 1 and key_name in (' ', 'i', 'I'):
+                self._reader('TRANG BỊ · TOÀN BỘ 5 Ô',
+                             '\n\n'.join(gear_lines(self.farm)))
                 continue
             if tab == 0 and key_name in ('x', 'X'):
                 self._action(exchange_points, self.farm)
@@ -1350,6 +1439,8 @@ class ExplorerGame:
                     bag_selected = min(max(0, len(bag_rows) - 1), bag_selected + 5)
             elif tab == 0 and isinstance(key_name, str) and key_name in '1234567':
                 selected = int(key_name) - 1
+            elif tab == 1 and isinstance(key_name, str) and key_name in '12345':
+                gear_selected = int(key_name) - 1
             elif key_name in ('\n', '\r', 'e', 'E',
                               getattr(self._curses, 'KEY_ENTER', -1)):
                 if tab == 0:
@@ -1357,13 +1448,64 @@ class ExplorerGame:
                     self._action(upgrade_attribute if is_attribute else upgrade_skill,
                                  self.farm, key)
                 elif tab == 1:
-                    key = gear_keys[gear_selected]
-                    self._reader(f'TRANG BỊ · {GEAR[key].name}',
-                                 '\n\n'.join(gear_lines(self.farm)))
+                    tooltip = True
                 elif bag_rows:
                     key, name, _, _ = bag_rows[bag_selected]
                     self._reader(f'VẬT PHẨM · {name}',
                                  self._inventory_note(key))
+
+    def _gear_tooltip(self, key: str) -> None:
+        """Small item card shown when a square equipment slot is activated."""
+        from .catalog import GEAR
+        from .forge import (attack_power, mining_bonus, mining_energy_cost,
+                            rarity_color, rarity_name, recipe_for, recipe_label,
+                            tier_label)
+        info = GEAR[key]
+        rank = self.farm.gear.get(key, 0)
+        recipe = recipe_for(self.farm, key)
+        if key == 'hat':
+            stats = (f'Hiện tại: đào tốn {mining_energy_cost(self.farm)} sức, '
+                     f'thêm {mining_bonus(self.farm)} quặng.')
+        elif key == 'sword':
+            stats = f'Hiện tại: sát thương {attack_power(self.farm)}.'
+        else:
+            hp_gain = {'armor': 4, 'pants': 2, 'shoes': 1}[key] * rank
+            defense_gain = {'armor': 2, 'pants': 1, 'shoes': 1}[key] * rank
+            stats = (f'Hiện tại: +{hp_gain} máu tối đa, '
+                     f'+{defense_gain} phòng thủ.')
+        width = max(30, min(54, self._screen.getmaxyx()[1] - 4))
+        text_width = max(8, width - 4)
+        content = [f'Cấp bậc: {tier_label(rank)}']
+        content.extend(wrap_cells(info.description, text_width))
+        content.extend(wrap_cells(info.effect, text_width))
+        content.append(stats)
+        content.append('Rèn kế tiếp: ' + (recipe_label(recipe)
+                                          if recipe is not None
+                                          else 'đã đạt cấp cao nhất.'))
+        content = content[:max(1, self._screen.getmaxyx()[0] - 7)]
+        height = len(content) + 4
+        height_room, width_room = self._screen.getmaxyx()
+        x = max(0, (width_room - width) // 2)
+        y = max(1, (height_room - height) // 2)
+        rect = tui.Rect(x, y, width, min(height, height_room - 2))
+        # Clear the card plus its shadow strip so no old sheet text peeks out.
+        for row in range(rect.y, min(rect.bottom + 2, height_room)):
+            self._put(row, rect.x, ' ' * min(rect.width + 2, width_room - rect.x), '')
+        if rect.bottom + 1 < height_room:
+            self._put(rect.bottom + 1, 0, ' ' * max(1, width_room - 1), '')
+        body = tui.draw_panel(
+            self, rect,
+            title=f'{info.name} · {rarity_name(rank)}',
+            footer='Nhấn phím bất kỳ để đóng', unicode=self.unicode_map,
+            accent=rarity_color(rank), title_color='yellow', shadow=True,
+            bounds=(height_room, width_room))
+        for offset, line in enumerate(content):
+            if offset >= body.height - 1:
+                break
+            self._put(body.y + offset, body.x + 1,
+                      tui.ellipsize(line, max(1, body.width - 2),
+                                    unicode=self.unicode_map),
+                      rarity_color(rank) if offset == 0 else 'cyan')
 
     def _directory(self):
         from .villagers import NPCS, bond_title
@@ -1995,8 +2137,8 @@ class ExplorerGame:
             'fur': 'Lông thỏ mềm, bán ở chợ làng.',
             'truffle': 'Nấm củ heo tìm được, nguyên liệu quý.',
             'da': 'Đá đào từ mỏ; nguyên liệu cơ bản cho mọi bậc rèn.',
-            'quang_dong': 'Quặng đồng, dùng rèn cuốc/kiếm/giáp bậc đầu.',
-            'quang_sat': 'Quặng sắt, cần cho trang bị bậc trung và cao.',
+            'quang_dong': 'Quặng đồng, dùng rèn mũ/kiếm/giáp/quần/giày bậc đầu.',
+            'quang_sat': 'Quặng sắt, cần cho trang bị Hiếm, Sử thi và cao hơn.',
             'quang_vang': 'Quặng vàng quý, dùng rèn trang bị bậc cao.',
             'kim_cuong': 'Tinh thể hang sâu, chỉ rơi ở tầng sâu hoặc tảng đá hiếm.',
             'thuoc': 'Uống trong Hang Sâu để hồi 12 máu.',
@@ -2034,15 +2176,14 @@ class ExplorerGame:
             self._draw_modal_backdrop(height, width)
             g = tui.glyphs(self.unicode_map)
             nav = '↑↓' if self.unicode_map else 'W/S'
-            tab_range = '1–5' if self.unicode_map else '1-5'
             title = ('RƯƠNG · GỬI / RÚT' if chest else 'TÚI ĐỒ')
             if chest:
-                controls = (f'{nav} chọn · PgUp/Dn · Tab/{tab_range} lọc · '
+                controls = (f'{nav} chọn · PgUp/Dn · Tab/Shift+Tab lọc · '
                             'Enter gửi/rút · G gửi tất cả · I/Esc đóng'
                             if width >= 80 else
                             f'{nav} · PgUp/Dn · Tab lọc · Enter · G · I/Esc')
             else:
-                controls = (f'{nav} chọn · PgUp/Dn · Tab/{tab_range} lọc · I/Esc đóng'
+                controls = (f'{nav} chọn · PgUp/Dn · Tab/Shift+Tab lọc · I/Esc đóng'
                             if width >= 48 else
                             f'{nav} · PgUp/Dn · Tab lọc · I/Esc')
             body = tui.draw_panel(
@@ -2077,7 +2218,7 @@ class ExplorerGame:
                 section_label = (SECTION_NAMES[name] if not compact_tabs else
                                  {'all': 'Tất cả', 'seed': 'Hạt', 'crop': 'N.Sản',
                                   'fish': 'Cá', 'other': 'Khác'}[name])
-                label = f'{index + 1}{icon} {section_label} {counts[name]}'
+                label = f'{icon} {section_label} {counts[name]}'
                 label = tui.ellipsize(label, max(1, tab_limit - tab_x),
                                       unicode=self.unicode_map)
                 self._put(body.y + 1, tab_x, label,
@@ -2166,13 +2307,15 @@ class ExplorerGame:
             key_name = self._read()
             if key_name in ('i', 'I', 'q', 'Q', '\x1b'):
                 return
-            if key_name == '\t' or (isinstance(key_name, str)
-                                    and key_name in '12345'):
-                if key_name == '\t':
-                    index = (SECTION_ORDER.index(section) + 1) % len(SECTION_ORDER)
-                else:
-                    index = int(key_name) - 1
-                section = SECTION_ORDER[index]
+            if key_name == '\t':
+                section = SECTION_ORDER[(SECTION_ORDER.index(section) + 1)
+                                        % len(SECTION_ORDER)]
+                selected = 0
+                offset = 0
+                continue
+            if key_name == getattr(self._curses, 'KEY_BTAB', -1):
+                section = SECTION_ORDER[(SECTION_ORDER.index(section) - 1)
+                                        % len(SECTION_ORDER)]
                 selected = 0
                 offset = 0
                 continue
@@ -2322,8 +2465,7 @@ class ExplorerGame:
 
             # Category tabs, scrolled horizontally around the active one.
             available = max(4, body.width - 2)
-            pieces = [f'{index + 1}{item.icon} {item.name}'
-                      for index, item in enumerate(categories)]
+            pieces = [f'{item.icon} {item.name}' for item in categories]
             active = CATEGORY_ORDER.index(category_key)
             def tab_span(items):
                 return sum(tui.cells(piece) + 2 for piece in items) - 2
@@ -2357,8 +2499,7 @@ class ExplorerGame:
             if not entries:
                 self._put(body.y + 3, body.x + 2, 'Quầy này đang trống.', 'dim')
             nav = '←→/↑↓' if self.unicode_map else 'A/D/W/S'
-            quick = '1–5' if self.unicode_map else '1-5'
-            controls = (f'{nav} chọn · Tab hoặc {quick} đổi quầy · Enter dùng · Esc ra'
+            controls = (f'{nav} chọn · Tab/Shift+Tab đổi quầy · Enter dùng · Esc ra'
                         if width >= 68 else f'{nav} · Tab quầy · Enter · Esc')
             self._draw_status_bar(height, width, controls)
             self._refresh()
@@ -2366,18 +2507,14 @@ class ExplorerGame:
             key = self._read()
             if key in ('q', 'Q', 'm', 'M', '\x1b'):
                 return
-            if key in ('\t', ']', '.'):
+            if key == '\t':
                 index = (CATEGORY_ORDER.index(category_key) + 1) % len(CATEGORY_ORDER)
                 category_key = CATEGORY_ORDER[index]
                 selected = 0
                 continue
-            if key in ('[', ',', getattr(self._curses, 'KEY_BTAB', -1)):
+            if key == getattr(self._curses, 'KEY_BTAB', -1):
                 index = (CATEGORY_ORDER.index(category_key) - 1) % len(CATEGORY_ORDER)
                 category_key = CATEGORY_ORDER[index]
-                selected = 0
-                continue
-            if isinstance(key, str) and key in '12345':
-                category_key = CATEGORY_ORDER[int(key) - 1]
                 selected = 0
                 continue
             if key in ('a', 'A', getattr(self._curses, 'KEY_LEFT', -1)):
@@ -2452,10 +2589,11 @@ class ExplorerGame:
         self._shop_grid('upgrades')
 
     def _forge(self):
-        """The mine forge: spend ore to raise pickaxe, sword or armour."""
+        """The mine forge: spend ore to raise one of the five equipment slots."""
         from .artwork import art_for
         from .catalog import GEAR, ITEMS
-        from .forge import forge, missing_for, recipe_for, recipe_label
+        from .forge import (forge, missing_for, recipe_for, recipe_label,
+                            tier_label)
         from .mining import mine_summary
         keys = list(GEAR)
         while True:
@@ -2464,11 +2602,11 @@ class ExplorerGame:
                 info = GEAR[key]
                 level = self.farm.gear.get(key, 0)
                 recipe = recipe_for(self.farm, key)
-                labels.append(f'{info.icon} {info.name} · bậc {level}/5'
+                labels.append(f'{info.icon} {info.name} · {tier_label(level)}'
                               + ('' if recipe is None else f' · {recipe_label(recipe)}'))
                 missing = missing_for(self.farm, key, recipe)
                 if recipe is None:
-                    state = 'Đã rèn tối đa.'
+                    state = 'Đã đạt Huyền thoại.'
                 elif missing:
                     state = 'Thiếu: ' + ', '.join(
                         f'{amount} {"xu" if item == "coins" else ITEMS[item].name}'
@@ -2495,8 +2633,10 @@ class ExplorerGame:
         except GameError as error:
             self._log(error)
             return
-        self._log(f'Bạn bước vào Hang Sâu. Kiếm bậc '
-                  f'{self.farm.gear.get("sword", 0)}/5, máu {self.farm.hp}/{self.farm.max_hp}.')
+        from .forge import tier_label
+        self._log(f'Bạn bước vào Hang Sâu. Kiếm '
+                  f'{tier_label(self.farm.gear.get("sword", 0))}, '
+                  f'máu {self.farm.hp}/{self.farm.max_hp}.')
         self._save()
         while True:
             height, width = self._screen.getmaxyx()
@@ -2677,7 +2817,7 @@ class ExplorerGame:
                 content_height=height - 3, margin_x=1, margin_y=1,
                 bottom_reserve=2, min_width=58, min_height=16)
             nav = '↑↓' if self.unicode_map else 'W/S'
-            controls = (f'{nav} chọn · Tab/1–3 khu · Enter vuốt · A/C/M/F/U · Esc đóng'
+            controls = (f'{nav} chọn · Tab/Shift+Tab khu · Enter vuốt · A/C/M/F/U · Esc đóng'
                         if width >= 72 else
                         f'{nav} · Tab khu · Enter · A/C/M/F/U · Esc')
             body = tui.draw_panel(
@@ -2695,7 +2835,7 @@ class ExplorerGame:
                     break
                 count = len(zone_animals(self.farm, zone))
                 unlocked = self.farm.level >= zone.level
-                text = f'{index + 1}. {zone.name} {count}/{zone.capacity}'
+                text = f'{zone.name} {count}/{zone.capacity}'
                 if not unlocked and width >= 72:
                     text += f' (cấp {zone.level})'
                 text = tui.ellipsize(text, max(1, tab_limit - tab_x),
@@ -2792,11 +2932,13 @@ class ExplorerGame:
             key_name = self._read()
             if key_name in ('b', 'B', 'q', 'Q', '\x1b'):
                 return
-            if key_name == '\t' or key_name in ('1', '2', '3'):
-                if key_name == '\t':
-                    zone_index = (zone_index + 1) % len(zones)
-                else:
-                    zone_index = int(key_name) - 1
+            if key_name == '\t':
+                zone_index = (zone_index + 1) % len(zones)
+                selected = 0
+                offset = 0
+                continue
+            if key_name == getattr(self._curses, 'KEY_BTAB', -1):
+                zone_index = (zone_index - 1) % len(zones)
                 selected = 0
                 offset = 0
                 continue
@@ -3059,16 +3201,17 @@ class ExplorerGame:
             "H nhà: cửa vào; Z giường: ngủ; V tivi: dự báo ngày mai.",
             "C rương: gửi/rút đồ; I: túi hai cột, tab lọc, Enter gửi/rút.",
             "M chợ: quầy Hạt giống, Vật nuôi, Vật tư, Bán hàng, Nâng cấp; mỗi món có hình minh họa.",
-            "Chợ: ←→/↑↓ chọn ô, Tab hoặc 1–5 đổi quầy, Enter mua bán; Esc ra.",
+            "Chợ: ←→/↑↓ chọn ô, Tab/Shift+Tab đổi quầy, Enter mua bán; Esc ra.",
             "B: sổ chuồng có 3 khu mở theo cấp: Sân Gà Vịt (1), Đồng Cỏ (2), Đồi Dê (4).",
-            "Trong sổ chuồng: Tab/1–3 đổi khu, Enter vuốt, A cho ăn, C thu, M mua, U nâng.",
+            "Trong sổ chuồng: Tab/Shift+Tab đổi khu, Enter vuốt, A cho ăn, C thu, M mua, U nâng.",
             "~ hồ: E quăng cần; Space nâng thanh, thả để hạ. K: bộ sưu tầm cá và điểm.",
-            "NPC: chọn chủ đề (chào hỏi, công việc, làng, ước mơ, kỷ niệm), đọc rồi chọn lời đáp.",
+            "NPC: chọn chủ đề (chào hỏi, công việc, làng, ước mơ, kỷ niệm, lễ hội, điều chưa kể, chuyện ngày mai), đọc rồi chọn lời đáp.",
             "J: thẻ dân làng có chân dung, mức thân, sở thích và lịch sinh hoạt.",
             "Đi bộ không tốn sức. Chỉ ngủ tại giường mới sang ngày.",
             "Mỏ Khoáng ở Đồi Gió (76,6): E vào mỏ; đứng cạnh đá rồi E để đào quặng.",
-            "Trong mỏ: F lò rèn (cuốc/kiếm/giáp), G Hang Sâu, D ra ngoài; ngủ để mỏ hồi đầy.",
-            "Lò rèn tiêu quặng và xu để tăng bậc; kiếm bậc 1 mở Hang Sâu, giáp tăng máu.",
+            "Trong mỏ: F lò rèn 5 slot (mũ/kiếm/giáp/quần/giày), G Hang Sâu, D ra ngoài; ngủ để mỏ hồi đầy.",
+            "Lò rèn tiêu quặng và xu để nâng 5 slot: mũ, kiếm, giáp, quần, giày; "
+            "kiếm Hiếm mở Hang Sâu, giáp/quần/giày tăng máu và phòng thủ.",
             "Hang Sâu: 1/Enter tấn công, 2 uống thuốc, 3 rút lui; kỷ lục lưu theo ván.",
             "Z: khung bản đồ rộng, ô hẹp để nhìn được nhiều đất hơn quanh nhân vật.",
             "Biểu tượng: ☀/☁/☂ thời tiết · ♥ sức/độ thân · ◆ xu · ✧ XP · ▤ túi · ⌖ bản đồ.",

@@ -4,7 +4,7 @@ import random
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .catalog import (CROPS, WEATHER, EXTRA_ITEMS, FISH_TYPES, Crop,
+from .catalog import (CROPS, WEATHER, EXTRA_ITEMS, FISH_TYPES, MAX_GEAR, Crop,
                       empty_chest, empty_fish_collection, empty_gear,
                       starting_items)
 from .villagers import empty_friendships, empty_talked_on
@@ -105,6 +105,18 @@ class Farm:
     def __post_init__(self) -> None:
         if not self.plots:
             self.plots = {key: Plot() for key in coordinates(self.size)}
+        if not isinstance(self.gear, dict):
+            self.gear = empty_gear()
+        else:
+            legacy_hat = self.gear.get('pickaxe', 0)
+            normalized = {}
+            for key in empty_gear():
+                value = self.gear.get(key, 0)
+                normalized[key] = (max(0, min(MAX_GEAR, value))
+                                   if type(value) is int else value)
+            if not normalized.get('hat') and type(legacy_hat) is int:
+                normalized['hat'] = max(0, min(MAX_GEAR, legacy_hat))
+            self.gear = normalized
 
     @property
     def level(self) -> int:
@@ -117,7 +129,10 @@ class Farm:
     @property
     def max_hp(self) -> int:
         """Health grows with armour and levels, independently of energy."""
-        return 20 + 4 * self.gear.get('armor', 0) + 2 * (self.level - 1)
+        return (20 + 4 * self.gear.get('armor', 0)
+                + 2 * self.gear.get('pants', 0)
+                + self.gear.get('shoes', 0)
+                + 2 * (self.level - 1))
 
     @property
     def attribute_points(self) -> int:

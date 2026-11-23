@@ -48,6 +48,28 @@ class BranchingDialogueTests(unittest.TestCase):
                 self.assertEqual(len(conclusions), 4)
         self.assertEqual(len(openings), len(NPCS) * len(TOPICS))
 
+    def test_extended_story_routes_are_wired_for_every_npc(self):
+        extended = ('festival', 'secret', 'future')
+        self.assertEqual([TOPICS[key] for key in extended],
+                         ['Lễ hội mùa', 'Điều chưa kể', 'Chuyện ngày mai'])
+        self.assertEqual(len(TOPICS), 8)
+        for npc_id in NPCS:
+            for topic in extended:
+                farm = self.farm_near(npc_id)
+                conversation = dialogue.begin_dialogue(farm, npc_id, topic)
+                node = dialogue.dialogue_node(conversation)
+                self.assertIn('?', node.npc_line)
+                self.assertEqual(len(node.choices), 2)
+                ending = deepcopy(conversation)
+                dialogue.choose_response(farm, ending, node.choices[0].id)
+                followup = dialogue.dialogue_node(ending)
+                self.assertIn('?', followup.npc_line)
+                dialogue.choose_response(farm, ending, followup.choices[0].id)
+                self.assertTrue(ending.done)
+                self.assertEqual(len(ending.history), 5)
+                summary = talk(self.farm_near(npc_id), npc_id, topic)
+                self.assertTrue(summary.strip())
+
     def test_opening_and_cancellation_do_not_touch_farm(self):
         farm = self.farm_near()
         before = asdict(farm)

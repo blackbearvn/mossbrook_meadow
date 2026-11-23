@@ -124,12 +124,13 @@ class UpgradeTests(unittest.TestCase):
                 break
         self.assertTrue(result.done)
         self.assertGreater(farm.items.get('da', 0), 0)
-        self.assertGreaterEqual(farm.gear['pickaxe'], 1)
+        self.assertGreaterEqual(farm.gear['hat'], 1)
         self.assertIn('quặng', auto.summary)
         self.assertGreaterEqual(farm.day, 2)
 
     def test_dungeon_auto_equips_and_clears_at_least_one_floor(self):
-        farm = Farm(gear={'pickaxe': 0, 'sword': 1, 'armor': 0},
+        farm = Farm(gear={'hat': 0, 'sword': 1, 'armor': 0,
+                              'pants': 0, 'shoes': 0},
                     items={'thuoc': 3})
         auto = Automation(farm, AutoOptions(mode='dungeon', days=1),
                           rng=random.Random(2))

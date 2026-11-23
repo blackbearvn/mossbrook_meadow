@@ -311,7 +311,7 @@ def barn_menu(ui: 'TerminalGame') -> bool:
 def forge_menu(ui: 'TerminalGame') -> bool:
     """Line-based forge panel for the mine camp."""
     from .catalog import GEAR, ITEMS
-    from .forge import forge, missing_for, recipe_for, recipe_label
+    from .forge import forge, missing_for, recipe_for, recipe_label, tier_label
     keys = list(GEAR)
     while True:
         ui.say(f'LÒ RÈN · {ui.farm.coins} xu', 'title')
@@ -328,14 +328,14 @@ def forge_menu(ui: 'TerminalGame') -> bool:
                     for item, amount in missing.items())
             else:
                 state = 'sẵn sàng rèn'
-            ui.wrapped(f'[{index}] {info.icon} {info.name} · bậc {level}/5 · {state}')
+            ui.wrapped(f'[{index}] {info.icon} {info.name} · {tier_label(level)} · {state}')
             ui.wrapped(f'    {info.effect} {recipe_label(recipe)}', 'dim')
         ui.wrapped('[0] Quay lại', 'dim')
         answer = ui.ask('Chọn trang bị muốn rèn: ').strip()
         if answer in ('', '0', 'q', 'esc'):
             return False
         if not answer.isdecimal() or not 1 <= int(answer) <= len(keys):
-            ui.wrapped('Chọn trang bị từ 1 đến 3 hoặc 0 để quay lại.')
+            ui.wrapped(f'Chọn trang bị từ 1 đến {len(keys)} hoặc 0 để quay lại.')
             continue
         key = keys[int(answer) - 1]
         try:

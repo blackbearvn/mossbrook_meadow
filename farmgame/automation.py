@@ -297,14 +297,14 @@ class Automation:
     def _sell_intent(self):
         return _Intent('sell_keep')
 
-    def _forge_intent(self, slots=('pickaxe',)):
+    def _forge_intent(self, slots=('hat',)):
         for key in slots:
             recipe = recipe_for(self.farm, key)
             if recipe is not None and not missing_for(self.farm, key, recipe):
                 return _Intent('forge', 'mine', world.MINE_FORGE, 'forge', (key,))
         return None
 
-    def _mine_intent(self, *, forge_slots=('pickaxe',)):
+    def _mine_intent(self, *, forge_slots=('hat',)):
         farm = self.farm
         cost = mining_energy_cost(farm)
         if farm.area != 'mine':
@@ -331,13 +331,13 @@ class Automation:
         if farm.hp < max(3, farm.max_hp // 3):
             return self._sleep_intent()
         if farm.gear.get('sword', 0) < 1:
-            return self._mine_intent(forge_slots=('pickaxe', 'sword', 'armor'))
+            return self._mine_intent(forge_slots=('hat', 'sword', 'armor'))
         if (farm.items.get('thuoc', 0) < 2
                 and farm.coins >= 2 * EXTRA_ITEMS['thuoc'].buy_price):
             return self._shop('buy_potion', 2)
         if farm.area != 'mine':
             return _Intent('enter_mine', 'village', world.MINE_DOOR, 'mine')
-        forging = self._forge_intent(('sword', 'armor'))
+        forging = self._forge_intent(('sword', 'armor', 'pants', 'shoes'))
         if forging is not None:
             return forging
         return _Intent('dungeon', 'mine', world.DUNGEON_GATE, 'dungeon_gate')

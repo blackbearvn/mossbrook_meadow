@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .forge import attack_power, defense_power
+from .forge import attack_power, defense_power, rarity_name
 
 if TYPE_CHECKING:
     from .model import Farm
@@ -139,7 +139,7 @@ def start_run(farm: 'Farm') -> DungeonRun:
     from .model import GameError
 
     if farm.gear.get('sword', 0) < 1:
-        raise GameError('Cần rèn ít nhất một thanh kiếm ở lò rèn trước khi vào hang sâu.')
+        raise GameError('Cần rèn kiếm lên bậc Hiếm ở lò rèn trước khi vào hang sâu.')
     if farm.hp < 2:
         raise GameError('Bạn quá yếu để vào hang. Hãy ngủ hoặc uống thuốc hồi sức.')
     run = DungeonRun(depth=1, enemies=[_enemy(key, 1) for key in floor_plan(1)])
@@ -267,8 +267,11 @@ def flee(farm: 'Farm', run: DungeonRun) -> str:
 def status_lines(farm: 'Farm', run: DungeonRun, *, unicode: bool = True) -> list[str]:
     full, empty = ('▰', '▱') if unicode else ('#', '-')
     rows = [f'Hang Sâu · tầng {run.depth}/{MAX_DEPTH} · '
-            f'máu {farm.hp}/{farm.max_hp} · kiếm {farm.gear.get("sword", 0)}/5'
-            f' · giáp {farm.gear.get("armor", 0)}/5']
+            f'máu {farm.hp}/{farm.max_hp} · kiếm {rarity_name(farm.gear.get("sword", 0))}'
+            f' · giáp {rarity_name(farm.gear.get("armor", 0))}',
+            f'Trang bị: mũ {rarity_name(farm.gear.get("hat", 0))}'
+            f' · quần {rarity_name(farm.gear.get("pants", 0))}'
+            f' · giày {rarity_name(farm.gear.get("shoes", 0))}']
     enemy = run.current()
     if run.phase == 'battle' and enemy is not None:
         width = 12

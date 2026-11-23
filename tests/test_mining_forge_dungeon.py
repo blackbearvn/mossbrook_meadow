@@ -80,9 +80,9 @@ class MiningTests(unittest.TestCase):
         with self.assertRaises(GameError):
             mine_rock(poor, 5, 12)
 
-    def test_pickaxe_improves_cost_and_yield_and_rock_summary(self):
+    def test_miner_hat_improves_cost_and_yield_and_rock_summary(self):
         self.assertEqual(mining_energy_cost(Farm()), 2)
-        upgraded = Farm(gear={**Farm().gear, 'pickaxe': 4})
+        upgraded = Farm(gear={**Farm().gear, 'hat': 4})
         self.assertEqual(mining_energy_cost(upgraded), 1)
         self.assertEqual(mining_bonus(upgraded), 2)
         available, total = mine_summary(Farm(area='mine'))
@@ -104,7 +104,7 @@ class ForgeTests(unittest.TestCase):
         recipe = recipe_for(farm, 'sword')
         coins = farm.coins
         message = forge(farm, 'sword')
-        self.assertIn('bậc 1/5', message)
+        self.assertIn('Hiếm', message)
         self.assertEqual(farm.gear['sword'], 1)
         self.assertEqual(farm.coins, coins - recipe['coins'])
         for key, amount in recipe.items():
@@ -123,17 +123,22 @@ class ForgeTests(unittest.TestCase):
     def test_forge_rejects_missing_materials_and_max_rank(self):
         poor = Farm(coins=0)
         with self.assertRaises(GameError):
-            forge(poor, 'pickaxe')
-        maxed = self.farm(**{key: 5 for key in GEAR})
+            forge(poor, 'hat')
+        maxed = self.farm(**{key: 4 for key in GEAR})
         with self.assertRaises(GameError):
-            forge(maxed, 'pickaxe')
-        self.assertIsNone(recipe_for(maxed, 'pickaxe'))
+            forge(maxed, 'hat')
+        self.assertIsNone(recipe_for(maxed, 'hat'))
         with self.assertRaises(GameError):
             forge(self.farm(), 'unknown')
 
-    def test_every_gear_has_five_recipes_with_real_items(self):
+    def test_every_gear_slot_has_four_upgrades_to_mythic_rarity(self):
+        from farmgame.catalog import RARITY_NAMES
+        self.assertEqual([info.name for info in GEAR.values()],
+                         ['Mũ thợ mỏ', 'Kiếm rèn', 'Giáp da', 'Quần da', 'Giày da'])
+        self.assertEqual(RARITY_NAMES,
+                         ('Bình thường', 'Hiếm', 'Sử thi', 'Truyền thuyết', 'Huyền thoại'))
         for key, info in GEAR.items():
-            self.assertEqual(len(FORGE_RECIPES[key]), 5)
+            self.assertEqual(len(FORGE_RECIPES[key]), 4)
             for recipe in FORGE_RECIPES[key]:
                 self.assertIn('coins', recipe)
                 for item in recipe:
@@ -146,7 +151,7 @@ class DungeonTests(unittest.TestCase):
         farm = Farm(coins=1000, energy=30)
         for key in ITEMS:
             farm.items[key] = 100
-        farm.gear.update({'pickaxe': 5, 'sword': 5, 'armor': 5})
+        farm.gear.update({key: 4 for key in GEAR})
         farm.hp = farm.max_hp
         return farm
 
@@ -212,7 +217,7 @@ class MineSaveTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'farm.json'
             farm = Farm(area='mine', player_x=4, player_y=12, hp=7, dungeon_best=3)
-            farm.gear.update({'pickaxe': 2, 'sword': 1, 'armor': 1})
+            farm.gear.update({'hat': 2, 'sword': 1, 'armor': 1})
             farm.mine_used['5,12'] = 2
             save_game(farm, path)
             restored = load_game(path)

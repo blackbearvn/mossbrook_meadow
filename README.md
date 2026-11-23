@@ -6,11 +6,15 @@ trò chuyện với dân làng và dần mở rộng cuộc sống ở Mossbrook
 
 Trò chơi có bản đồ làng rộng, hệ thống ngày – thời tiết – năng lượng, nhiệm vụ
 hằng ngày, túi đồ, chợ, nhà ở, chuồng trại và hồ câu. Ngoài phần nông trại còn
-có **Mỏ Khoáng** để đào quặng, **Lò Rèn** để nâng cấp cuốc/kiếm/giáp và
-**Hang Sâu** 5 tầng với chiến đấu theo lượt. Hội thoại với dân làng dùng
+có **Mỏ Khoáng** để đào quặng, **Lò Rèn** để nâng cấp trang bị và
+**Hang Sâu** 5 tầng với chiến đấu theo lượt. Lò Rèn nâng 5 slot trang bị
+(mũ, kiếm, giáp, quần, giày) qua 5 cấp bậc: Bình thường, Hiếm, Sử thi,
+Truyền thuyết và Huyền thoại. Hội thoại với dân làng dùng
 hộp thoại ở cuối màn hình theo phong cách RPG: chân dung, tên người nói,
-chữ hiện dần và các lựa chọn trả lời. Người chơi có thể tự do khám phá hoặc
-dùng chế độ **Auto** để nhân vật tự làm việc.
+chữ hiện dần và các lựa chọn trả lời. Mỗi dân làng có 8 tuyến chủ đề, gồm
+chào hỏi, công việc, chuyện làng, ước mơ, kỷ niệm, lễ hội, điều chưa kể và
+chuyện ngày mai. Người chơi có thể tự do khám phá hoặc dùng chế độ **Auto**
+để nhân vật tự làm việc.
 
 Game chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói và không cần
 kết nối mạng.
@@ -74,6 +78,9 @@ Mặc định tiến trình được lưu tại `saves/farm.json`.
 | `WASD` / phím mũi tên | Di chuyển |
 | `E` | Tương tác với người, cửa, ruộng, mỏ… |
 | `C` | Mở hồ sơ nhân vật: Hồ sơ / Trang bị / Túi đồ |
+| `Tab` / `Shift+Tab` | Chuyển tab trong hồ sơ, túi đồ, chợ, chuồng |
+| `1–5` trong tab Trang bị | Chọn ô trang bị |
+| `Enter` / click | Mở tooltip trang bị |
 | `I` | Mở túi đồ |
 | `N` | Nhiệm vụ hằng ngày |
 | `O` | Bật/tắt và chọn chế độ Auto |
@@ -87,6 +94,11 @@ Mặc định tiến trình được lưu tại `saves/farm.json`.
 | `H` / `?` | Trợ giúp |
 | `P` / `F5` | Lưu game |
 | `Q` | Lưu và về menu chính |
+
+Các menu có tab chỉ dùng `Tab` / `Shift+Tab` để chuyển tab.
+Tab **Trang bị** hiển thị 5 ô vuông cho mũ, kiếm, giáp, quần và giày.
+Chọn một ô rồi nhấn `Enter` hoặc click để xem tooltip cấp bậc, hiệu ứng và
+vật liệu rèn kế tiếp.
 
 Khi đang chơi, nhấn `Q` sẽ lưu tiến trình rồi trở về menu chính. Chọn **Thoát**
 ở menu để đóng game; game sẽ hỏi xác nhận trước khi thoát.

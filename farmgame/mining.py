@@ -1,7 +1,7 @@
 """Mining rules for the Mỏ Khoáng map.
 
-Every rock refills each morning.  Pickaxe rank lowers the energy cost and adds
-extra chunks, while the foraging skill adds one more chunk at rank three.
+Every rock refills each morning.  The miner's hat lowers the energy cost and
+adds extra chunks, while the foraging skill adds one more chunk at rank three.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ _ORE_XP = {'quang_dong': 3, 'quang_sat': 5, 'quang_vang': 8, 'kim_cuong': 12}
 
 
 def rock_capacity(farm: 'Farm') -> int:
-    return 2 + int(farm.gear.get('pickaxe', 0) >= 3)
+    return 2 + int(farm.gear.get('hat', 0) >= 3)
 
 
 def rock_key(x: int, y: int) -> str:
@@ -59,9 +59,9 @@ def mine_rock(farm: 'Farm', x: int, y: int) -> str:
     if farm.skills.get('foraging', 0) >= 3:
         bonus += 1
     stones = 1 + bonus
-    ore = 1 + (1 if farm.gear.get('pickaxe', 0) >= 2 else 0)
+    ore = 1 + (1 if farm.gear.get('hat', 0) >= 2 else 0)
     if kind == 'kim_cuong':
-        ore = 1 + (1 if farm.gear.get('pickaxe', 0) >= 5 else 0)
+        ore = 1 + (1 if farm.gear.get('hat', 0) >= 4 else 0)
     farm._spend_energy(cost)
     if index % 2 == 1:
         # Every second swing in the same rock also yields a little copper.

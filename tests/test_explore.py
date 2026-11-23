@@ -41,6 +41,12 @@ class ExplorerTests(unittest.TestCase):
         save.assert_called_once_with(self.farm, self.game.save_path)
 
     @patch('farmgame.explore.save_game')
+    def test_rapid_movement_is_checkpointed_instead_of_saving_every_tile(self, save):
+        self.game.handle_key('s')
+        self.game.handle_key('s')
+        self.assertEqual(save.call_count, 1)
+
+    @patch('farmgame.explore.save_game')
     def test_blocked_movement_still_saves_new_facing(self, save):
         self.farm.player_x, self.farm.player_y = 1, 1
         with patch('farmgame.explore.world.move', return_value=False):
