@@ -7,8 +7,10 @@ trò chuyện với dân làng và dần mở rộng cuộc sống ở Mossbrook
 Trò chơi có bản đồ làng rộng, hệ thống ngày – thời tiết – năng lượng, nhiệm vụ
 hằng ngày, túi đồ, chợ, nhà ở, chuồng trại và hồ câu. Ngoài phần nông trại còn
 có **Mỏ Khoáng** để đào quặng, **Lò Rèn** để nâng cấp cuốc/kiếm/giáp và
-**Hang Sâu** 5 tầng với chiến đấu theo lượt. Người chơi có thể tự do khám phá
-hoặc dùng chế độ **Auto** để nhân vật tự làm việc.
+**Hang Sâu** 5 tầng với chiến đấu theo lượt. Hội thoại với dân làng dùng
+hộp thoại ở cuối màn hình theo phong cách RPG: chân dung, tên người nói,
+chữ hiện dần và các lựa chọn trả lời. Người chơi có thể tự do khám phá hoặc
+dùng chế độ **Auto** để nhân vật tự làm việc.
 
 Game chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói và không cần
 kết nối mạng.

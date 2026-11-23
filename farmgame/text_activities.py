@@ -10,6 +10,7 @@ from .catalog import CROPS, ITEMS
 from .fishing import finish_fishing, start_fishing
 from .inventory import count_item, deposit_all, inventory_rows, transfer_item
 from . import regions
+from . import tui
 from .model import GameError
 from .progression import (ATTRIBUTES, SKILLS, character_lines, exchange_points,
                           sale_price, upgrade_attribute, upgrade_skill)
@@ -577,6 +578,29 @@ def interact(ui: 'TerminalGame') -> bool:
     return True
 
 
+def _dialogue_box_text(ui: 'TerminalGame', npc, node) -> None:
+    """Render one RPG-style dialogue box in the line interface."""
+    from .explore import wrap_cells
+    unicode = getattr(ui, 'unicode_map', True)
+    g = tui.glyphs(unicode)
+    width = max(32, min(getattr(ui, 'width', 80), 88))
+    inner = max(20, width - 2)
+    raw_title = f' {npc.name} · {npc.role} '
+    title = tui.ellipsize(raw_title, inner - 2, unicode=unicode)
+    ui.say(g['tl'] + g['h'] + title + g['h'] * max(0, inner - 1 - tui.cells(title)) + g['tr'],
+           'cyan')
+    for line in wrap_cells(node.npc_line, max(12, inner - 2)):
+        ui.say(g['v'] + ' ' + tui.pad(line, inner - 2) + ' ' + g['v'], 'white')
+    if node.choices:
+        ui.say(g['v'] + ' ' + tui.pad('', inner - 2) + ' ' + g['v'], 'dim')
+        for index, choice in enumerate(node.choices, 1):
+            for offset, line in enumerate(wrap_cells(
+                    f'{index}. {choice.text}', max(12, inner - 2))):
+                ui.say(g['v'] + ' ' + tui.pad(line, inner - 2) + ' ' + g['v'],
+                       'white')
+    ui.say(g['bl'] + g['h'] * inner + g['br'], 'cyan')
+
+
 def conversation(ui: 'TerminalGame') -> bool:
     from .villagers import TOPICS, nearby_npc
     from .dialogue import begin_dialogue, choose_response, dialogue_node
@@ -601,12 +625,10 @@ def conversation(ui: 'TerminalGame') -> bool:
     if not choice.isdecimal() or not 1 <= int(choice) <= len(topics):
         raise GameError(f'Chọn chủ đề từ 1 đến {len(topics)}.')
     current = begin_dialogue(ui.farm, npc.id, topics[int(choice) - 1])
-    ui.wrapped(current.history[0], 'blue')
     changed = False
     while not current.done:
         node = dialogue_node(current)
-        for index, response in enumerate(node.choices, 1):
-            ui.wrapped(f'[{index}] Bạn: {response.text}')
+        _dialogue_box_text(ui, npc, node)
         answer = ui.ask('Bạn trả lời [1/2, 0/q = dừng trò chuyện]: ').lower()
         if answer in ('0', 'q', '', '\x1b'):
             break

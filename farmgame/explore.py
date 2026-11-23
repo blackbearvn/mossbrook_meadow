@@ -802,8 +802,25 @@ class ExplorerGame:
             if index is None:
                 return
             conversation = begin_dialogue(self.farm, npc.id, topics[index])
+            boxed = bool(self._screen is not None
+                         and callable(getattr(self._screen, 'getmaxyx', None)))
             while not conversation.done:
                 node = dialogue_node(conversation)
+                if boxed:
+                    choice_id = self._dialogue_box(
+                        npc, node, portrait, friendship, TOPICS[topics[index]])
+                    if choice_id is None:
+                        self._draw()
+                        if conversation.done:
+                            self.coach.event('talk', npc_id=npc.id, done=True)
+                        return
+                    if not choice_id:
+                        break
+                    reply = choose_response(self.farm, conversation, choice_id)
+                    friendship = self.farm.friendships[npc.id]
+                    self._log(reply, toast=False)
+                    self._save()
+                    continue
                 available = '\n'.join(f'{number}. {choice.text}'
                                       for number, choice in enumerate(node.choices, 1))
                 readable = ('\n\n'.join(conversation.history)
@@ -821,11 +838,137 @@ class ExplorerGame:
                 reply = choose_response(self.farm, conversation, node.choices[response].id)
                 self._log(reply)
                 self._save()
+            if boxed:
+                self._draw()
+                friendship_now = self.farm.friendships[npc.id]
+                self._log(
+                    f'Kết thúc trò chuyện với {npc.name} · '
+                    f'{hearts(friendship_now, unicode=self.unicode_map)} '
+                    f'{friendship_now}/10 · {bond_title(friendship_now)}.',
+                    toast=False)
+                self.coach.event('talk', npc_id=npc.id, done=True)
+                return
             self._reader(f'{npc.name} · Kết thúc cuộc trò chuyện',
                          '\n\n'.join(conversation.history)
                          + f'\n\n{hearts(self.farm.friendships[npc.id], unicode=self.unicode_map)} '
                            f'{self.farm.friendships[npc.id]}/10 · {bond_title(self.farm.friendships[npc.id])}')
             self.coach.event('talk', npc_id=npc.id, done=conversation.done)
+
+    def _dialogue_box(self, npc, node, portrait, friendship, topic):
+        """An RPG-style bottom dialogue box with typewriter text and choices."""
+        from .presentation import Typewriter
+        from .villagers import bond_title
+
+        selected = 0
+        writer = Typewriter(node.npc_line, chars_per_second=48.0)
+        previous = time.monotonic()
+        base_size = None
+        boxed = False
+        set_timeout = getattr(self._screen, 'timeout', None)
+        if callable(set_timeout):
+            set_timeout(25)
+        try:
+            while True:
+                height, width = self._screen.getmaxyx()
+                if height < 8 or width < 26:
+                    writer.reveal()
+                if base_size != (height, width):
+                    self._draw()
+                    base_size = (height, width)
+                portrait_w = 13 if width >= 56 and height >= 16 else 0
+                inner_w = max(8, width - 4 - portrait_w)
+                wrapped = wrap_cells(node.npc_line, max(6, inner_w))
+                choice_rows = len(node.choices)
+                max_box = max(8, height - 5)
+                box_h = min(max_box, max(8, len(wrapped) + choice_rows + 4))
+                rect = tui.Rect(0, max(0, height - box_h - 1),
+                                max(2, width), box_h)
+                footer = (
+                    f'{topic} · Space/Enter: hiện hết · Esc: đóng'
+                    if not writer.done else
+                    (f'{topic} · ↑↓/W/S chọn · 1–2/Enter trả lời · Esc: đóng'
+                     if node.choices else
+                     f'{topic} · Space/Enter: kết thúc · Esc: đóng'))
+                body = tui.draw_panel(
+                    self, rect,
+                    title=f'{npc.name} · {npc.role} · {bond_title(friendship)}',
+                    footer=footer, unicode=self.unicode_map, accent='cyan',
+                    title_color='yellow', footer_color='cyan', shadow=True,
+                    bounds=(height, width))
+                boxed = True
+                text_x = body.x + (portrait_w + 1 if portrait_w else 1)
+                text_w = max(6, body.right - text_x + 1)
+                if portrait_w:
+                    for row, line in enumerate(portrait):
+                        if body.y + row >= body.bottom:
+                            break
+                        self._put(body.y + row, body.x + 1,
+                                  tui.ellipsize(line, portrait_w,
+                                                unicode=self.unicode_map),
+                                  'magenta')
+                speaker = f'{npc.name} · {npc.role}'
+                self._put(body.y, text_x,
+                          tui.ellipsize(speaker, text_w,
+                                        unicode=self.unicode_map),
+                          'yellow', True)
+                choice_top = body.y + body.height - choice_rows
+                text_room = max(0, choice_top - (body.y + 1))
+                lines = wrap_cells(writer.visible, max(6, text_w - 1))
+                if len(lines) > text_room:
+                    lines = lines[-text_room:] if text_room else []
+                for offset, line in enumerate(lines):
+                    self._put(body.y + 1 + offset, text_x, line, 'white')
+                if writer.done and node.choices:
+                    for index, choice in enumerate(node.choices):
+                        row = choice_top + index
+                        if row > body.bottom:
+                            break
+                        active = index == selected
+                        marker = ('› ' if self.unicode_map else '> ') if active else '  '
+                        text = f'{marker}{index + 1}. {choice.text}'
+                        if active:
+                            self._put(row, body.x + 1, ' ' * (body.width - 1),
+                                      'selected')
+                        self._put(row, text_x,
+                                  tui.ellipsize(text, max(1, body.right - text_x + 1),
+                                                unicode=self.unicode_map),
+                                  'selected' if active else 'cyan', active)
+                if not writer.done and body.height >= 2:
+                    self._put(body.y + body.height - 1,
+                              max(body.x + 1, body.right - 2), '…', 'dim')
+                # Keep the map footer from peeking around the full-width box.
+                self._put(height - 1, 0, ' ' * max(1, width - 1), '')
+                self._refresh()
+                now = time.monotonic()
+                writer.advance(max(0.0, now - previous))
+                previous = now
+                key = self._read()
+                key = key.lower() if isinstance(key, str) else key
+                if key in ('q', '\x1b'):
+                    return None
+                if key in (' ', '\n', '\r',
+                           getattr(self._curses, 'KEY_ENTER', -1), 'e'):
+                    if not writer.done:
+                        writer.reveal()
+                    elif node.choices:
+                        return node.choices[selected].id
+                    else:
+                        return ''
+                elif writer.done and node.choices:
+                    if key in ('w', getattr(self._curses, 'KEY_UP', -1)):
+                        selected = max(0, selected - 1)
+                    elif key in ('s', getattr(self._curses, 'KEY_DOWN', -1)):
+                        selected = min(len(node.choices) - 1, selected + 1)
+                    elif isinstance(key, str) and key in '12':
+                        index = int(key) - 1
+                        if index < len(node.choices):
+                            return node.choices[index].id
+        finally:
+            if boxed and callable(set_timeout):
+                try:
+                    set_timeout(100)
+                except Exception:
+                    pass
 
     def _character(self):
         """Open the illustrated character sheet, with a list fallback."""
