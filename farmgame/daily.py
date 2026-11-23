@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .catalog import CROPS, FISH_TYPES
+from .catalog import CROPS, FISH_TYPES, MAX_GEAR
 
 if TYPE_CHECKING:
     from .model import Farm
@@ -34,6 +34,10 @@ QUESTS = {
     'catch_new': QuestDefinition('Câu loài cá mới', 1, 25, 5),
     'sell_fish': QuestDefinition('Bán cá cho chợ', 2, 18, 4),
     'mine': QuestDefinition('Đào khoáng sản', 2, 16, 4),
+    'forge': QuestDefinition('Rèn trang bị', 1, 20, 5),
+    'cook': QuestDefinition('Nấu một món ăn', 1, 16, 4),
+    'dungeon': QuestDefinition('Hạ quái trong Hang Sâu', 1, 25, 6),
+    'animal': QuestDefinition('Mua vật nuôi mới', 1, 20, 4),
 }
 
 
@@ -81,6 +85,17 @@ def ensure_daily(farm: 'Farm') -> DailyState:
         farm.fish_collection.get(key, 0) == 0 and info.level <= farm.level
         for key, info in FISH_TYPES.items())
     available['sell_fish'] = any(farm.items.get(key, 0) for key in FISH_TYPES)
+    available['forge'] = any(farm.gear.get(key, 0) < MAX_GEAR for key in farm.gear)
+    from .cooking import RECIPES
+    available['cook'] = any(recipe.level <= farm.level
+                            for recipe in RECIPES.values())
+    available['dungeon'] = (farm.gear.get('sword', 0) >= 1
+                            and farm.hp >= 2)
+    from .animals import ANIMAL_TYPES, zone_for
+    available['animal'] = (len(farm.animals) < farm.barn_capacity
+                           and any(farm.level >= zone_for(kind).level
+                                   and farm.coins >= info.price
+                                   for kind, info in ANIMAL_TYPES.items()))
     kinds = [kind for kind in QUESTS if available[kind]]
     offset = (farm.day - 1) % len(kinds)
     selected = (kinds[offset:] + kinds[:offset])[:4]

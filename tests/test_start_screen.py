@@ -148,6 +148,29 @@ class StartupTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
 
 
+class CursesTitleMenuTests(unittest.TestCase):
+    def test_main_menu_centers_logo_above_the_choices(self):
+        from unittest.mock import Mock
+        from tests.test_floating_ui import CellScreen, curses_namespace
+        from farmgame.start_screen import CursesUI
+        ui = CursesUI(color=False)
+        ui._screen = CellScreen(24, 80)
+        ui._curses = curses_namespace()
+        ui._colors = {}
+        ui.key = Mock(side_effect=['\n'])
+        choice = ui.choose(
+            'MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời',
+            [('1', 'Tiếp tục'), ('2', 'Hành trình mới'), ('0', 'Thoát')],
+            body='Ngày 1 · Cấp 1')
+        rendered = '\n'.join(ui._screen.lines())
+        self.assertEqual(choice, '1')
+        self.assertIn('M O S S B R O O K', rendered)
+        self.assertIn('M E A D O W', rendered)
+        self.assertIn('1. Tiếp tục', rendered)
+        self.assertLess(rendered.index('M O S S B R O O K'),
+                        rendered.index('1. Tiếp tục'))
+
+
 class CursesInputTests(unittest.TestCase):
     def ui(self):
         from types import SimpleNamespace

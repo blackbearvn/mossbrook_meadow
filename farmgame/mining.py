@@ -69,6 +69,7 @@ def mine_rock(farm: 'Farm', x: int, y: int) -> str:
     farm.items['da'] += stones
     farm.items[kind] += ore
     farm.mine_used[key] = index + 1
+    farm.mined_total += 1
     from .daily import ensure_daily, record_daily
     ensure_daily(farm)
     record_daily(farm, 'mine')

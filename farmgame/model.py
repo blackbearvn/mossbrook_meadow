@@ -13,6 +13,7 @@ from .daily import DailyState, ensure_daily, record_daily
 from .progression import (action_cost, attribute_points, empty_attributes,
                           empty_skills, energy_limit, gain_xp, sale_price,
                           skill_points)
+from .achievements import ACHIEVEMENTS, empty_achievements
 
 if TYPE_CHECKING:
     from .animals import Animal
@@ -101,6 +102,8 @@ class Farm:
     gear: dict[str, int] = field(default_factory=empty_gear)
     mine_used: dict[str, int] = field(default_factory=dict)
     dungeon_best: int = 0
+    mined_total: int = 0
+    achievements: dict[str, bool] = field(default_factory=empty_achievements)
 
     def __post_init__(self) -> None:
         if not self.plots:
@@ -117,6 +120,13 @@ class Farm:
             if not normalized.get('hat') and type(legacy_hat) is int:
                 normalized['hat'] = max(0, min(MAX_GEAR, legacy_hat))
             self.gear = normalized
+        if not isinstance(self.achievements, dict):
+            self.achievements = empty_achievements()
+        else:
+            self.achievements = {
+                item.id: bool(self.achievements.get(item.id, False))
+                for item in ACHIEVEMENTS}
+        self.mined_total = max(0, int(self.mined_total))
 
     @property
     def level(self) -> int:

@@ -183,13 +183,20 @@ def character_menu(ui: 'TerminalGame') -> bool:
                         and (ui.farm.attribute_points or ui.farm.skill_points))
         if can_exchange:
             ui.wrapped('[8] Đổi toàn bộ điểm dư thành xu')
-        ui.wrapped('[g] Trang bị và sức chiến đấu · [i] Túi đồ đang mang')
-        choice = ui.ask('Chọn [1-7 nâng, g trang bị, i túi, 8 đổi điểm, 0/q về]: ').lower()
+        ui.wrapped('[g] Trang bị và sức chiến đấu · [i] Túi đồ · '
+                   '[a] Thành tựu')
+        choice = ui.ask('Chọn [1-7 nâng, g trang bị, i túi, a thành tựu, '
+                        '8 đổi điểm, 0/q về]: ').lower()
         if choice in ('0', 'q', ''):
             return False
         if choice == 'g':
             from .forge import gear_lines
             for line in gear_lines(ui.farm):
+                ui.wrapped(line)
+            continue
+        if choice == 'a':
+            from .achievements import achievement_lines
+            for line in achievement_lines(ui.farm, unicode=getattr(ui, 'unicode_map', True)):
                 ui.wrapped(line)
             continue
         if choice == 'i':
@@ -213,7 +220,7 @@ def character_menu(ui: 'TerminalGame') -> bool:
                 ui.wrapped(ui.messages[-1], 'green')
             continue
         if choice not in tuple(str(i) for i in range(1, 8)):
-            ui.wrapped('Chọn từ 1 đến 7 hoặc 0 để quay lại.')
+            ui.wrapped('Chọn 1–7, g, i, a hoặc 0 để quay lại.')
             continue
         key, info, is_attribute = definitions[int(choice) - 1]
         try:
@@ -350,8 +357,9 @@ def forge_menu(ui: 'TerminalGame') -> bool:
 
 def dungeon_menu(ui: 'TerminalGame') -> bool:
     """Line-based Hang Sâu mode with the same rules as the curses panel."""
-    from .dungeon import (MAX_DEPTH, advance, flee, player_attack, start_run,
-                          status_lines, use_potion)
+    from .dungeon import (MAX_DEPTH, advance, flee, player_attack,
+                          player_defend, player_skill, start_run, status_lines,
+                          use_potion)
     farm = ui.farm
     try:
         run = start_run(farm)
@@ -367,17 +375,22 @@ def dungeon_menu(ui: 'TerminalGame') -> bool:
         if run.log:
             ui.wrapped(run.log[-1], 'green')
         if run.phase == 'battle':
-            answer = ui.ask('1 tấn công · 2 uống thuốc · 3 rút lui: ').strip().lower()
+            answer = ui.ask('1 tấn công · 2 uống thuốc · 3 rút lui · '
+                            '4 đỡ đòn · 5 kỹ năng: ').strip().lower()
             try:
                 if answer in ('3', '0', 'q', 'esc'):
                     ui.messages = [flee(farm, run)]
                     break
                 if answer == '2':
                     ui.messages = [use_potion(farm, run)]
+                elif answer in ('4', 'd', 'defend', 'đỡ'):
+                    ui.messages = [player_defend(farm, run)]
+                elif answer in ('5', 'k', 'skill', 'kỹ năng'):
+                    ui.messages = [player_skill(farm, run)]
                 elif answer in ('', '1', 'e', ' '):
                     ui.messages = [player_attack(farm, run)]
                 else:
-                    ui.wrapped('Chọn 1, 2 hoặc 3.')
+                    ui.wrapped('Chọn 1, 2, 3, 4 hoặc 5.')
                     continue
             except GameError as error:
                 ui.wrapped(str(error), 'red')

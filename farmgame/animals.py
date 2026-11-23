@@ -131,6 +131,7 @@ def buy_animal(farm: "Farm", kind: str, name: str | None = None) -> str:
     animal_name = name.strip() if name is not None else f"{info.name} {len(farm.animals) + 1}"
     farm.coins -= info.price
     farm.animals.append(Animal(kind, animal_name))
+    record_daily(farm, 'animal')
     return f"Đón {animal_name} về chuồng! (-{info.price} xu)"
 
 

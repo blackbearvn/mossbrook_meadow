@@ -127,6 +127,9 @@ def cook(farm: 'Farm', key: str) -> str:
     farm.items[recipe.key] = farm.items.get(recipe.key, 0) + 1
     farm.energy = min(farm.energy_limit, farm.energy + recipe.energy)
     xp_message = farm.award_xp(recipe.xp)
+    from .daily import ensure_daily, record_daily
+    ensure_daily(farm)
+    record_daily(farm, 'cook')
     return (f'Đã nấu {recipe.name}. Hồi {recipe.energy} năng lượng, '
             f'{xp_message} Món ăn đã được cất vào túi.')
 

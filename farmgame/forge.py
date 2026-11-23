@@ -97,6 +97,9 @@ def forge(farm: 'Farm', key: str) -> str:
     healed = max(0, farm.max_hp - previous_max_hp)
     farm.hp = min(farm.max_hp, farm.hp + healed)
     xp_message = farm.award_xp(3 + 2 * (level + 1))
+    from .daily import ensure_daily, record_daily
+    ensure_daily(farm)
+    record_daily(farm, 'forge')
     return (f'Lò rèn: {GEAR[key].name} lên {tier_label(level + 1)}. '
             f'{GEAR[key].effect} {xp_message}')
 

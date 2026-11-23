@@ -14,6 +14,7 @@ from .catalog import (EXTRA_ITEMS, FISH_TYPES, GEAR, ITEMS, MAX_GEAR,
 from .model import CROPS, WEATHER, Farm, Plot, coordinates
 from .world import MINE_HEIGHT, MINE_ROCKS, MINE_WIDTH, walkable
 from .villagers import NPCS
+from .achievements import empty_achievements
 from .progression import ATTRIBUTES, SKILLS
 from .identity import AVATARS, OUTFITS, BACKGROUNDS, normalize_name
 from .cooking import COOKED_ITEMS
@@ -136,7 +137,7 @@ def _legacy_fields(data: object, expected: set[str], message: str) -> dict:
         raise ValueError(message)
     optional = {'fish_collection', 'retired_attribute_points',
                 'retired_skill_points', 'map_pages', 'hp', 'gear',
-                'mine_used', 'dungeon_best'}
+                'mine_used', 'dungeon_best', 'mined_total', 'achievements'}
     keys = set(data)
     if keys >= expected and keys - expected <= optional:
         data = {key: value for key, value in data.items()
@@ -279,7 +280,9 @@ def _decode_farm(data: object) -> Farm:
                                ('hp', lambda: 20),
                                ('gear', empty_gear),
                                ('mine_used', dict),
-                               ('dungeon_best', int)):
+                               ('dungeon_best', int),
+                               ('mined_total', int),
+                               ('achievements', empty_achievements)):
             if field not in data:
                 data = {**data, field: default()}
     if not isinstance(data, dict) or set(data) != expected:
@@ -354,6 +357,16 @@ def _decode_farm(data: object) -> Farm:
         data['hp'] = max_hp
     _integer(data['hp'], 1, max_hp)
     _integer(data['dungeon_best'], maximum=5)
+    _integer(data['mined_total'])
+    achievements = data['achievements']
+    if not isinstance(achievements, dict):
+        raise ValueError('Dữ liệu thành tựu không hợp lệ.')
+    from .achievements import ACHIEVEMENT_IDS
+    if set(achievements) - set(ACHIEVEMENT_IDS):
+        raise ValueError('Dữ liệu thành tựu không hợp lệ.')
+    for value in achievements.values():
+        if type(value) is not bool:
+            raise ValueError('Dữ liệu thành tựu không hợp lệ.')
     mine_used = data['mine_used']
     if not isinstance(mine_used, dict):
         raise ValueError('Dữ liệu khai thác mỏ không hợp lệ.')
@@ -446,7 +459,8 @@ def load_game(path: Path) -> Farm:
         elif document['version'] == 6:
             optional = {'fish_collection', 'retired_attribute_points',
                         'retired_skill_points', 'map_pages', 'hp', 'gear',
-                        'mine_used', 'dungeon_best'}
+                        'mine_used', 'dungeon_best', 'mined_total',
+                        'achievements'}
             if (not isinstance(data, dict)
                     or not set(data) >= VERSION_SIX_FIELDS
                     or set(data) - VERSION_SIX_FIELDS - optional):

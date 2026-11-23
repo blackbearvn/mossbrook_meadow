@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 MAX_DEPTH = 5
 POTION_HEAL = 12
+PLAYER_SKILL_COST = 3
+ENEMY_SKILL_COST = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +75,8 @@ class Enemy:
     xp: int
     coins: int
     drops: dict[str, int]
+    mp: int = 0
+    max_mp: int = 0
 
     @property
     def glyph(self) -> str:
@@ -93,6 +97,9 @@ class DungeonRun:
     enemies: list[Enemy] = field(default_factory=list)
     index: int = 0
     turn: int = 0
+    guard: bool = False
+    mp: int = 0
+    max_mp: int = 0
     phase: str = 'battle'  # battle | floor | done | defeated | fled
     log: list[str] = field(default_factory=list)
     total_xp: int = 0
@@ -118,6 +125,7 @@ def _enemy(key: str, depth: int) -> Enemy:
     base = MONSTERS[key]
     hp = base.hp + (depth - 1) * 6
     attack = base.attack + (depth - 1)
+    max_mp = 4 + depth
     return Enemy(
         key=key,
         name=base.name,
@@ -127,6 +135,8 @@ def _enemy(key: str, depth: int) -> Enemy:
         xp=base.xp + depth,
         coins=base.coins + depth * 4,
         drops=dict(base.drops),
+        mp=max_mp,
+        max_mp=max_mp,
     )
 
 
@@ -143,6 +153,8 @@ def start_run(farm: 'Farm') -> DungeonRun:
     if farm.hp < 2:
         raise GameError('Bạn quá yếu để vào hang. Hãy ngủ hoặc uống thuốc hồi sức.')
     run = DungeonRun(depth=1, enemies=[_enemy(key, 1) for key in floor_plan(1)])
+    run.max_mp = 6 + farm.level // 2
+    run.mp = run.max_mp
     run.say(f'Bước vào Hang Sâu tầng 1. {len(run.enemies)} quái vật đang chờ.')
     return run
 
@@ -155,10 +167,22 @@ def _award(farm: 'Farm', run: DungeonRun, enemy: Enemy) -> str:
         run.loot[item] = run.loot.get(item, 0) + amount
     xp_message = farm.award_xp(enemy.xp)
     run.total_xp += enemy.xp
+    from .daily import ensure_daily, record_daily
+    ensure_daily(farm)
+    record_daily(farm, 'dungeon')
     from .catalog import ITEMS
     drop_text = ', '.join(f'{amount} {ITEMS[item].name}'
                           for item, amount in enemy.drops.items())
     return (f'Hạ {enemy.name}: +{enemy.coins} xu, +{drop_text}, {xp_message}')
+
+
+def enemy_intent(run: DungeonRun) -> str:
+    """Telegraph the enemy action so the player can choose to guard."""
+    if run.phase != 'battle' or run.current() is None:
+        return ''
+    enemy = run.current()
+    heavy = (run.turn + 1) % 3 == 0 and enemy.mp >= ENEMY_SKILL_COST
+    return 'Tung đòn mạnh' if heavy else 'Tấn công'
 
 
 def _enemy_attack(farm: 'Farm', run: DungeonRun) -> str:
@@ -166,34 +190,42 @@ def _enemy_attack(farm: 'Farm', run: DungeonRun) -> str:
     if enemy is None:
         return ''
     raw = max(1, enemy.attack - defense_power(farm))
+    heavy = (run.turn > 0 and run.turn % 3 == 0
+             and enemy.mp >= ENEMY_SKILL_COST)
+    if heavy:
+        enemy.mp -= ENEMY_SKILL_COST
+        raw = max(raw + 1, (raw * 3) // 2)
+    guarded = run.guard
+    if guarded:
+        raw = max(1, raw // 2)
+        run.guard = False
     farm.hp = max(0, farm.hp - raw)
     if farm.hp <= 0:
         lost = min(farm.coins, max(1, farm.coins // 10))
         farm.coins -= lost
         farm.hp = 1
+        run.guard = False
         run.phase = 'defeated'
         return f'{enemy.name} quật ngã bạn. Mất {lost} xu; bạn tỉnh dậy ở cửa mỏ.'
-    return f'{enemy.name} phản đòn, bạn mất {raw} máu.'
+    prefix = 'Tung đòn mạnh' if heavy else 'Phản đòn'
+    guard_text = ' Bạn đỡ được một nửa sát thương.' if guarded else ''
+    return f'{enemy.name} {prefix.lower()}, bạn mất {raw} máu.{guard_text}'
 
 
-def player_attack(farm: 'Farm', run: DungeonRun) -> str:
-    """Attack the current enemy and let it retaliate while it lives."""
-    from .model import GameError
-
-    if run.phase != 'battle':
-        raise GameError('Không có trận đánh nào đang diễn ra.')
+def _resolve_player_hit(farm: 'Farm', run: DungeonRun, damage: int,
+                        verb: str) -> str:
+    """Apply one player hit, then either award loot or let the enemy reply."""
     enemy = run.current()
     if enemy is None:
-        raise GameError('Không còn quái vật trong tầng này.')
-    variance = (run.turn * 3 + run.depth) % 3
-    damage = max(1, attack_power(farm) - (run.depth - 1) + variance)
+        raise ValueError('Không còn quái vật trong tầng này.')
     enemy.hp = max(0, enemy.hp - damage)
     run.turn += 1
-    attack_text = f'Bạn đánh {enemy.name} mất {damage} máu.'
+    attack_text = f'{verb} {enemy.name} mất {damage} máu.'
     run.say(attack_text)
     if enemy.hp <= 0:
         award_text = _award(farm, run, enemy)
         run.say(award_text)
+        run.guard = False
         run.index += 1
         if run.index >= len(run.enemies):
             run.phase = 'floor'
@@ -214,6 +246,52 @@ def player_attack(farm: 'Farm', run: DungeonRun) -> str:
     counter = _enemy_attack(farm, run)
     run.say(counter)
     return f'{attack_text} {counter}'
+
+
+def player_attack(farm: 'Farm', run: DungeonRun) -> str:
+    """Attack the current enemy and let it retaliate while it lives."""
+    from .model import GameError
+
+    if run.phase != 'battle':
+        raise GameError('Không có trận đánh nào đang diễn ra.')
+    if run.current() is None:
+        raise GameError('Không còn quái vật trong tầng này.')
+    variance = (run.turn * 3 + run.depth) % 3
+    damage = max(1, attack_power(farm) - (run.depth - 1) + variance)
+    return _resolve_player_hit(farm, run, damage, 'Bạn đánh')
+
+
+def player_skill(farm: 'Farm', run: DungeonRun) -> str:
+    """Spend MP on a heavy strike; the enemy still gets a turn if alive."""
+    from .model import GameError
+
+    if run.phase != 'battle':
+        raise GameError('Không có trận đánh nào đang diễn ra.')
+    if run.current() is None:
+        raise GameError('Không còn quái vật trong tầng này.')
+    if run.mp < PLAYER_SKILL_COST:
+        raise GameError(f'Cần {PLAYER_SKILL_COST} MP để dùng kỹ năng. '
+                        'MP hồi khi xuống tầng mới.')
+    variance = (run.turn * 3 + run.depth) % 3
+    damage = max(1, attack_power(farm) * 2 + run.depth + variance)
+    run.mp -= PLAYER_SKILL_COST
+    return _resolve_player_hit(farm, run, damage, 'Bạn tung kỹ năng vào')
+
+
+def player_defend(farm: 'Farm', run: DungeonRun) -> str:
+    """Brace for the telegraphed hit and let the enemy take its turn."""
+    from .model import GameError
+
+    if run.phase != 'battle':
+        raise GameError('Không có trận đánh nào đang diễn ra.')
+    if run.current() is None:
+        raise GameError('Không còn quái vật trong tầng này.')
+    run.guard = True
+    run.turn += 1
+    run.say('Bạn giơ khiên, chuẩn bị đỡ đòn.')
+    counter = _enemy_attack(farm, run)
+    run.say(counter)
+    return f'Bạn đỡ đòn. {counter}'
 
 
 def use_potion(farm: 'Farm', run: DungeonRun) -> str:
@@ -249,6 +327,9 @@ def advance(farm: 'Farm', run: DungeonRun) -> str:
     run.depth += 1
     run.enemies = [_enemy(key, run.depth) for key in floor_plan(run.depth)]
     run.index = 0
+    run.turn = 0
+    run.guard = False
+    run.mp = run.max_mp
     run.phase = 'battle'
     heal = max(4, farm.max_hp // 4)
     farm.hp = min(farm.max_hp, farm.hp + heal)
@@ -267,7 +348,8 @@ def flee(farm: 'Farm', run: DungeonRun) -> str:
 def status_lines(farm: 'Farm', run: DungeonRun, *, unicode: bool = True) -> list[str]:
     full, empty = ('▰', '▱') if unicode else ('#', '-')
     rows = [f'Hang Sâu · tầng {run.depth}/{MAX_DEPTH} · '
-            f'máu {farm.hp}/{farm.max_hp} · kiếm {rarity_name(farm.gear.get("sword", 0))}'
+            f'HP {farm.hp}/{farm.max_hp} · MP {run.mp}/{run.max_mp}'
+            f' · kiếm {rarity_name(farm.gear.get("sword", 0))}'
             f' · giáp {rarity_name(farm.gear.get("armor", 0))}',
             f'Trang bị: mũ {rarity_name(farm.gear.get("hat", 0))}'
             f' · quần {rarity_name(farm.gear.get("pants", 0))}'
@@ -277,8 +359,8 @@ def status_lines(farm: 'Farm', run: DungeonRun, *, unicode: bool = True) -> list
         width = 12
         filled = max(0, min(width, round(width * enemy.hp / max(1, enemy.max_hp))))
         rows.append(f'{enemy.name} · {full * filled}{empty * (width - filled)} '
-                    f'{enemy.hp}/{enemy.max_hp}')
-        rows.append(enemy.hint)
+                    f'{enemy.hp}/{enemy.max_hp} · MP {enemy.mp}/{enemy.max_mp}')
+        rows.append(f'Ý định: {enemy_intent(run)} · {enemy.hint}')
     elif run.phase == 'floor':
         rows.append('Tầng đã sạch. Chọn xuống tầng tiếp theo hoặc trở về.')
     elif run.phase == 'done':

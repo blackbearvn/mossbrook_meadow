@@ -481,6 +481,103 @@ _EXTRA_SCRIPTS = {
 for _extra_npc, _extra_topics in _EXTRA_SCRIPTS.items():
     _SCRIPTS[_extra_npc].update(_extra_topics)
 
+
+# Small gestures and reactions keep conversations from reading like an FAQ.
+# Each NPC has a few scene beats so repeat visits do not open the same way.
+_SCENES = {
+    'lan': (
+        'Lan đang buộc lại miệng túi hạt, thấy bạn liền đẩy giỏ sang một bên.',
+        'Lan lau tay vào tạp dề rồi rót thêm một chén trà nhỏ.',
+        'Lan ngồi sau quầy, khuỷu tay đặt trên mặt gỗ, nghe ngóng trước khi đáp.',
+    ),
+    'tu': (
+        'Bác Tư gác cần câu lên đầu gối, vỗ vỗ khoảng đá bên cạnh.',
+        'Bác Tư thu chậm sợi dây, mắt vẫn dõi theo mặt nước.',
+        'Bác Tư thổi bớt hơi nóng của chén trà rồi nghiêng người nghe.',
+    ),
+    'an': (
+        'An ngồi xổm bên luống hoa, tay còn dính đất, ngẩng lên cười.',
+        'An đặt bình tưới xuống, phủi lá khô khỏi đầu gối.',
+        'An đứng giữa hai hàng hoa, nghiêng đầu ngắm bạn như đang xếp bạn vào vườn.',
+    ),
+    'mai': (
+        'Mai gấp một góc sách, đặt viên đá nhỏ làm dấu rồi quay sang.',
+        'Mai ôm cuốn sổ vào lòng, ngòi bút còn lơ lửng trên trang.',
+        'Mai nhích sang để chừa chỗ ngồi, tay vẫn giữ trang đang đọc.',
+    ),
+    'son': (
+        'Sơn tựa vào thân thông, phủi vỏ cây khỏi ống tay áo.',
+        'Sơn đặt bó cành khô xuống, lắng nghe một tiếng chim trước khi trả lời.',
+        'Sơn bước chậm khỏi lối mòn, nhường nửa khoảng đất cho bạn.',
+    ),
+}
+_RAIN_SCENES = {
+    'lan': 'Lan đứng nép dưới hiên, tạp dề còn vương vài hạt mưa.',
+    'tu': 'Bác Tư ngồi dưới mái lá, mũ áo còn ướt vì mưa.',
+    'an': 'An nghiêng ô cho chậu hoa nhỏ khỏi ướt.',
+    'mai': 'Mai giữ cuốn sách trong vạt áo, tóc còn lấm tấm nước.',
+    'son': 'Sơn vắt nước trên vành mũ, chỉ tay về lối rừng sũng nước.',
+}
+_FRIEND_SCENES = {
+    'lan': 'Lan thấy bạn là bỏ dở việc, kéo ghế ra như đã quen từ lâu.',
+    'tu': 'Bác Tư cười trước cả khi bạn kịp chào.',
+    'an': 'An hái vội một bông hoa, định cài lên túi bạn rồi lại thôi.',
+    'mai': 'Mai gấp sách ngay, dành trọn ánh nhìn cho bạn.',
+    'son': 'Sơn nhận ra bước chân bạn từ trước khi bạn tới gần.',
+}
+_REACTIONS = {
+    'lan': {
+        'warm': 'Lan mỉm cười, ngón tay khẽ gõ lên mặt quầy.',
+        'practical': 'Lan gật gù, rút cây bút ra khỏi túi tạp dề.',
+    },
+    'tu': {
+        'warm': 'Bác Tư chậm rãi gật đầu, ánh mắt dịu xuống.',
+        'practical': 'Bác Tư nhìn mặt hồ một lát rồi mới đáp.',
+    },
+    'an': {
+        'warm': 'An cười, đưa tay phủi một chiếc lá vương trên vai bạn.',
+        'practical': 'An cúi xuống nhặt que, vạch thử một đường trên đất.',
+    },
+    'mai': {
+        'warm': 'Mai khép sổ lại, như muốn dành trọn câu chuyện cho bạn.',
+        'practical': 'Mai lật về trang trước, đánh dấu một đoạn bằng bút chì.',
+    },
+    'son': {
+        'warm': 'Sơn khẽ cười, bẻ một cành nhỏ rồi vứt ra khỏi lối.',
+        'practical': 'Sơn chỉ tay về phía lối mòn, giọng chậm và rõ.',
+    },
+}
+_FAREWELL = {
+    'lan': {
+        'warm': 'Lan đưa mắt theo bạn ra cửa, rồi mới quay lại giỏ hạt.',
+        'practical': 'Lan ghi thêm một dòng vào sổ, cạnh đó là tên bạn.',
+    },
+    'tu': {
+        'warm': 'Bác Tư ngồi thêm một lát, nhìn mặt nước như đang giữ lại câu chuyện.',
+        'practical': 'Bác Tư gật đầu, tay đã đặt sẵn cần câu về phía bạn.',
+    },
+    'an': {
+        'warm': 'An đứng nhìn theo bạn một quãng, tay còn cầm bông hoa dở.',
+        'practical': 'An quay lại luống đất, miệng vẫn lẩm nhẩm điều vừa nghe.',
+    },
+    'mai': {
+        'warm': 'Mai đóng sổ thật nhẹ, như sợ làm vỡ khoảng lặng vừa có.',
+        'practical': 'Mai viết thêm một chữ, rồi cài bút vào giữa trang.',
+    },
+    'son': {
+        'warm': 'Sơn đứng lại nhìn theo bạn, tay vẫn vịn vào cành thông.',
+        'practical': 'Sơn quay lại lối mòn, bước chân chậm hơn lúc đến.',
+    },
+}
+
+
+def _scene_line(farm: 'Farm', npc_id: str) -> str:
+    if farm.weather == 'rainy':
+        return _RAIN_SCENES[npc_id]
+    if farm.friendships.get(npc_id, 0) >= 5:
+        return _FRIEND_SCENES[npc_id]
+    return _SCENES[npc_id][(farm.day - 1) % 3]
+
 _SALUTATIONS = {
     'lan': ('Mừng bạn ghé tiệm.', 'Mình vừa xếp hàng xong, ghé chơi nhé.',
             'Hôm nay gặp bạn sớm, vui quá.'),
@@ -519,6 +616,7 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
     """Open a conversation without changing any saved game state."""
     _validate_nearby(farm, npc_id, topic)
     question, warm, practical = _SCRIPTS[npc_id][topic]
+    scene = _scene_line(farm, npc_id)
     if topic == 'greet':
         greeting = _SALUTATIONS[npc_id][(farm.day - 1) % 3]
         if farm.friendships[npc_id] == 0:
@@ -531,7 +629,9 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
             greeting += f' {bond_title(3)} rồi, mình nói chuyện với bạn dễ hơn nhiều.'
         if farm.weather == 'rainy':
             greeting += ' ' + _WEATHER[npc_id]
-        question = greeting + ' ' + question
+        question = scene + ' ' + greeting + ' ' + question
+    else:
+        question = scene + ' ' + question
     nodes = {}
     first_choices = []
     for branch_id, branch in (('warm', warm), ('practical', practical)):
@@ -569,7 +669,18 @@ def choose_response(farm: 'Farm', conversation: Conversation, choice_id: str) ->
     if choice is None or choice.next_node not in conversation._nodes:
         raise GameError('Câu trả lời không hợp lệ.')
     following = conversation._nodes[choice.next_node]
-    new_lines = [f'Bạn: {choice.text}', f'{NPCS[conversation.npc_id].name}: {following.npc_line}']
+    branch = choice.next_node.split('_', 1)[0]
+    npc_line = following.npc_line
+    if following.choices:
+        reaction = _REACTIONS[conversation.npc_id].get(branch, '')
+        if reaction:
+            npc_line = f'{reaction} {npc_line}'
+    else:
+        farewell = _FAREWELL[conversation.npc_id].get(branch, '')
+        if farewell:
+            npc_line = f'{npc_line} {farewell}'
+    new_lines = [f'Bạn: {choice.text}',
+                 f'{NPCS[conversation.npc_id].name}: {npc_line}']
     reward = []
     if farm.talked_on[conversation.npc_id] != farm.day:
         status = talk(farm, conversation.npc_id, conversation.topic).splitlines()[-1]

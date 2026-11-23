@@ -31,6 +31,14 @@ LANDSCAPE = (
     '       T       T       | [] |      T     ',
     '  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~  |____|  ~ ~ ~ ~  ',
 )
+TITLE_LOGO = (
+    r'       /\      /\      /\      /\      /\       ',
+    r'      /  \    /  \    /  \    /  \    /  \      ',
+    r'     /____\  /____\  /____\  /____\  /____\     ',
+    r'        ~   M O S S B R O O K   ~               ',
+    r'              M E A D O W                        ',
+)
+TITLE_TAGLINE = 'Một cuộc sống chậm giữa mây trời'
 CREATOR_FIELDS = (
     ('player_name', 'Tên bạn', 24),
     ('farm_name', 'Nông trại', 28),
@@ -46,13 +54,13 @@ HELP = ('WASD / phím mũi tên: di chuyển. E: tương tác với người và
         'G: đổi hình bản đồ Unicode/ASCII.\n'
         'N: nhiệm vụ hằng ngày. O: auto; Space/P tạm dừng, O/Esc dừng auto.\n'
         'F: bảng cánh đồng; B: sổ chuồng 3 khu theo cấp; K: bộ sưu tầm cá.\n'
-        'C: hồ sơ hai cột, chân dung và thanh bậc; Enter nâng, Space xem đầy đủ, X đổi điểm dư.\n'
+        'C: hồ sơ 4 tab (Hồ sơ/Trang bị/Túi đồ/Thành tựu); Enter nâng, Space xem đầy đủ.\n'
         'I: túi đồ/rương hai cột, tab lọc, minh họa và tổng xu. M: bản đồ. J: thẻ dân làng.\n'
         'R: đi nhanh giữa các khu vực; bản đồ theo trang chỉ hiện một khu, đi qua đường ở rìa để sang trang.\n'
         'Z: khung bản đồ rộng, hiện nhiều ô hơn quanh nhân vật.\n'
         'Mỏ Khoáng ở Đồi Gió (76,6): E vào mỏ, đứng cạnh đá rồi E để đào quặng.\n'
         'Trong mỏ: F lò rèn (mũ/kiếm/giáp/quần/giày), G Hang Sâu, D ra ngoài; ngủ để mỏ hồi đầy.\n'
-        'Hang Sâu: 1/Enter tấn công, 2 uống thuốc, 3 rút lui; cần kiếm bậc Hiếm.\n'
+        'Hang Sâu: cửa sổ chiến đấu riêng; 1 tấn công, 2 thuốc, 3 rút, 4 đỡ, 5 kỹ năng (3 MP).\n'
         'Trong nhà, đứng cạnh bếp K rồi E để nấu ăn.\n'
         'Ruộng có 9 giống; chuồng có gà, vịt, thỏ, bò, cừu, dê, heo. Nấu món để hồi sức và bán.\n'
         'Biểu tượng: ☀☁☂ thời tiết · ♥ sức · ◆ xu · ✧ XP · ▤ túi; --ascii tự đổi ASCII.\n'
@@ -64,12 +72,20 @@ HELP = ('WASD / phím mũi tên: di chuyển. E: tương tác với người và
 
 class TextUI:
     def choose(self, title, options, *, body='', default=None):
+        main_menu = title.startswith('MOSSBROOK MEADOW')
         while True:
-            print('\n' + title)
+            print()
+            if main_menu:
+                for line in TITLE_LOGO:
+                    print(line.center(78))
+                print(TITLE_TAGLINE.center(78))
+                print()
+            print(title.center(78) if main_menu else title)
             if body:
                 print(body)
             for key, label in options:
-                print(f'  {key}. {label}')
+                print(f'  {key}. {label}'.center(78) if main_menu
+                      else f'  {key}. {label}')
             value = input('Chọn > ').strip()
             if not value and default is not None:
                 return default
@@ -426,7 +442,85 @@ class CursesUI(ExplorerGame):
                     if limit is None:
                         self._creator_cycle(profile, field, 1)
 
+    def _title_menu(self, title, options, body='', default=None):
+        """Centered title card: logo first, then the menu choices."""
+        height, width = self._screen.getmaxyx()
+        if height < 18 or width < 54:
+            return None
+        selected = next((i for i, pair in enumerate(options)
+                         if pair[0] == default), 0)
+        while True:
+            height, width = self._screen.getmaxyx()
+            self._screen.erase()
+            panel_w = min(width - 4, 72)
+            panel_h = min(height - 2, 22)
+            x = max(0, (width - panel_w) // 2)
+            y = max(1, (height - panel_h) // 2)
+            rect = tui.Rect(x, y, panel_w, panel_h)
+            body_rect = tui.draw_panel(
+                self, rect, footer='', unicode=self.unicode_map,
+                accent='magenta', title_color='yellow', shadow=True,
+                bounds=(height, width))
+            row = body_rect.y + 1
+            logo_colors = ('green', 'green', 'green', 'yellow', 'yellow')
+            for line, color in zip(TITLE_LOGO, logo_colors):
+                text = tui.ellipsize(line, body_rect.width,
+                                     unicode=self.unicode_map)
+                left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
+                self._put(row, left, text, color, True)
+                row += 1
+            tagline = tui.ellipsize(TITLE_TAGLINE, body_rect.width,
+                                    unicode=self.unicode_map)
+            left = body_rect.x + max(0, (body_rect.width - tui.cells(tagline)) // 2)
+            self._put(row, left, tagline, 'dim')
+            row += 2
+            summary = wrap_cells(body, max(8, body_rect.width - 6))
+            summary_room = max(0, body_rect.y + body_rect.height - 10 - row)
+            for line in summary[:summary_room]:
+                text = tui.ellipsize(line, body_rect.width - 4,
+                                     unicode=self.unicode_map)
+                left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
+                self._put(row, left, text, 'cyan')
+                row += 1
+            row += 1
+            for index, (key, label) in enumerate(options):
+                active = index == selected
+                text = f'{key}. {label}'
+                prefix = '› ' if self.unicode_map else '> '
+                text = (prefix if active else '  ') + text
+                left = body_rect.x + max(6, (body_rect.width - tui.cells(text)) // 2)
+                if active:
+                    self._put(row, body_rect.x + 2,
+                              ' ' * max(1, body_rect.width - 4), 'selected')
+                self._put(row, left, text,
+                          'selected' if active else 'green', active)
+                row += 1
+            hint = ('↑↓ chọn · Enter/số xác nhận · Esc thoát'
+                    if self.unicode_map else
+                    'W/S chọn · Enter/số xác nhận · Esc thoát')
+            if body_rect.y + body_rect.height > row:
+                self._put(body_rect.y + body_rect.height - 1,
+                          body_rect.x + 1,
+                          tui.ellipsize(hint, body_rect.width - 2,
+                                        unicode=self.unicode_map), 'dim')
+            self._refresh()
+            key = self.key()
+            if key in dict(options):
+                return key
+            if key == '\x1b':
+                return '0'
+            if key in (self._curses.KEY_UP, 'k', 'w', 'W'):
+                selected = (selected - 1) % len(options)
+            elif key in (self._curses.KEY_DOWN, 'j', 's', 'S'):
+                selected = (selected + 1) % len(options)
+            elif key in ('\n', '\r', self._curses.KEY_ENTER):
+                return options[selected][0]
+
     def choose(self, title, options, *, body='', default=None):
+        if title.startswith('MOSSBROOK MEADOW'):
+            title_result = self._title_menu(title, options, body, default)
+            if title_result is not None:
+                return title_result
         selected = next((i for i, pair in enumerate(options) if pair[0] == default), 0)
         manual_scroll = None
         while True:

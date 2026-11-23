@@ -150,6 +150,7 @@ class ExplorerGame:
         self._save_error = ""
         self._dim_base = False
         self._last_move_save = 0.0
+        self._last_achievement_check = 0.0
         from .map_art import supports_unicode
         self.unicode_map = not ascii_only and supports_unicode()
         from .tutorial_ui import TutorialCoach
@@ -190,6 +191,18 @@ class ExplorerGame:
             self._log(self._save_error)
             return False
         self._save_error = ""
+        return True
+
+    def _check_achievements(self):
+        """Unlock milestones after real play, outside direct action tests."""
+        from .achievements import sync_achievements
+        unlocked = sync_achievements(self.farm)
+        if not unlocked:
+            return False
+        for achievement in unlocked:
+            self._log(f'Mở khóa thành tựu: {achievement.name} '
+                      f'(+{achievement.reward} điểm)!', kind='reward')
+        self._save()
         return True
 
     def _action(self, action, *args):
@@ -266,7 +279,11 @@ class ExplorerGame:
             screen.timeout(self.activities.read_timeout_ms)
             key = self._read()
             redraw |= key is not None
-            if not self.handle_key(key):
+            alive = self.handle_key(key)
+            if key is not None or now - self._last_achievement_check >= 0.5:
+                redraw |= self._check_achievements()
+                self._last_achievement_check = now
+            if not alive:
                 return 0
 
     def _read(self):
@@ -1089,18 +1106,23 @@ class ExplorerGame:
         from .artwork import (icon_for, player_portrait, pips, stat_icon,
                               symbol, weather_icon)
         from .catalog import GEAR, MAX_GEAR, WEATHER
+        from .achievements import (ACHIEVEMENTS, achievement_rows,
+                                   family_name, tier_label as achievement_tier_label,
+                                   unlocked_count)
         from .forge import (attack_power, defense_power, gear_lines,
                             mining_bonus, mining_energy_cost, rarity_color,
                             rarity_name, recipe_for, recipe_label, tier_label)
         from .identity import BACKGROUNDS, OUTFITS
         from .inventory import inventory_rows
         definitions = self._character_definitions()
-        tabs = ('HỒ SƠ', 'TRANG BỊ', 'TÚI ĐỒ')
+        tabs = ('HỒ SƠ', 'TRANG BỊ', 'TÚI ĐỒ', 'THÀNH TỰU')
         tab = 0
         selected = 0
         gear_selected = 0
         bag_selected = 0
         bag_offset = 0
+        achievement_selected = 0
+        achievement_offset = 0
         gear_keys = list(GEAR)
         self._gear_boxes = {}
         tooltip = False
@@ -1132,9 +1154,14 @@ class ExplorerGame:
                             'Space đầy đủ · Tab/Shift+Tab đổi tab · Esc đóng'
                             if width >= 80 else
                             f'{status_nav} chọn ô · Enter tooltip · Tab đổi tab · Esc')
-            else:
+            elif tab == 2:
                 controls = (f'{status_nav} chọn · Tab/Shift+Tab đổi tab · '
                             'I mở túi đầy đủ · Esc đóng'
+                            if width >= 80 else
+                            f'{status_nav} chọn · Tab đổi tab · Esc đóng')
+            else:
+                controls = (f'{status_nav} chọn · Tab/Shift+Tab đổi tab · '
+                            'Space xem đầy đủ · Esc đóng'
                             if width >= 80 else
                             f'{status_nav} chọn · Tab đổi tab · Esc đóng')
             body = tui.draw_panel(
@@ -1320,7 +1347,7 @@ class ExplorerGame:
                             break
                         self._put(detail_y + 1 + offset, right_x, line,
                                   'cyan' if offset else rarity_color(rank))
-            else:
+            elif tab == 2:
                 total = sum(row[2] for row in bag_rows)
                 value = sum(sale_price(self.farm, key) * bag
                             for key, _, bag, _ in bag_rows
@@ -1369,6 +1396,69 @@ class ExplorerGame:
                             break
                         self._put(detail_y + 1 + offset, right_x, line, 'dim')
 
+            else:
+                rows = achievement_rows(self.farm)
+                total = len(rows)
+                opened = unlocked_count(self.farm)
+                from .achievements import achievement_score
+                self._put(top, right_x,
+                          tui.ellipsize(f' THÀNH TỰU · {opened}/{total} '
+                                        f'· {achievement_score(self.farm)} điểm ',
+                                        max(1, right_w - 1),
+                                        unicode=self.unicode_map), 'yellow', True)
+                list_top = top + 1
+                detail_y = bottom - 4
+                available = max(1, detail_y - list_top)
+                achievement_selected = max(0, min(achievement_selected,
+                                                  total - 1))
+                achievement_offset = max(0, min(achievement_offset,
+                                                max(0, total - available)))
+                if achievement_selected < achievement_offset:
+                    achievement_offset = achievement_selected
+                elif achievement_selected >= achievement_offset + available:
+                    achievement_offset = achievement_selected - available + 1
+                for slot, (item, current, unlocked) in enumerate(
+                        rows[achievement_offset:achievement_offset + available]):
+                    index = achievement_offset + slot
+                    active = index == achievement_selected
+                    mark = (('✓' if unlocked else '○') if self.unicode_map
+                            else ('x' if unlocked else 'o'))
+                    state = 'đã mở khóa' if unlocked else f'{current}/{item.target}'
+                    text = (f'{g["arrow"] if active else " "} {mark} '
+                            f'{item.name}  {item.tier}/5  {state}')
+                    if active:
+                        self._put(list_top + slot, right_x, ' ' * right_w, 'selected')
+                        self._put(list_top + slot, right_x,
+                                  tui.ellipsize(text, max(1, right_w - 1),
+                                                unicode=self.unicode_map),
+                                  'selected', True)
+                    else:
+                        self._put(list_top + slot, right_x,
+                                  tui.ellipsize(text, max(1, right_w - 1),
+                                                unicode=self.unicode_map),
+                                  rarity_color(item.tier - 1) if unlocked else 'dim')
+                self._put(detail_y, right_x, g['h'] * right_w, 'dim')
+                item, current, unlocked = rows[achievement_selected]
+                description = wrap_cells(item.description, max(2, right_w - 2))
+                detail = description[:2]
+                if len(description) > 2:
+                    detail[-1] = tui.ellipsize(detail[-1] + ' …', right_w - 2,
+                                               unicode=self.unicode_map)
+                for offset, line in enumerate(detail):
+                    if detail_y + 1 + offset >= bottom:
+                        break
+                    self._put(detail_y + 1 + offset, right_x, line, 'cyan')
+                reward_y = detail_y + 3
+                if reward_y < bottom:
+                    self._put(reward_y, right_x,
+                              tui.ellipsize(f'{family_name(item.family)} · '
+                                            f'{achievement_tier_label(item.tier)} · '
+                                            f'+{item.reward} điểm · '
+                                            f'{current}/{item.target}',
+                                            max(1, right_w - 1),
+                                            unicode=self.unicode_map),
+                              'green' if unlocked else 'yellow')
+
             if tooltip:
                 self._gear_tooltip(gear_keys[gear_selected])
             self._draw_status_bar(height, width, controls)
@@ -1410,6 +1500,12 @@ class ExplorerGame:
                 self._reader('TRANG BỊ · TOÀN BỘ 5 Ô',
                              '\n\n'.join(gear_lines(self.farm)))
                 continue
+            if tab == 3 and key_name in (' ', 'i', 'I'):
+                from .achievements import achievement_lines
+                self._reader('THÀNH TỰU · DANH SÁCH ĐẦY ĐỦ',
+                             '\n\n'.join(achievement_lines(
+                                 self.farm, unicode=self.unicode_map)))
+                continue
             if tab == 0 and key_name in ('x', 'X'):
                 self._action(exchange_points, self.farm)
                 continue
@@ -1418,25 +1514,35 @@ class ExplorerGame:
                     selected = max(0, selected - 1)
                 elif tab == 1:
                     gear_selected = max(0, gear_selected - 1)
-                else:
+                elif tab == 2:
                     bag_selected = max(0, bag_selected - 1)
+                else:
+                    achievement_selected = max(0, achievement_selected - 1)
             elif key_name in ('s', 'S', getattr(self._curses, 'KEY_DOWN', -1)):
                 if tab == 0:
                     selected = min(len(definitions) - 1, selected + 1)
                 elif tab == 1:
                     gear_selected = min(len(gear_keys) - 1, gear_selected + 1)
-                else:
+                elif tab == 2:
                     bag_selected = min(max(0, len(bag_rows) - 1), bag_selected + 1)
+                else:
+                    achievement_selected = min(len(ACHIEVEMENTS) - 1,
+                                               achievement_selected + 1)
             elif key_name == getattr(self._curses, 'KEY_PPAGE', -1):
                 if tab == 0:
                     selected = max(0, selected - 3)
                 elif tab == 2:
                     bag_selected = max(0, bag_selected - 5)
+                elif tab == 3:
+                    achievement_selected = max(0, achievement_selected - 5)
             elif key_name == getattr(self._curses, 'KEY_NPAGE', -1):
                 if tab == 0:
                     selected = min(len(definitions) - 1, selected + 3)
                 elif tab == 2:
                     bag_selected = min(max(0, len(bag_rows) - 1), bag_selected + 5)
+                elif tab == 3:
+                    achievement_selected = min(len(ACHIEVEMENTS) - 1,
+                                               achievement_selected + 5)
             elif tab == 0 and isinstance(key_name, str) and key_name in '1234567':
                 selected = int(key_name) - 1
             elif tab == 1 and isinstance(key_name, str) and key_name in '12345':
@@ -1449,10 +1555,15 @@ class ExplorerGame:
                                  self.farm, key)
                 elif tab == 1:
                     tooltip = True
-                elif bag_rows:
+                elif tab == 2 and bag_rows:
                     key, name, _, _ = bag_rows[bag_selected]
                     self._reader(f'VẬT PHẨM · {name}',
                                  self._inventory_note(key))
+                elif tab == 3:
+                    from .achievements import achievement_lines
+                    self._reader('THÀNH TỰU · DANH SÁCH ĐẦY ĐỦ',
+                                 '\n\n'.join(achievement_lines(
+                                     self.farm, unicode=self.unicode_map)))
 
     def _gear_tooltip(self, key: str) -> None:
         """Small item card shown when a square equipment slot is activated."""
@@ -2623,11 +2734,113 @@ class ExplorerGame:
                 return
             self._action(forge, self.farm, keys[index])
 
+    def _draw_battle_scene(self, body, farm, run):
+        """Draw a dedicated PvP-style arena: player left, monster right."""
+        from .artwork import art_for, player_portrait
+        from .dungeon import PLAYER_SKILL_COST, enemy_intent
+        from .forge import attack_power, defense_power
+
+        enemy = run.current()
+        if enemy is None:
+            return
+        g = tui.glyphs(self.unicode_map)
+        top = body.y
+        gap = 2
+        left_w = max(10, (body.width - gap) // 2)
+        right_x = body.x + left_w + gap + 1
+        right_w = max(8, body.width - left_w - gap - 1)
+        divider_x = body.x + left_w
+        log_sep = max(top + 8, body.y + body.height - 7)
+        for row in range(top + 1, min(log_sep, body.y + body.height - 1)):
+            self._put(row, divider_x, g['v'], 'dim')
+
+        def side(x, width, name, hp, max_hp, mp, max_mp, color):
+            bar_w = max(4, min(12, width - 13))
+            self._put(top, x,
+                      tui.ellipsize(name, max(1, width),
+                                    unicode=self.unicode_map), color, True)
+            ratio = hp / max(1, max_hp)
+            hp_color = ('red' if ratio <= 0.3 else
+                        ('yellow' if ratio <= 0.6 else color))
+            self._put(top + 1, x,
+                      tui.ellipsize(
+                          f'HP {tui.progress_bar(ratio, bar_w, unicode=self.unicode_map)} '
+                          f'{hp}/{max_hp}', max(1, width),
+                          unicode=self.unicode_map), hp_color)
+            mp_ratio = mp / max(1, max_mp)
+            self._put(top + 2, x,
+                      tui.ellipsize(
+                          f'MP {tui.progress_bar(mp_ratio, bar_w, unicode=self.unicode_map)} '
+                          f'{mp}/{max_mp}', max(1, width),
+                          unicode=self.unicode_map), 'blue')
+
+        side(body.x + 1, left_w - 1, 'BẠN', farm.hp, farm.max_hp,
+             run.mp, run.max_mp, 'cyan')
+        side(right_x, right_w, enemy.name.upper(), enemy.hp, enemy.max_hp,
+             enemy.mp, enemy.max_mp, 'red')
+
+        art_top = top + 4
+        art_room = max(0, log_sep - art_top - 2)
+        max_art = min(4, art_room)
+        player_art = player_portrait(farm.avatar, unicode=self.unicode_map)
+        enemy_art = art_for('monster:' + enemy.key, unicode=self.unicode_map)
+
+        def center(lines, x, width, color):
+            for offset, line in enumerate(lines[:max_art]):
+                text = tui.ellipsize(line, max(1, width),
+                                     unicode=self.unicode_map)
+                left = max(0, (width - tui.cells(text)) // 2)
+                self._put(art_top + offset, x + left, text, color, True)
+
+        center(player_art, body.x + 1, left_w - 1, farm.outfit)
+        center(enemy_art, right_x, right_w, 'red')
+
+        stats_y = art_top + max_art + 1
+        if stats_y < log_sep:
+            self._put(stats_y, body.x + 1,
+                      tui.ellipsize(
+                          f'Sát thương {attack_power(farm)} · '
+                          f'Giáp {defense_power(farm)}',
+                          max(1, left_w - 1), unicode=self.unicode_map), 'cyan')
+        if stats_y + 1 < log_sep:
+            self._put(stats_y + 1, body.x + 1,
+                      tui.ellipsize(
+                          f'Thuốc {farm.items.get("thuoc", 0)} · '
+                          f'Kỹ năng {PLAYER_SKILL_COST} MP',
+                          max(1, left_w - 1), unicode=self.unicode_map), 'dim')
+        if stats_y < log_sep:
+            self._put(stats_y, right_x,
+                      tui.ellipsize(f'Ý định: {enemy_intent(run)}',
+                                    max(1, right_w),
+                                    unicode=self.unicode_map), 'yellow', True)
+        if stats_y + 1 < log_sep:
+            self._put(stats_y + 1, right_x,
+                      tui.ellipsize(enemy.hint, max(1, right_w),
+                                    unicode=self.unicode_map), 'dim')
+
+        heading = ' NHẬT KÝ '
+        self._put(log_sep, body.x + 1,
+                  heading + g['h'] * max(0, body.width - 2 - tui.cells(heading)),
+                  'dim')
+        action_y = body.y + body.height - 2
+        log_top = log_sep + 1
+        log_room = max(0, action_y - log_top)
+        for offset, line in enumerate(run.log[-log_room:] if log_room else []):
+            self._put(log_top + offset, body.x + 1,
+                      tui.ellipsize(line, max(1, body.width - 2),
+                                    unicode=self.unicode_map), 'green')
+        actions = (f'HÀNH ĐỘNG [1] Tấn công [2] Thuốc [3] Rút lui '
+                   f'[4] Đỡ đòn [5] Kỹ năng {PLAYER_SKILL_COST}MP')
+        self._put(action_y, body.x + 1,
+                  tui.ellipsize(actions, max(1, body.width - 2),
+                                unicode=self.unicode_map), 'yellow', True)
+
     def _dungeon(self):
         """Turn-based Hang Sâu encounter UI shared by every floor."""
         from .artwork import art_for
         from .dungeon import (MAX_DEPTH, advance, flee, player_attack,
-                              start_run, status_lines, use_potion)
+                              player_defend, player_skill, start_run,
+                              status_lines, use_potion)
         try:
             run = start_run(self.farm)
         except GameError as error:
@@ -2642,7 +2855,8 @@ class ExplorerGame:
             height, width = self._screen.getmaxyx()
             lines = status_lines(self.farm, run, unicode=self.unicode_map)
             if run.phase == 'battle':
-                controls = '1/Enter tấn công · 2 uống thuốc · 3 rút lui · Q đóng'
+                controls = ('1/Enter tấn công · 2 uống thuốc · 3 rút lui · '
+                            '4 đỡ đòn · 5 kỹ năng · Q đóng')
             elif run.phase == 'floor':
                 controls = '1/Enter xuống tầng · 2/Q trở về'
             else:
@@ -2661,43 +2875,56 @@ class ExplorerGame:
                                             unicode=self.unicode_map), 'green')
                 self._refresh()
             else:
-                self._draw_modal_backdrop(height, width)
-                rect = tui.panel_geometry(
-                    height, width, content_width=min(width - 2, 74),
-                    content_height=min(height - 3, 20), margin_x=1, margin_y=1,
-                    bottom_reserve=2, min_width=44, min_height=12)
+                full_battle = (run.phase == 'battle'
+                               and height >= 20 and width >= 64)
+                if full_battle:
+                    self._clear()
+                    rect = tui.Rect(0, 0, width, height - 1)
+                else:
+                    self._draw_modal_backdrop(height, width)
+                    rect = tui.panel_geometry(
+                        height, width, content_width=min(width - 2, 74),
+                        content_height=min(height - 3, 20), margin_x=1, margin_y=1,
+                        bottom_reserve=2, min_width=44, min_height=12)
+                title = f'HANG SÂU · TẦNG {run.depth}/{MAX_DEPTH}'
+                if run.phase == 'battle':
+                    title += f' · LƯỢT {run.turn + 1}'
                 body = tui.draw_panel(
                     self, rect,
-                    title=f'HANG SÂU · TẦNG {run.depth}/{MAX_DEPTH}',
+                    title=title,
                     footer=controls if height >= 18 else '',
                     unicode=self.unicode_map, accent='red', title_color='yellow',
-                    bounds=(height, width))
-                self._put(body.y, body.x + 1,
-                          tui.ellipsize(lines[0], max(1, body.width - 2),
-                                        unicode=self.unicode_map), 'yellow', True)
-                enemy = run.current()
-                art_w = 15 if body.width >= 58 else 0
-                if enemy is not None and run.phase == 'battle' and art_w:
-                    art = art_for('monster:' + enemy.key, unicode=self.unicode_map)
-                    for row, line in enumerate(art[:4]):
-                        self._put(body.y + 2 + row, body.x + 1, line, 'red')
-                text_x = body.x + (art_w + 1 if art_w else 1)
-                text_w = max(8, body.right - text_x)
-                for row, line in enumerate(lines[1:], 2):
-                    if row >= body.y + body.height - 4:
-                        break
-                    self._put(row, text_x,
-                              tui.ellipsize(line, text_w,
-                                            unicode=self.unicode_map),
-                              'cyan' if row == 2 else 'dim')
-                log_top = body.y + body.height - 5
-                for row, line in enumerate(run.log[-3:]):
-                    if log_top + row >= body.y + body.height - 1:
-                        break
-                    self._put(log_top + row, body.x + 1,
-                              tui.ellipsize(line, max(1, body.width - 2),
-                                            unicode=self.unicode_map), 'green')
-                self._draw_status_bar(height, width, controls)
+                    shadow=not full_battle, bounds=(height, width))
+                if run.phase == 'battle' and body.height >= 15 and body.width >= 60:
+                    self._draw_battle_scene(body, self.farm, run)
+                else:
+                    self._put(body.y, body.x + 1,
+                              tui.ellipsize(lines[0], max(1, body.width - 2),
+                                            unicode=self.unicode_map), 'yellow', True)
+                    enemy = run.current()
+                    art_w = 15 if body.width >= 58 else 0
+                    if enemy is not None and run.phase == 'battle' and art_w:
+                        art = art_for('monster:' + enemy.key, unicode=self.unicode_map)
+                        for row, line in enumerate(art[:4]):
+                            self._put(body.y + 2 + row, body.x + 1, line, 'red')
+                    text_x = body.x + (art_w + 1 if art_w else 1)
+                    text_w = max(8, body.right - text_x)
+                    for row, line in enumerate(lines[1:], 2):
+                        if row >= body.y + body.height - 4:
+                            break
+                        self._put(row, text_x,
+                                  tui.ellipsize(line, text_w,
+                                                unicode=self.unicode_map),
+                                  'cyan' if row == 2 else 'dim')
+                    log_top = body.y + body.height - 5
+                    for row, line in enumerate(run.log[-3:]):
+                        if log_top + row >= body.y + body.height - 1:
+                            break
+                        self._put(log_top + row, body.x + 1,
+                                  tui.ellipsize(line, max(1, body.width - 2),
+                                                unicode=self.unicode_map), 'green')
+                if not full_battle:
+                    self._draw_status_bar(height, width, controls)
                 self._refresh()
             key = self._read()
             if run.phase == 'battle':
@@ -2706,6 +2933,10 @@ class ExplorerGame:
                     self._action(player_attack, self.farm, run)
                 elif key == '2':
                     self._action(use_potion, self.farm, run)
+                elif key in ('4', 'd', 'D'):
+                    self._action(player_defend, self.farm, run)
+                elif key in ('5', 'k', 'K'):
+                    self._action(player_skill, self.farm, run)
                 elif key in ('3', 'q', 'Q', '\x1b'):
                     self._log(flee(self.farm, run))
                     self._save()
@@ -3193,7 +3424,7 @@ class ExplorerGame:
             "O: auto toàn bộ/trồng trọt/chăn nuôi/câu cá/đào khoáng/hang; chọn ngày và tốc độ.",
             "Auto: Space/P tạm dừng, O/Esc dừng, +/- tốc độ; WASD lấy lại điều khiển.",
             "E: dùng đồ/ô ruộng hoặc trò chuyện với dân làng kề bên.",
-            "C: cấp, XP, điểm thuộc tính và tay nghề; nâng bằng điểm nhận khi lên cấp.",
+            "C: hồ sơ 4 tab (Hồ sơ/Trang bị/Túi đồ/Thành tựu); nâng điểm khi lên cấp.",
             "Cánh đồng ở (26,42), xa nhà về phía nam; M xem vị trí để đi theo đường.",
             "M: bản đồ toàn làng; J: danh sách dân làng và độ thân.",
             "F: bảng cánh đồng dạng ô; chọn ô rồi Enter để gieo, tưới, thu hoặc dọn.",
@@ -3212,7 +3443,9 @@ class ExplorerGame:
             "Trong mỏ: F lò rèn 5 slot (mũ/kiếm/giáp/quần/giày), G Hang Sâu, D ra ngoài; ngủ để mỏ hồi đầy.",
             "Lò rèn tiêu quặng và xu để nâng 5 slot: mũ, kiếm, giáp, quần, giày; "
             "kiếm Hiếm mở Hang Sâu, giáp/quần/giày tăng máu và phòng thủ.",
-            "Hang Sâu: 1/Enter tấn công, 2 uống thuốc, 3 rút lui; kỷ lục lưu theo ván.",
+            "Hang Sâu: cửa sổ riêng, bạn trái/quái phải, HP+MP ở trên, nhật ký ở dưới.",
+            "Hang Sâu: 1/Enter tấn công, 2 uống thuốc, 3 rút lui, 4 đỡ đòn, 5 kỹ năng (3 MP).",
+            "Thành tựu: mở tab Thành tựu trong C để xem tiến độ và điểm; Space xem đầy đủ.",
             "Z: khung bản đồ rộng, ô hẹp để nhìn được nhiều đất hơn quanh nhân vật.",
             "Biểu tượng: ☀/☁/☂ thời tiết · ♥ sức/độ thân · ◆ xu · ✧ XP · ▤ túi · ⌖ bản đồ.",
             "Tay nghề: ⚘ trồng trọt · ≈ câu cá · ♱ chăn nuôi · ⚒ kiếm sống · ☾ tập trung.",

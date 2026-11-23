@@ -386,7 +386,8 @@ class TerminalGame:
             "Mỏ Khoáng ở Đồi Gió (76,6): e để vào, đứng cạnh đá và e để đào quặng.",
             "Trong mỏ: F lò rèn 5 slot (mũ, kiếm, giáp, quần, giày), G hang sâu, D ra ngoài.",
             "Quặng dùng để rèn; ngủ qua ngày sẽ làm đầy lại các tảng đá trong mỏ.",
-            "Hang Sâu cần kiếm bậc Hiếm: 1/Enter tấn công, 2 uống thuốc, 3 rút lui.",
+            "Hang Sâu cần kiếm bậc Hiếm: 1/Enter tấn công, 2 uống thuốc, 3 rút lui, 4 đỡ đòn, 5 kỹ năng (3 MP).",
+            "Thành tựu: mở c rồi chọn a; quái báo ý định trước mỗi lượt.",
             "z đổi khung bản đồ rộng (ô hẹp, nhìn được nhiều đất hơn).",
             "Auto dòng: p tạm dừng, o dừng, +/- đổi tốc độ, gõ rồi Enter.",
         ):
@@ -405,6 +406,17 @@ class TerminalGame:
             self.unsaved = True
             self.messages.append(str(error))
             return False
+
+    def check_achievements(self) -> None:
+        from .achievements import sync_achievements
+        unlocked = sync_achievements(self.farm)
+        if not unlocked:
+            return
+        for achievement in unlocked:
+            self.messages.append(
+                f'Mở khóa thành tựu: {achievement.name} '
+                f'(+{achievement.reward} điểm)!')
+        self.persist()
 
     def finish(self) -> int:
         if self.persist():
@@ -469,6 +481,7 @@ class TerminalGame:
                                     "hoặc 0 lưu và về menu.")
                     if actions[choice]():
                         self.persist()
+                    self.check_achievements()
                 except GameError as error:
                     self.messages = [str(error)]
         except (EOFError, KeyboardInterrupt):
