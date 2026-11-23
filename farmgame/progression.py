@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .catalog import ITEMS
+from .catalog import ITEMS, RARITY_COLORS
 
 if TYPE_CHECKING:
     from .model import Farm
@@ -26,6 +26,18 @@ SKILLS = {
     'ranching': Definition('Chăn nuôi', '+10% giá bán trứng, sữa, len mỗi bậc (tối đa +50%); từ bậc 3 thêm 1 sản phẩm mỗi lượt, cộng dồn thân thiết.'),
     'foraging': Definition('Kiếm sống', 'Làm thuê bậc 1–5: xu 8/10/12/14/16; gỗ 1/2/2/3/3; sức 4/3/3/2/2. Nhận 2 XP cơ bản.'),
 }
+
+
+def stat_color(value: int) -> str:
+    """Tier colour for a 0-5 attribute or skill rank; 0 stays muted."""
+    value = max(0, min(5, int(value)))
+    return 'dim' if value == 0 else RARITY_COLORS[value - 1]
+
+
+def level_color(level: int) -> str:
+    """Colour a player level in five broad brackets."""
+    bracket = min(4, max(0, (int(level) - 1) // 5))
+    return RARITY_COLORS[bracket]
 
 
 def empty_attributes() -> dict[str, int]:

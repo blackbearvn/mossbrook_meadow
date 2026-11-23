@@ -9,6 +9,15 @@ from farmgame.model import Farm, GameError, Plot
 
 
 class ProgressionTests(unittest.TestCase):
+    def test_stat_and_level_colours_follow_the_five_rarity_tiers(self):
+        from farmgame.progression import level_color, stat_color
+
+        self.assertEqual(
+            [stat_color(value) for value in range(6)],
+            ['dim', 'white', 'cyan', 'magenta', 'yellow', 'red'])
+        self.assertEqual([level_color(level) for level in (1, 5, 10, 15, 20, 99)],
+                         ['white', 'white', 'cyan', 'magenta', 'yellow', 'red'])
+
     def test_work_gives_wood_and_base_experience_without_sales(self):
         farm = Farm()
         farm.work()

@@ -428,20 +428,20 @@ class ExplorerGame:
         farm = self.farm
         expanded = bool(getattr(self, 'map_expanded', False))
         g = tui.glyphs(self.unicode_map)
-        place = symbol('home' if farm.area == 'home' else 'map',
-                       unicode=self.unicode_map)
-        location = f"{place} {world.location_name(farm)} · ({farm.player_x}, {farm.player_y})"
-        self._put(0, 0, tui.ellipsize(location, width, unicode=self.unicode_map),
-                  "yellow", True)
-        brand = f"{g['icon']} MOSSBROOK MEADOW"
-        if width >= tui.cells(location) + tui.cells(brand) + 4:
-            self._put(0, width - tui.cells(brand) - 1, brand, 'dim')
-        status_color = ('red' if farm.hp <= max(1, farm.max_hp // 3)
-                        else 'cyan')
-        self._put(1, 0,
-                  tui.ellipsize(status_line(farm, width, unicode=self.unicode_map),
-                                width, unicode=self.unicode_map), status_color)
         if not expanded:
+            place = symbol('home' if farm.area == 'home' else 'map',
+                           unicode=self.unicode_map)
+            location = f"{place} {world.location_name(farm)} · ({farm.player_x}, {farm.player_y})"
+            self._put(0, 0, tui.ellipsize(location, width, unicode=self.unicode_map),
+                      "yellow", True)
+            brand = f"{g['icon']} MOSSBROOK MEADOW"
+            if width >= tui.cells(location) + tui.cells(brand) + 4:
+                self._put(0, width - tui.cells(brand) - 1, brand, 'dim')
+            status_color = ('red' if farm.hp <= max(1, farm.max_hp // 3)
+                            else 'cyan')
+            self._put(1, 0,
+                      tui.ellipsize(status_line(farm, width, unicode=self.unicode_map),
+                                    width, unicode=self.unicode_map), status_color)
             goal = objective_line(farm, width, unicode=self.unicode_map)
             self._put(2, 0, tui.ellipsize(goal, width, unicode=self.unicode_map),
                       "green" if not (farm.attribute_points or farm.skill_points)
@@ -460,9 +460,15 @@ class ExplorerGame:
         path = (self.activities.path_points() if self.activities.running
                 else self.coach.path_points())
         if layout.framed:
+            map_hint = None
+            if expanded:
+                if self.activities.running:
+                    map_hint = self.activities.status_lines()[0]
+                else:
+                    _, map_hint = world.context(farm)
             top, bottom, side = frame_lines(
                 layout, farm.area, unicode=self.unicode_map,
-                page_name=pages.page_name(farm))
+                page_name=pages.page_name(farm), footer=map_hint)
             self._put(layout.y - 1, layout.x - 1, top, 'cyan')
             self._put(layout.y + layout.rows, layout.x - 1, bottom, 'cyan')
             for row in range(layout.rows):
@@ -496,17 +502,11 @@ class ExplorerGame:
                           art.color, art.bold)
         legends = map_legend(farm, unicode=self.unicode_map)
         if expanded:
-            _, hint = world.context(farm)
-            if self.activities.running:
-                hint = self.activities.status_lines()[0]
-            line = self._save_error and ('LỖI LƯU: ' + self._save_error) or hint
-            self._put(2, 0, tui.ellipsize(line, width, unicode=self.unicode_map),
-                      'red' if self._save_error else 'yellow', True)
-            if not getattr(self, '_dim_base', False):
-                from .toast import draw_toasts
-                now = time.monotonic()
-                draw_toasts(self, width, height, self.toasts.visible(now),
-                            unicode=self.unicode_map, top=3, now=now)
+            if layout.framed and self._save_error:
+                self._put(layout.y + layout.rows - 1, 1,
+                          tui.ellipsize('LỖI LƯU: ' + self._save_error,
+                                        max(1, width - 2),
+                                        unicode=self.unicode_map), 'red', True)
             if refresh:
                 self._refresh()
             return
@@ -1131,6 +1131,7 @@ class ExplorerGame:
                             rarity_name, recipe_for, recipe_label, tier_label)
         from .identity import BACKGROUNDS, OUTFITS
         from .inventory import inventory_rows
+        from .progression import level_color, stat_color
         definitions = self._character_definitions()
         tabs = ('HỒ SƠ', 'TRANG BỊ', 'TÚI ĐỒ', 'THÀNH TỰU')
         tab = 0
@@ -1218,8 +1219,9 @@ class ExplorerGame:
                 (f'{weather} {WEATHER[self.farm.weather]} · '
                  f'{symbol("coin", unicode=self.unicode_map)} {self.farm.coins} xu', 'cyan', False),
                 (f'{symbol("heart", unicode=self.unicode_map)} '
-                 f'{self.farm.energy}/{self.farm.energy_limit} sức · '
-                 f'{symbol("chart", unicode=self.unicode_map)} cấp {self.farm.level}', 'cyan', False),
+                 f'{self.farm.energy}/{self.farm.energy_limit} sức', 'cyan', False),
+                (f'{symbol("chart", unicode=self.unicode_map)} '
+                 f'cấp {self.farm.level}', level_color(self.farm.level), True),
             ]
             for row, (line, color, bold) in enumerate(lines):
                 if info_y + row >= body.y + body.height - 2:
@@ -1245,20 +1247,24 @@ class ExplorerGame:
             for offset, line in enumerate(point_lines):
                 if points_y + offset >= body.y + body.height - 1:
                     break
+                available_points = (self.farm.attribute_points if offset == 0
+                                    else self.farm.skill_points)
                 self._put(points_y + offset, body.x + 1,
                           tui.ellipsize(line, max(1, left_w - 2),
-                                        unicode=self.unicode_map), 'cyan')
+                                        unicode=self.unicode_map),
+                          'yellow' if available_points else 'cyan',
+                          bool(available_points))
 
             bottom = body.y + body.height
             if tab == 0:
                 row = top
-                self._put(row, right_x, ' THUỘC TÍNH ', 'dim')
+                self._put(row, right_x, ' THUỘC TÍNH ', 'cyan', True)
                 row += 1
                 for index, (key, info, is_attribute) in enumerate(definitions):
                     if index == 3:
                         row += 1
                         if row < bottom - 3:
-                            self._put(row, right_x, ' TAY NGHỀ ', 'dim')
+                            self._put(row, right_x, ' TAY NGHỀ ', 'magenta', True)
                         row += 1
                     if row >= bottom - 3:
                         break
@@ -1276,10 +1282,10 @@ class ExplorerGame:
                                   tui.ellipsize(text, max(1, right_w - 1),
                                                 unicode=self.unicode_map), 'selected', True)
                     else:
-                        color = 'dim' if value >= 5 else ''
                         self._put(row, right_x,
                                   tui.ellipsize(text, max(1, right_w - 1),
-                                                unicode=self.unicode_map), color)
+                                                unicode=self.unicode_map),
+                                  stat_color(value), value >= 5)
                     row += 1
 
                 detail_y = bottom - 3
@@ -1349,21 +1355,25 @@ class ExplorerGame:
                         tui.ellipsize(info.effect, max(1, right_w - 1),
                                       unicode=self.unicode_map),
                     ]
+                    detail_colors = [rarity_color(rank), 'cyan']
                     if recipe is None:
                         detail.append(f'Đã đạt {rarity_name(rank)}; không còn bậc cao hơn.')
+                        detail_colors.append('dim')
                     else:
                         detail.append(tui.ellipsize(
                             f'Kế tiếp {rarity_name(rank + 1)}: {recipe_label(recipe)}',
                             max(1, right_w - 1), unicode=self.unicode_map))
+                        detail_colors.append(rarity_color(rank + 1))
                     detail.append(
                         f'Sát thương {attack_power(self.farm)} · '
                         f'phòng thủ {defense_power(self.farm)} · '
                         f'máu {self.farm.max_hp}')
+                    detail_colors.append('cyan')
                     for offset, line in enumerate(detail):
                         if detail_y + 1 + offset >= bottom:
                             break
                         self._put(detail_y + 1 + offset, right_x, line,
-                                  'cyan' if offset else rarity_color(rank))
+                                  detail_colors[offset], offset == 0)
             elif tab == 2:
                 total = sum(row[2] for row in bag_rows)
                 value = sum(sale_price(self.farm, key) * bag
@@ -1474,7 +1484,8 @@ class ExplorerGame:
                                             f'{current}/{item.target}',
                                             max(1, right_w - 1),
                                             unicode=self.unicode_map),
-                              'green' if unlocked else 'yellow')
+                              rarity_color(item.tier - 1) if unlocked else 'dim',
+                              unlocked)
 
             if tooltip:
                 self._gear_tooltip(gear_keys[gear_selected])
@@ -1604,12 +1615,18 @@ class ExplorerGame:
         width = max(30, min(54, self._screen.getmaxyx()[1] - 4))
         text_width = max(8, width - 4)
         content = [f'Cấp bậc: {tier_label(rank)}']
+        styles = [rarity_color(rank)]
         content.extend(wrap_cells(info.description, text_width))
+        styles.extend(['cyan'] * (len(content) - 1))
+        before_effect = len(content)
         content.extend(wrap_cells(info.effect, text_width))
+        styles.extend(['cyan'] * (len(content) - before_effect))
         content.append(stats)
+        styles.append('cyan')
         content.append('Rèn kế tiếp: ' + (recipe_label(recipe)
                                           if recipe is not None
                                           else 'đã đạt cấp cao nhất.'))
+        styles.append(rarity_color(rank + 1) if recipe is not None else 'dim')
         content = content[:max(1, self._screen.getmaxyx()[0] - 7)]
         height = len(content) + 4
         height_room, width_room = self._screen.getmaxyx()
@@ -1625,7 +1642,7 @@ class ExplorerGame:
             self, rect,
             title=f'{info.name} · {rarity_name(rank)}',
             footer='Nhấn phím bất kỳ để đóng', unicode=self.unicode_map,
-            accent=rarity_color(rank), title_color='yellow', shadow=True,
+            accent=rarity_color(rank), title_color=rarity_color(rank), shadow=True,
             bounds=(height_room, width_room))
         for offset, line in enumerate(content):
             if offset >= body.height - 1:
@@ -1633,7 +1650,7 @@ class ExplorerGame:
             self._put(body.y + offset, body.x + 1,
                       tui.ellipsize(line, max(1, body.width - 2),
                                     unicode=self.unicode_map),
-                      rarity_color(rank) if offset == 0 else 'cyan')
+                      styles[offset], offset == 0)
 
     def _directory(self):
         from .villagers import NPCS, bond_title

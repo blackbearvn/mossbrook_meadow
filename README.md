@@ -106,10 +106,14 @@ Mặc định tiến trình được lưu tại `saves/farm.json`.
 | `B` | Sổ chuồng vật nuôi |
 | `K` | Bộ sưu tầm cá |
 | `G` | Đổi giao diện Unicode / ASCII |
-| `Z` | Đổi khung bản đồ rộng |
+| `Z` | Bật/tắt bản đồ toàn màn hình |
 | `H` / `?` | Trợ giúp |
 | `P` / `F5` | Lưu game |
 | `Q` | Lưu và về menu chính |
+
+Màu cấp bậc trang bị, thành tựu, cấp nhân vật và thuộc tính/tay nghề thay đổi
+theo 5 bậc: trắng, xanh lam, tím, vàng, đỏ. Nhấn `Z` để bản đồ chiếm toàn bộ
+terminal; nhấn lần nữa để trở lại giao diện thường.
 
 Các menu có tab chỉ dùng `Tab` / `Shift+Tab` để chuyển tab.
 Tab **Trang bị** hiển thị 5 ô vuông cho mũ, kiếm, giáp, quần và giày.

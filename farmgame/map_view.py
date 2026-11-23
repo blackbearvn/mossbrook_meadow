@@ -71,6 +71,19 @@ def map_layout(farm, width, height, *, reserved_rows=9, expanded=False):
     else:
         area_width, area_height = world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT
     framed = width >= 30 and height >= 14
+    if expanded:
+        # Z is the full-terminal map: use every available row and column
+        # (with only the frame border on tiny terminals removed).
+        border = 2 if framed else 0
+        cols = min(area_width, max(1, width - border))
+        rows = min(area_height, max(1, height - border))
+        left = max(0, min(farm.player_x - cols // 2, area_width - cols))
+        top = max(0, min(farm.player_y - rows // 2, area_height - rows))
+        full = (framed and cols == width - border
+                and rows == height - border)
+        x = 1 if full else max(0, (width - cols - border) // 2) + int(framed)
+        y = 1 if full else max(0, (height - rows - border) // 2) + int(framed)
+        return MapLayout(left, top, cols, rows, 1, x, y, framed)
     border = 2 if framed else 0
     left, top, cols, rows, cell = viewport(
         area_width, area_height, farm.player_x, farm.player_y,
@@ -99,7 +112,7 @@ def cells(text):
                for char in text)
 
 
-def frame_lines(layout, area, *, unicode=True, page_name=None):
+def frame_lines(layout, area, *, unicode=True, page_name=None, footer=None):
     from .explore import fit_text
     width = layout.cols * layout.cell
     name = (page_name or {'mine': 'MỎ KHOÁNG', 'home': 'NHÀ'}.get(area, 'LÀNG'))
@@ -110,8 +123,13 @@ def frame_lines(layout, area, *, unicode=True, page_name=None):
     title = fit_text(title, max(0, width - 2))
     tl, tr, bl, br, horizontal, vertical = (('╭', '╮', '╰', '╯', '─', '│')
                                            if unicode else ('+', '+', '+', '+', '-', '|'))
+    bottom = bl + horizontal * width + br
+    if footer:
+        label = fit_text(f' {footer} ', max(0, width - 2))
+        bottom = (bl + horizontal + label
+                  + horizontal * max(0, width - 1 - cells(label)) + br)
     return (tl + horizontal + title + horizontal * max(0, width - 1 - cells(title)) + tr,
-            bl + horizontal * width + br, vertical)
+            bottom, vertical)
 
 
 def status_line(farm, width, *, unicode=True):

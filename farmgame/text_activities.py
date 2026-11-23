@@ -717,7 +717,9 @@ def _draw_map(ui: 'TerminalGame') -> str:
     )
     prompt = next((text for text in prompts if cells(text) <= width), '> ')
     expanded = bool(getattr(ui, 'map_expanded', False))
-    layout = map_layout(farm, width, terminal.lines, expanded=expanded)
+    # Z fills the text screen too; leave the final row for the command prompt.
+    map_height = max(1, terminal.lines - int(expanded))
+    layout = map_layout(farm, width, map_height, expanded=expanded)
     activities = getattr(ui, 'activities', None)
     path = (activities.path_points() if activities and activities.running
             else ui.coach.path_points())
@@ -765,22 +767,27 @@ def _draw_map(ui: 'TerminalGame') -> str:
     footer = [line for index, line in enumerate(footer) if index in chosen]
     if expanded:
         footer = [line for line in footer if line[0] == 0][:1]
-    layout = map_layout(farm, width, terminal.lines,
+    layout = map_layout(farm, width, map_height,
                         reserved_rows=3 + len(footer), expanded=expanded)
-    ui.say(fit_text(f'{world.location_name(farm)} · ({farm.player_x}, {farm.player_y})', width), 'title')
-    status = status_line(farm, width, unicode=unicode_map)
-    if width < 30:
-        status = f'Ngày {farm.day} · Sức {farm.energy}/{farm.energy_limit}'
-    ui.say(fit_text(status, width),
-           'red' if farm.hp <= max(1, farm.max_hp // 3) else 'blue')
-    if expanded:
-        for _, text, style in footer:
-            ui.say(fit_text(text, width), style)
+    if not expanded:
+        ui.say(fit_text(f'{world.location_name(farm)} · ({farm.player_x}, {farm.player_y})', width), 'title')
+        status = status_line(farm, width, unicode=unicode_map)
+        if width < 30:
+            status = f'Ngày {farm.day} · Sức {farm.energy}/{farm.energy_limit}'
+        ui.say(fit_text(status, width),
+               'red' if farm.hp <= max(1, farm.max_hp // 3) else 'blue')
     side = ''
     if layout.framed:
         from . import pages
+        hint = None
+        if expanded:
+            if activities and activities.running:
+                hint = activities.status_lines()[0]
+            else:
+                _, hint = world.context(farm)
         top, bottom, side = frame_lines(layout, farm.area, unicode=unicode_map,
-                                        page_name=pages.page_name(farm))
+                                        page_name=pages.page_name(farm),
+                                        footer=hint)
         ui.say(top, 'blue')
     paint = getattr(ui, 'paint', None)
     # Map roles are styled directly by TerminalGame.paint; keep the old

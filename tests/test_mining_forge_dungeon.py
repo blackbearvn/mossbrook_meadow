@@ -261,7 +261,11 @@ class WideFrameTests(unittest.TestCase):
         self.assertEqual(wide.cell, 1)
         self.assertGreater(wide.rows, normal.rows)
         self.assertLessEqual(wide.left + wide.cols, world.VILLAGE_WIDTH)
-        self.assertEqual(wide.y + wide.rows - 1, 21)
+        self.assertEqual((wide.x, wide.y), (1, 1))
+        self.assertEqual((wide.cols, wide.rows), (78, 22))
+        self.assertEqual(wide.x + wide.cols, 79)
+        self.assertEqual(wide.y + wide.rows, 23)
+        self.assertEqual(wide.y + wide.rows - 1, 22)
 
     def test_mine_layout_uses_mine_bounds(self):
         farm = Farm(area='mine', player_x=20, player_y=8)

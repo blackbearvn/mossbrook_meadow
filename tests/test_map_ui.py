@@ -104,6 +104,17 @@ class MapUITests(unittest.TestCase):
                     self.assertIn('disk full', lines[-2])
         self.assertEqual(asdict(farm), before)
 
+    def test_z_fills_the_full_terminal_with_the_map(self):
+        game = self.game(height=24, width=80)
+        game.map_expanded = True
+        game._draw()
+        lines = game._screen.lines()
+        self.assertEqual(len(lines), 24)
+        self.assertEqual((lines[0][0], lines[0][-1]), ('╭', '╮'))
+        self.assertEqual(lines[-1][0], '╰')
+        self.assertIn('@', '\n'.join(lines[1:-1]))
+        self.assertIn('WASD', lines[-1])
+
     def test_text_map_and_overview_share_style_and_keep_player_visible(self):
         farm = Farm()
         with tempfile.TemporaryDirectory() as directory:
