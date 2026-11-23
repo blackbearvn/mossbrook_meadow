@@ -1,12 +1,12 @@
 """Small connected map pages for the large village.
 
 The world still uses one global coordinate space so farming, NPCs and saves
-stay compatible.  Page mode names the current area, gives travel and status
-text a local identity, and gates walking across a page edge (only roads cross).
-The camera itself fills the terminal frame, so a small page no longer leaves
-wide unused margins.  The original 128 x 64 village keeps its old pages; the
-eastern and southern expansion is tiled by larger pages.  This module has no
-curses dependency.
+stay compatible.  Page mode names the current area and gives travel and status
+text a local identity.  Movement is continuous across page borders, while the
+camera fills the terminal frame, so a small page no longer leaves wide unused
+margins.  The original 128 x 64 village keeps its old pages; the eastern and
+southern expansion is tiled by larger pages.  This module has no curses
+dependency.
 """
 
 from __future__ import annotations

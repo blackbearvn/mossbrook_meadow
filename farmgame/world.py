@@ -435,30 +435,12 @@ def walkable(area: str, x: int, y: int, size: int = 4) -> bool:
     return tile_at(area, x, y, size) in ('.', ':', '=', ',', 's')
 
 
-def page_step_allowed(area: str, size: int, x: int, y: int,
-                      nx: int, ny: int, map_pages: bool) -> bool:
-    """Mirror the opt-in page gate without importing pages at module load."""
-    if not map_pages or area != 'village':
-        return True
-    from .pages import page_for_coord
-    current = page_for_coord(x, y)
-    target = page_for_coord(nx, ny)
-    if current is None or target is None:
-        return False
-    if current.key == target.key:
-        return True
-    # Only roads may cross between map pages, matching manual movement.
-    return (tile_at(area, x, y, size) == '='
-            or tile_at(area, nx, ny, size) == '=')
-
-
 def move(farm: 'Farm', direction: str) -> bool:
     """Turn even at obstacles; a successful step costs no energy or time.
 
-    In page mode a walkable step over a page boundary enters the neighbouring
-    page only where a road crosses the border.  Coordinates remain global, so
-    plots, NPCs and old saves keep their existing positions while the frame
-    can still show nearby parts of the wider world.
+    Page mode only names the area and gates fast travel; every walkable tile is
+    continuous, including across page borders.  Coordinates remain global, so
+    plots, NPCs and old saves keep their existing positions.
     """
     _validate_farm(farm)
     if direction not in _DIRECTIONS:
@@ -470,11 +452,6 @@ def move(farm: 'Farm', direction: str) -> bool:
         return False
     from .villagers import npc_at
     if npc_at(x, y, farm.area) is not None:
-        return False
-    # Page mode is deliberately opt-in for old saves: direct world helpers and
-    # the legacy map keep their historical coordinates and behaviour.
-    if not page_step_allowed(farm.area, farm.size, farm.player_x, farm.player_y,
-                             x, y, getattr(farm, 'map_pages', False)):
         return False
     farm.player_x, farm.player_y = x, y
     return True

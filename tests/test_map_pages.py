@@ -48,11 +48,11 @@ class MapPageTests(unittest.TestCase):
         self.assertEqual(world.location_name(farm), 'Đồng Hoa')
         self.assertEqual(pages.page_name(farm), 'Đồng Hoa')
 
-        # Grass edges stop the player; only road crossings lead to another page.
-        blocked = Farm(map_pages=True, player_x=31, player_y=14)
-        self.assertFalse(world.move(blocked, 'right'))
-        self.assertEqual((blocked.player_x, blocked.player_y), (31, 14))
-        self.assertEqual(world.location_name(blocked), 'Khu Sinh Sống')
+        # Page borders are labels only: grass continues into the next page.
+        open_field = Farm(map_pages=True, player_x=31, player_y=14)
+        self.assertTrue(world.move(open_field, 'right'))
+        self.assertEqual((open_field.player_x, open_field.player_y), (32, 14))
+        self.assertEqual(world.location_name(open_field), 'Đồng Hoa')
 
     def test_expansion_gates_open_onto_the_wider_world(self):
         east = Farm(map_pages=True, player_x=126, player_y=55)

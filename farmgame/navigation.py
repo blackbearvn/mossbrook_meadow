@@ -56,8 +56,7 @@ def route(farm: 'Farm', target_area: str, target: Point, *, kind: str = '') -> R
     # Include NPC positions so a changed obstacle layout cannot reuse old paths.
     blockers = tuple(npc.position for npc in villagers.NPCS.values()) if farm.area == 'village' else ()
     return _navigate(farm.area, farm.size, farm.player_x, farm.player_y,
-                     farm.facing, target, kind, blockers,
-                     bool(getattr(farm, 'map_pages', False)))
+                     farm.facing, target, kind, blockers)
 
 
 @lru_cache(maxsize=256)
@@ -109,7 +108,7 @@ def _goal_states(area: str, size: int, target: Point, kind: str,
 @lru_cache(maxsize=512)
 def _navigate(area: str, size: int, player_x: int, player_y: int,
               facing: str, target: Point, kind: str,
-              blockers: tuple[Point, ...], map_pages: bool) -> Route:
+              blockers: tuple[Point, ...]) -> Route:
     goals = _goal_states(area, size, target, kind, blockers)
     if not goals:
         return target, (), 'M'
@@ -151,8 +150,6 @@ def _navigate(area: str, size: int, player_x: int, player_y: int,
             nx, ny = x + dx, y + dy
             if not (0 <= nx < width and 0 <= ny < height
                     and grid[ny][nx] in '.:=,' and (nx, ny) not in blocked):
-                continue
-            if not world.page_step_allowed(area, size, x, y, nx, ny, map_pages):
                 continue
             step = nx, ny, direction if track_facing else ''
             new_cost = cost + 1
