@@ -10,10 +10,23 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .model import Farm
 
-VILLAGE_WIDTH = 128
-VILLAGE_HEIGHT = 64
+# The playable village now spans a 1280 x 720 logical world.  The original
+# 128 x 64 village keeps its layout in the north-west corner so retired plots,
+# landmarks and old saves keep working; three edge gates join it to the open
+# countryside, forests, lakes and long coast extending east and south.
+VILLAGE_WIDTH = 1280
+VILLAGE_HEIGHT = 720
+LEGACY_WIDTH = 128
+LEGACY_HEIGHT = 64
 HOME_WIDTH = 16
 HOME_HEIGHT = 9
+
+# Roads cross the old map edge at these gates, joining the wider world.
+EXPANSION_GATES = frozenset({(127, 55), (26, 63), (39, 63)})
+SOUTH_PAGE_HEIGHT = 164
+EAST_BOUNDARIES = (416, 704, 992)
+SOUTH_BOUNDARIES = (320, 640, 960)
+SOUTH_ROAD_ROWS = (146, 228, 310, 392, 474, 556, 638)
 
 # The mine is a connected indoor map carved into Đồi Gió. Rocks are solid;
 # the player mines one by standing on an orthogonal neighbour and pressing E.
@@ -168,9 +181,34 @@ def terrain_grid(area: str, size: int = 4) -> tuple[str, ...]:
 @lru_cache(maxsize=12)
 def _terrain_grid(area: str, size: int) -> tuple[str, ...]:
     # Two outdoor sizes plus two indoor maps stay cached for the whole session.
+    if area == 'village':
+        return _village_grid(size)
     width, height = _DIMENSIONS[area]
     return tuple(''.join(_terrain_tile(area, x, y, size)
                          for x in range(width)) for y in range(height))
+
+
+@lru_cache(maxsize=3)
+def _legacy_core_grid(size: int) -> tuple[str, ...]:
+    objects = {(x, y): glyph for area, (x, y), glyph in _OBJECTS.values()
+               if area == 'village'}
+
+    def tile(x: int, y: int) -> str:
+        if (x, y) in EXPANSION_GATES:
+            return '='
+        return objects.get((x, y)) or _legacy_outdoor_tile(x, y, size)
+
+    return tuple(''.join(tile(x, y) for x in range(LEGACY_WIDTH))
+                 for y in range(LEGACY_HEIGHT))
+
+
+@lru_cache(maxsize=1)
+def _village_grid(size: int) -> tuple[str, ...]:
+    expansion = _expansion_rows()
+    return tuple(
+        (_legacy_core_grid(size)[y] + expansion[y][LEGACY_WIDTH:]
+         if y < LEGACY_HEIGHT else expansion[y])
+        for y in range(VILLAGE_HEIGHT))
 
 
 def _terrain_tile(area: str, x: int, y: int, size: int) -> str:
@@ -188,8 +226,20 @@ def _terrain_tile(area: str, x: int, y: int, size: int) -> str:
         if y == 3 and x in (7, 8):
             return '#'
         return '.'
-    if x in (0, width - 1) or y in (0, height - 1):
+    if (x, y) in EXPANSION_GATES:
+        return '='
+    if 0 <= x < LEGACY_WIDTH and 0 <= y < LEGACY_HEIGHT:
+        return _legacy_outdoor_tile(x, y, size)
+    return _expanded_outdoor_tile(x, y)
+
+
+def _legacy_outdoor_tile(x: int, y: int, size: int) -> str:
+    """The original 128 x 64 village, preserved exactly for old saves."""
+    if x in (0, LEGACY_WIDTH - 1) or y in (0, LEGACY_HEIGHT - 1):
         return 'T'
+    # A short bridge carries the old coast road to the eastern expansion gate.
+    if y == 55 and 116 <= x < LEGACY_WIDTH:
+        return '='
     if (FIELD_ORIGIN[0] <= x < FIELD_ORIGIN[0] + size
             and FIELD_ORIGIN[1] <= y < FIELD_ORIGIN[1] + size):
         return ':'
@@ -206,6 +256,85 @@ def _terrain_tile(area: str, x: int, y: int, size: int) -> str:
     if x < 80 and y < 36:
         return _countryside_tile(x, y)
     return _outer_countryside_tile(x, y)
+
+
+def _expanded_outdoor_tile(x: int, y: int) -> str:
+    """One cell of the wider countryside, backed by cached row strings."""
+    return _expansion_row(y)[x]
+
+
+_LAKES = ((780, 310, 150, 90), (245, 505, 110, 65), (480, 145, 120, 70))
+
+
+@lru_cache(maxsize=1)
+def _lake_ranges() -> dict[int, tuple[tuple[int, int], ...]]:
+    ranges: dict[int, list[tuple[int, int]]] = {}
+    for cx, cy, rx, ry in _LAKES:
+        for y in range(cy - ry, cy + ry + 1):
+            ratio = 1.0 - ((y - cy) / ry) ** 2
+            if ratio < 0:
+                continue
+            half = int(rx * (ratio ** 0.5))
+            if half > 0:
+                ranges.setdefault(y, []).append((cx - half, cx + half))
+    return {y: tuple(values) for y, values in ranges.items()}
+
+
+@lru_cache(maxsize=720)
+def _expansion_row(y: int) -> str:
+    """Build one row in O(width) with cheap local branches."""
+    width = VILLAGE_WIDTH
+    if y in (0, VILLAGE_HEIGHT - 1):
+        return 'T' * width
+    if y == 55 or y in SOUTH_ROAD_ROWS:
+        return 'T' + '=' * (width - 2) + 'T'
+    band = (y - LEGACY_HEIGHT) // SOUTH_PAGE_HEIGHT
+    if y < LEGACY_HEIGHT:
+        row = [('T' if (x * 7 + y * 5) % 31 < 3 else
+                ',' if (x * 13 + y * 3) % 23 == 0 else '.')
+               for x in range(width)]
+    elif band == 0:
+        row = [',' if (x * 13 + y * 7) % 19 < 3 else '.' for x in range(width)]
+    elif band == 1:
+        row = ['T' if ((x // 5) * 13 + (y // 7) * 17) % 29 < 11 else '.'
+               for x in range(width)]
+    elif band == 2:
+        row = ['T' if ((x // 7) * 11 + (y // 9) * 5) % 37 < 7 else
+               ',' if (x + y * 3) % 21 == 0 else '.'
+               for x in range(width)]
+    else:
+        row = ['T' if ((x // 6) * 7 + (y // 8) * 13) % 31 < 9 else ','
+               for x in range(width)]
+    # Lakes are precomputed per row so no exponentiation runs per cell.
+    for left, right in _lake_ranges().get(y, ()):
+        left, right = max(1, left), min(width - 2, right)
+        if left <= right:
+            row[left:right + 1] = ['~'] * (right - left + 1)
+    coast = 1114 + (y * 17) % 82
+    if coast < width - 1:
+        row[coast:coast + 26] = ['s'] * max(0, min(26, width - 1 - coast))
+        if coast + 26 < width - 1:
+            row[coast + 26:width - 1] = ['S'] * (width - 1 - coast - 26)
+    bay = 742 + (y * 11) % 118
+    if y >= 646 and bay < width - 1:
+        end = min(width - 1, bay + 24)
+        row[bay:end] = ['s'] * (end - bay)
+        if end < width - 1:
+            row[end:width - 1] = ['S'] * (width - 1 - end)
+    # Roads are laid last so they always form bridge crossings.
+    if y >= LEGACY_HEIGHT:
+        for x in (26, 39, *SOUTH_BOUNDARIES):
+            row[x] = '='
+    else:
+        for x in EAST_BOUNDARIES:
+            row[x] = '='
+    row[0] = row[-1] = 'T'
+    return ''.join(row)
+
+
+@lru_cache(maxsize=1)
+def _expansion_rows() -> tuple[str, ...]:
+    return tuple(_expansion_row(y) for y in range(VILLAGE_HEIGHT))
 
 
 def _original_village_tile(x: int, y: int) -> str:
@@ -306,6 +435,23 @@ def walkable(area: str, x: int, y: int, size: int = 4) -> bool:
     return tile_at(area, x, y, size) in ('.', ':', '=', ',', 's')
 
 
+def page_step_allowed(area: str, size: int, x: int, y: int,
+                      nx: int, ny: int, map_pages: bool) -> bool:
+    """Mirror the opt-in page gate without importing pages at module load."""
+    if not map_pages or area != 'village':
+        return True
+    from .pages import page_for_coord
+    current = page_for_coord(x, y)
+    target = page_for_coord(nx, ny)
+    if current is None or target is None:
+        return False
+    if current.key == target.key:
+        return True
+    # Only roads may cross between map pages, matching manual movement.
+    return (tile_at(area, x, y, size) == '='
+            or tile_at(area, nx, ny, size) == '=')
+
+
 def move(farm: 'Farm', direction: str) -> bool:
     """Turn even at obstacles; a successful step costs no energy or time.
 
@@ -326,17 +472,9 @@ def move(farm: 'Farm', direction: str) -> bool:
         return False
     # Page mode is deliberately opt-in for old saves: direct world helpers and
     # the legacy map keep their historical coordinates and behaviour.
-    if getattr(farm, 'map_pages', False) and farm.area == 'village':
-        from .pages import page_for_coord
-        target = page_for_coord(x, y)
-        if target is None:
-            return False
-        current = page_for_coord(farm.player_x, farm.player_y)
-        if current is not None and current.key != target.key:
-            # Only roads cross page borders; grass and fields stop at the edge.
-            if (tile_at(farm.area, farm.player_x, farm.player_y, farm.size) != '='
-                    and tile_at(farm.area, x, y, farm.size) != '='):
-                return False
+    if not page_step_allowed(farm.area, farm.size, farm.player_x, farm.player_y,
+                             x, y, getattr(farm, 'map_pages', False)):
+        return False
     farm.player_x, farm.player_y = x, y
     return True
 
@@ -470,6 +608,9 @@ def location_name(farm: 'Farm') -> str:
         if page is not None:
             return page.name
     x, y = farm.player_x, farm.player_y
+    if x >= LEGACY_WIDTH or y >= LEGACY_HEIGHT:
+        from .regions import region_name
+        return f'Làng Mossbrook Meadow / {region_name("village", x, y)}'
     if 24 <= x <= 34 and 39 <= y <= 50:
         region = 'Cánh đồng'
     elif 102 <= x <= 122 and 3 <= y <= 16:

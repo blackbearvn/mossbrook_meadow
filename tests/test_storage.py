@@ -166,7 +166,7 @@ class StorageTests(unittest.TestCase):
         save_game(Farm(), self.path)
         original = self.path.read_text(encoding='utf-8')
         for field, value in (
-            ('area', 'sky'), ('player_x', -1), ('player_y', 99),
+            ('area', 'sky'), ('player_x', -1), ('player_y', 720),
             ('facing', 'diagonal'), ('forecast', []), ('fish_caught', True),
             ('items', {}), ('chest', {}), ('barn_capacity', 999),
             ('animals', [{'kind': 'dragon'}]),

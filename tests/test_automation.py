@@ -78,6 +78,14 @@ class AutomationTests(unittest.TestCase):
             self.assertEqual(routes.call_count, 1)
         self.assertTrue(auto.path_points())
 
+    def test_page_mode_auto_respects_road_only_borders(self):
+        farm = Farm(map_pages=True)
+        auto = self.engine(farm, days=2)
+        messages = self.run_until(auto)
+        self.assertFalse(any('lỗi' in message.lower() for message in messages),
+                         '\n'.join(messages[-5:]))
+        self.assertTrue(auto.done)
+
     def test_manual_position_change_replans_without_a_jump(self):
         farm = Farm()
         auto = self.engine(farm, mode='farm')

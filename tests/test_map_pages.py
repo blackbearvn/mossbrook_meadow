@@ -51,6 +51,21 @@ class MapPageTests(unittest.TestCase):
         self.assertEqual((blocked.player_x, blocked.player_y), (31, 14))
         self.assertEqual(world.location_name(blocked), 'Khu Sinh Sống')
 
+    def test_expansion_gates_open_onto_the_wider_world(self):
+        east = Farm(map_pages=True, player_x=126, player_y=55)
+        self.assertTrue(world.move(east, 'right'))
+        self.assertEqual((east.player_x, east.player_y), (127, 55))
+        self.assertTrue(world.move(east, 'right'))
+        self.assertEqual((east.player_x, east.player_y), (128, 55))
+        self.assertEqual(pages.page_name(east), 'Đồng Cỏ Đông')
+
+        south = Farm(map_pages=True, player_x=26, player_y=62)
+        self.assertTrue(world.move(south, 'down'))
+        self.assertEqual((south.player_x, south.player_y), (26, 63))
+        self.assertTrue(world.move(south, 'down'))
+        self.assertEqual((south.player_x, south.player_y), (26, 64))
+        self.assertEqual(pages.page_name(south), 'Đồng Cỏ Nam')
+
     def test_field_and_beach_pages_keep_their_landmarks(self):
         field = Farm(map_pages=True, player_x=26, player_y=42)
         self.assertEqual(world.location_name(field), 'Ruộng Cánh Đồng')

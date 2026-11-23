@@ -268,7 +268,7 @@ class MapArtTests(unittest.TestCase):
             map_art.map_cell(farm, farm.player_x, farm.player_y)
 
     def test_outside_coordinates_remain_solid_and_have_a_safe_presentation(self):
-        for area, width, height in (('village', 128, 64), ('home', 16, 9)):
+        for area, width, height in (('village', world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT), ('home', world.HOME_WIDTH, world.HOME_HEIGHT)):
             farm = Farm(area=area)
             for point in ((-1, 0), (width, 4), (3, -1), (3, height)):
                 self.assertEqual(world.tile_at(area, *point), '#')

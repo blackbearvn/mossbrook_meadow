@@ -25,7 +25,12 @@ def bfs_distance(farm, goal):
             return distance
         for dx, dy, direction in DIRECTIONS:
             step = x + dx, y + dy, direction
-            if (step not in seen and world.walkable(farm.area, *step[:2], farm.size)
+            nx, ny = step[:2]
+            # The oracle is used for the original village routes; bounding it
+            # keeps proving an intentional dead end cheap on the 1280 x 720 map.
+            inside = 0 <= nx < world.LEGACY_WIDTH and 0 <= ny < world.LEGACY_HEIGHT
+            if (inside and step not in seen
+                    and world.walkable(farm.area, *step[:2], farm.size)
                     and villagers.npc_at(*step[:2], farm.area) is None):
                 seen.add(step)
                 queue.append((step, distance + 1))
@@ -240,7 +245,7 @@ class NavigationTests(unittest.TestCase):
 class TerrainCacheTests(unittest.TestCase):
     def test_grid_is_immutable_and_retains_sizes_doors_and_terrain(self):
         self.assertTrue(hasattr(world, 'terrain_grid'), 'A reusable static terrain grid is missing')
-        for area, width, height in (('village', 128, 64), ('home', 16, 9)):
+        for area, width, height in (('village', world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT), ('home', 16, 9)):
             for size in (4, 5, 6):
                 grid = world.terrain_grid(area, size)
                 self.assertIsInstance(grid, tuple)
@@ -262,7 +267,7 @@ class TerrainCacheTests(unittest.TestCase):
             with self.subTest(area=area, x=x, y=y, size=size), self.assertRaises(GameError):
                 world.tile_at(area, x, y, size)
         for area in ('home', 'village'):
-            for point in ((-1, 1), (1, -1), (128, 64)):
+            for point in ((-1, 1), (1, -1), (world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT)):
                 self.assertEqual(world.tile_at(area, *point), '#')
 
 

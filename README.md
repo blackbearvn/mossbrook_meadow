@@ -5,9 +5,11 @@ Bạn bắt đầu với một mảnh vườn nhỏ, trồng trọt, chăm vật
 trò chuyện với dân làng và dần mở rộng cuộc sống ở Mossbrook Meadow.
 Màn hình chính đặt logo ở giữa, phía trên danh sách lựa chọn. Hội thoại có
 cử chỉ, phản ứng và lời tạm biệt riêng theo thời tiết, mức thân thiết và
-tính cách từng người, thay vì chỉ đọc câu hỏi–đáp cố định.
+tính cách từng người, thay vì chỉ đọc câu hỏi–đáp cố định. Bản đồ thế giới mở
+rộng 1280 × 720 ô: làng cũ vẫn nguyên vẹn ở góc tây bắc, còn đồng cỏ, rừng,
+hồ và bờ biển mới nối tiếp về phía đông và nam.
 
-Trò chơi có bản đồ làng rộng, hệ thống ngày – thời tiết – năng lượng, nhiệm vụ
+Trò chơi có bản đồ làng 1280 × 720 ô, hệ thống ngày – thời tiết – năng lượng, nhiệm vụ
 hằng ngày, túi đồ, chợ, nhà ở, chuồng trại và hồ câu. Ngoài phần nông trại còn
 có **Mỏ Khoáng** để đào quặng, **Lò Rèn** để nâng cấp trang bị và
 **Hang Sâu** 5 tầng với cửa sổ chiến đấu riêng theo lượt: người chơi bên

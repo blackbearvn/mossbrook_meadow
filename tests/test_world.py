@@ -136,12 +136,16 @@ class WorldTests(unittest.TestCase):
 
     @staticmethod
     def reachable(area, start, size):
+        width, height = ((world.LEGACY_WIDTH, world.LEGACY_HEIGHT)
+                         if area == 'village' else (world.HOME_WIDTH, world.HOME_HEIGHT))
         seen = {start}
         queue = deque([start])
         while queue:
             x, y = queue.popleft()
             for point in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-                if point not in seen and world.walkable(area, *point, size):
+                if (0 <= point[0] < width and 0 <= point[1] < height
+                        and point not in seen
+                        and world.walkable(area, *point, size)):
                     seen.add(point)
                     queue.append(point)
         return seen
@@ -163,7 +167,7 @@ class WorldTests(unittest.TestCase):
         self.assertIn('nhà', world.location_name(Farm(area='home')).lower())
 
     def test_expanded_map_keeps_old_village_with_retired_plots_and_gates(self):
-        self.assertEqual((world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT), (128, 64))
+        self.assertEqual((world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT), (1280, 720))
         original = (
             'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
             'T.#####...=..TT...TT....#####..T',
@@ -204,7 +208,9 @@ class WorldTests(unittest.TestCase):
         while queue:
             x, y = queue.popleft()
             for point in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-                if (point not in seen and world.walkable('village', *point)
+                if (0 <= point[0] < world.LEGACY_WIDTH
+                        and 0 <= point[1] < world.LEGACY_HEIGHT
+                        and point not in seen and world.walkable('village', *point)
                         and npc_at(*point) is None):
                     seen.add(point)
                     queue.append(point)
@@ -221,7 +227,7 @@ class WorldTests(unittest.TestCase):
             for x in range(44, 49):
                 self.assertEqual(world.tile_at('village', x, y), '=')
                 self.assertIn((x, y), seen)
-        for y in range(1, world.VILLAGE_HEIGHT - 1):
+        for y in range(1, world.LEGACY_HEIGHT - 1):
             for x in range(45, 48):
                 self.assertEqual(world.tile_at('village', x, y),
                                  'T' if y == 35 else '=' if y in (7, 21, 41, 55) else '~')
@@ -258,6 +264,22 @@ class WorldTests(unittest.TestCase):
         farm = Farm(player_x=30, player_y=9)
         self.assertTrue(world.is_near(farm, 'water'))
         self.assertEqual(world.context(farm)[0], 'npc')
+
+    def test_wider_world_is_1280x720_and_connected_to_the_old_village(self):
+        from farmgame import pages
+
+        self.assertEqual((world.VILLAGE_WIDTH, world.VILLAGE_HEIGHT), (1280, 720))
+        for point in ((127, 55), (128, 55), (26, 63), (26, 64),
+                      (39, 63), (39, 64), (320, 300), (640, 500),
+                      (960, 700), (1136, 55)):
+            self.assertEqual(world.tile_at('village', *point), '=', point)
+            self.assertTrue(world.walkable('village', *point), point)
+        for page in pages.PAGES.values():
+            self.assertTrue(world.walkable('village', *page.spawn), page.key)
+        farm = Farm(player_x=800, player_y=300)
+        self.assertIn('Hồ Nước Sâu', world.location_name(farm))
+        farm.map_pages = True
+        self.assertEqual(world.location_name(farm), 'Rừng Già')
 
     def test_location_names_identify_all_new_regions(self):
         for point, label in (((10, 7), 'Nông trại'), ((39, 10), 'Đồng Hoa'),

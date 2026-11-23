@@ -82,6 +82,40 @@ REGIONS = {
         'beach', 'Bãi Biển', '~', '~',
         'Bãi cát, rặng lau và tiếng sóng vỗ ngoài khơi xa.',
         (108, 50), (105, 43, 127, 63)),
+    # The 1280 x 720 expansion: four eastern pages and a broad southern
+    # territory, each with a safe spawn on the generated road grid.
+    'east_meadow': Region(
+        'east_meadow', 'Đồng Cỏ Đông', '✿', ',',
+        'Đồng cỏ mở rộng nối tiếp con đường phía đông.',
+        (272, 55), (128, 0, 415, 63)),
+    'east_wood': Region(
+        'east_wood', 'Rừng Đông', '♣', 'T',
+        'Rừng thông non với những lối mòn mới.',
+        (560, 55), (416, 0, 703, 63)),
+    'east_lake': Region(
+        'east_lake', 'Hồ Lớn', '≈', '~',
+        'Mặt hồ rộng phản chiếu bầu trời phía đông.',
+        (848, 55), (704, 0, 991, 63)),
+    'east_coast': Region(
+        'east_coast', 'Bờ Biển Đông', '~', '~',
+        'Bãi cát dài và tiếng sóng ngoài khơi đông.',
+        (1136, 55), (992, 0, 1279, 63)),
+    'south_meadow': Region(
+        'south_meadow', 'Đồng Cỏ Nam', '✿', ',',
+        'Đồng cỏ nam rộng, nối liền các nẻo đường làng.',
+        (160, 146), (0, 64, 319, 719)),
+    'south_wood': Region(
+        'south_wood', 'Rừng Nam', '♣', 'T',
+        'Rừng già phía nam với nhiều khoảng trống yên tĩnh.',
+        (480, 146), (320, 64, 639, 719)),
+    'south_lake': Region(
+        'south_lake', 'Hồ Nước Sâu', '≈', '~',
+        'Hồ nước sâu và những bãi lau ven bờ.',
+        (800, 146), (640, 64, 959, 719)),
+    'south_coast': Region(
+        'south_coast', 'Cửa Biển Nam', '~', '~',
+        'Cửa biển phía nam, nơi đất liền gặp chân trời.',
+        (1120, 146), (960, 64, 1279, 719)),
 }
 
 REGION_ORDER = tuple(REGIONS)

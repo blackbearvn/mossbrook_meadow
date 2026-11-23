@@ -3,7 +3,9 @@
 The world still uses one global coordinate space so farming, NPCs and saves
 stay compatible.  When page mode is enabled, the camera is clipped to one
 page and stepping over a page edge moves to the next map instead of showing
-the whole 128 x 64 village at once.  This module has no curses dependency.
+the whole 1280 x 720 world at once.  The original 128 x 64 village keeps its
+old pages; the eastern and southern expansion is tiled by larger pages.
+This module has no curses dependency.
 """
 
 from __future__ import annotations
@@ -38,9 +40,10 @@ class Page:
         return left <= x <= right and top <= y <= bottom
 
 
-# Pages tile the whole 128 x 64 world without gaps.  Their boundaries follow
-# the old roads (x=32/64/80, y=18/36) so walking out of one page naturally
-# leads into the next one.
+# The original pages tile the 128 x 64 village without gaps.  Their
+# boundaries follow the old roads (x=32/64/80, y=18/36) so walking out of one
+# page naturally leads into the next one; the expansion pages below continue
+# the grid across the wider 1280 x 720 world.
 PAGES = {
     'residential': Page(
         'residential', 'Khu Sinh Sống', '⌂', 'H',
@@ -88,6 +91,56 @@ PAGES = {
         (80, 36, 127, 63), (100, 50)),
 }
 
+# The expansion is split into pages whose borders sit on the generated road
+# grid.  Every spawn is on a road so fast travel never strands the player.
+EAST_PAGES = (
+    Page('east_meadow', 'Đồng Cỏ Đông', '✿', ',',
+         'Đồng cỏ rộng mở về phía đông của làng cũ.',
+         (128, 0, 415, 63), (272, 55)),
+    Page('east_wood', 'Rừng Đông', '♣', 'T',
+         'Rừng thông non và những lối mòn mới.',
+         (416, 0, 703, 63), (560, 55)),
+    Page('east_lake', 'Hồ Lớn', '≈', '~',
+         'Mặt hồ rộng phản chiếu bầu trời phía đông.',
+         (704, 0, 991, 63), (848, 55)),
+    Page('east_coast', 'Bờ Biển Đông', '~', '~',
+         'Bãi cát dài và tiếng sóng ngoài khơi đông.',
+         (992, 0, 1279, 63), (1136, 55)),
+)
+_SOUTH_NAMES = (
+    ('Đồng Cỏ Nam', '✿', ','),
+    ('Rừng Nam', '♣', 'T'),
+    ('Thung Lũng Sương', 'v', 'v'),
+    ('Cửa Biển Nam', '~', '~'),
+    ('Đồi Đá', '^', '^'),
+    ('Hồ Nước Sâu', '≈', '~'),
+    ('Rừng Già', '♣', 'T'),
+    ('Bãi Cát Vàng', '~', '~'),
+    ('Cánh Đồng Xa', ':', ':'),
+    ('Thác Nhỏ', '≈', '~'),
+    ('Núi Mây', '^', '^'),
+    ('Mũi Đá', '^', '^'),
+    ('Đầm Lau', ';', ';'),
+    ('Rừng Thấp', '♣', 'T'),
+    ('Đồng Sương', ',', ','),
+    ('Chân Trời', '.', '.'),
+)
+SOUTH_PAGES = []
+for _row in range(4):
+    _pages = []
+    for _col in range(4):
+        _name, _icon, _ascii = _SOUTH_NAMES[_row * 4 + _col]
+        _left = _col * 320
+        _top = 64 + _row * 164
+        _pages.append(Page(
+            f'south_{_row}_{_col}', _name, _icon, _ascii,
+            f'Vùng đất phía nam: {_name.lower()}.',
+            (_left, _top, _left + 319, _top + 163),
+            (_left + 160, (146, 310, 474, 638)[_row])))
+    SOUTH_PAGES.append(tuple(_pages))
+LEGACY_PAGES = tuple(PAGES.values())
+PAGES.update({page.key: page for page in EAST_PAGES})
+PAGES.update({page.key: page for page in SOUTH_PAGES for page in page})
 PAGE_ORDER = tuple(PAGES)
 PAGE_BY_KEY = PAGES
 
@@ -96,9 +149,15 @@ def page_for_coord(x: int, y: int) -> Page | None:
     """Return the page containing a global village coordinate."""
     if type(x) is not int or type(y) is not int:
         return None
-    for page in PAGES.values():
-        if page.contains(x, y):
-            return page
+    if 0 <= x < 128 and 0 <= y < 64:
+        for page in LEGACY_PAGES:
+            if page.contains(x, y):
+                return page
+        return None
+    if 128 <= x < 1280 and 0 <= y < 64:
+        return EAST_PAGES[(x - 128) // 288]
+    if 0 <= x < 1280 and 64 <= y < 720:
+        return SOUTH_PAGES[(y - 64) // 164][x // 320]
     return None
 
 
