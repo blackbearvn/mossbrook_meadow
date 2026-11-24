@@ -53,7 +53,9 @@ Bảng nhiệm vụ ngày có hơn 20 loại nhiệm vụ, gồm trồng trọt,
 khai mỏ, nấu ăn, rèn trang bị và Hang Sâu. Hệ thống **thành tựu** có 12 nhóm,
 mỗi nhóm 5 bậc từ Bình thường đến Huyền thoại, theo dõi tiến độ dài hạn và
 tặng điểm thành tựu. Người chơi có thể tự do khám phá hoặc dùng chế độ **Auto**
-để nhân vật tự làm việc.
+để nhân vật tự làm việc. Chế độ **Toàn bộ** ưu tiên hoàn tất bảng nhiệm vụ
+ngày, kể cả đào khoáng, rèn, nấu ăn và Hang Sâu; các chế độ riêng chỉ tập
+trung vào lĩnh vực đã chọn rồi nghỉ sang ngày tiếp theo.
 
 Game chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói và không cần
 kết nối mạng.

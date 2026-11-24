@@ -128,7 +128,7 @@ class ActivityUI:
             return False
         choice = self._choose('CHẾ ĐỘ AUTO', list(MODES.values()), [
             'Auto tự đi bộ và thực hiện thao tác thật, dùng năng lượng/vật phẩm đang có.',
-            'Toàn bộ: nhiệm vụ, ruộng, vật nuôi, câu cá, giao tiếp, mua/bán, nâng cấp và ngủ.',
+            'Toàn bộ: việc ngày (đào, rèn, nấu, Hang Sâu), ruộng, vật nuôi, câu cá, giao tiếp, mua/bán, nâng cấp và ngủ.',
             'Đào khoáng: tự vào mỏ, đào đá, rèn cúp và mang quặng về ngủ.',
             'Hang Sâu: tự rèn kiếm/giáp, mua thuốc và chiến đấu từng tầng.',
             'Chế độ riêng chỉ làm lĩnh vực đã chọn, rồi nghỉ sang ngày tiếp theo.',

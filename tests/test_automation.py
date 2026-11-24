@@ -286,6 +286,56 @@ class AutomationTests(unittest.TestCase):
             pass
         self.assertEqual((farm.coins, farm.xp), (claimed_coins, claimed_xp))
 
+    def test_all_mode_finishes_mining_and_forging_daily_tasks(self):
+        farm = Farm(coins=200)
+        from farmgame.daily import DailyQuest, DailyState
+        farm.daily = DailyState(day=farm.day, tasks=[DailyQuest('mine', 2),
+                                                    DailyQuest('forge', 1)])
+        auto = self.engine(farm, days=1)
+        self.run_until(auto, lambda: all(task.claimed for task in farm.daily.tasks))
+        self.assertGreaterEqual(farm.mined_total, 2)
+        self.assertGreaterEqual(sum(farm.gear.values()), 1)
+
+    def test_all_mode_buys_the_daily_seed_quota(self):
+        farm = Farm(coins=100)
+        from farmgame.daily import DailyQuest, DailyState
+        farm.daily = DailyState(day=farm.day, tasks=[DailyQuest('buy', 3)])
+        auto = self.engine(farm, days=1)
+        self.run_until(auto, lambda: all(task.claimed for task in farm.daily.tasks))
+        self.assertEqual(farm.daily.tasks[0].progress, 3)
+
+    def test_all_mode_buys_another_animal_for_a_daily_goal(self):
+        farm = Farm(coins=1000, animals=[
+            Animal('chicken', 'Một', fed=True, petted=True)])
+        from farmgame.daily import DailyQuest, DailyState
+        farm.daily = DailyState(day=farm.day, tasks=[DailyQuest('animal', 1)])
+        auto = self.engine(farm, days=1)
+        self.run_until(auto, lambda: all(task.claimed for task in farm.daily.tasks))
+        self.assertEqual(len(farm.animals), 2)
+
+    def test_all_mode_cooks_a_recipe_for_a_daily_goal(self):
+        farm = Farm()
+        farm.produce['ca_rot'] = 2
+        farm.produce['ca_chua'] = 1
+        from farmgame.daily import DailyQuest, DailyState
+        farm.daily = DailyState(day=farm.day, tasks=[DailyQuest('cook', 1)])
+        auto = self.engine(farm, days=1)
+        self.run_until(auto, lambda: all(task.claimed for task in farm.daily.tasks))
+        self.assertEqual(farm.items['salad_vuon'], 1)
+
+    def test_all_mode_replays_dungeon_for_a_daily_goal_after_max_depth(self):
+        farm = Farm()
+        farm.dungeon_best = 5
+        farm.gear['sword'] = 3
+        farm.hp = farm.max_hp
+        farm.items['thuoc'] = 3
+        from farmgame.daily import DailyQuest, DailyState
+        farm.daily = DailyState(day=farm.day, tasks=[DailyQuest('dungeon', 1)])
+        auto = self.engine(farm, days=1)
+        self.run_until(auto, lambda: all(task.claimed for task in farm.daily.tasks))
+        self.assertEqual(farm.dungeon_best, 5)
+        self.assertIsNone(auto.dungeon_run)
+
     def test_all_mode_buys_animals_upgrades_and_spends_only_available_points(self):
         farm = Farm(coins=4000, xp=120)
         auto = self.engine(farm)

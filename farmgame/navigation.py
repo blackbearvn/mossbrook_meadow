@@ -24,7 +24,8 @@ _KEYS = {(0, -1): 'W / ↑', (0, 1): 'S / ↓',
          (-1, 0): 'A / ←', (1, 0): 'D / →'}
 _KINDS = frozenset(('', 'plot', 'tile', 'water', 'forest', 'npc',
                     'home', 'barn', 'shop', 'tv', 'bed', 'chest', 'exit',
-                    'mine', 'mine_exit', 'rock', 'forge', 'dungeon_gate'))
+                    'kitchen', 'mine', 'mine_exit', 'rock', 'forge',
+                    'dungeon_gate'))
 
 
 def route(farm: 'Farm', target_area: str, target: Point, *, kind: str = '') -> Route:
