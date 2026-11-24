@@ -327,7 +327,7 @@ class ExplorerGame:
             directions.update({self._curses.KEY_UP: "up", self._curses.KEY_DOWN: "down",
                                self._curses.KEY_LEFT: "left", self._curses.KEY_RIGHT: "right"})
             if key == getattr(self._curses, 'KEY_RESIZE', None):
-                # Terminal đổi cỡ (kéo cửa sổ web chẳng hạn): vẽ lại toàn màn.
+                # Terminal đổi cỡ (kéo cửa sổ): vẽ lại toàn màn.
                 try:
                     self._curses.resizeterm(*self._screen.getmaxyx())
                 except self._curses.error:

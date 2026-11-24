@@ -38,12 +38,6 @@ def main(argv: list[str] | None = None) -> int:
     opening = parser.add_mutually_exclusive_group()
     opening.add_argument('--intro', action='store_true', help='xem đoạn mở đầu khi vào game')
     opening.add_argument('--skip-intro', action='store_true', help='bỏ qua đoạn mở đầu khi tạo nhân vật')
-    parser.add_argument('--web', action='store_true',
-                        help='mở máy chủ chơi trên web (xterm.js + PTY)')
-    parser.add_argument('--web-host', default='127.0.0.1', metavar='HOST',
-                        help='địa chỉ máy chủ web (mặc định 127.0.0.1)')
-    parser.add_argument('--web-port', type=int, default=8765, metavar='PORT',
-                        help='cổng máy chủ web (mặc định 8765)')
     args = parser.parse_args(argv)
     name = unicodedata.normalize("NFC", args.name.strip())
     if not 1 <= len(name) <= 28 or not name.isprintable():
@@ -63,16 +57,6 @@ def main(argv: list[str] | None = None) -> int:
                 explore = False
     try:
         save_path = args.save.expanduser().resolve()
-        if args.web:
-            from farmgame.web import serve
-            web_argv = [sys.executable, str(ROOT / 'main.py'),
-                        '--quick', '--save', str(save_path)]
-            if args.no_color:
-                web_argv.append('--no-color')
-            if args.ascii:
-                web_argv.append('--ascii')
-            serve(args.web_host, args.web_port, argv=web_argv)
-            return 0
         use_menu = args.menu or (interactive and not args.quick)
         force_new = args.new
         force_intro = args.intro
