@@ -326,6 +326,15 @@ class ExplorerGame:
         if self._curses:
             directions.update({self._curses.KEY_UP: "up", self._curses.KEY_DOWN: "down",
                                self._curses.KEY_LEFT: "left", self._curses.KEY_RIGHT: "right"})
+            if key == getattr(self._curses, 'KEY_RESIZE', None):
+                # Terminal đổi cỡ (kéo cửa sổ web chẳng hạn): vẽ lại toàn màn.
+                try:
+                    self._curses.resizeterm(*self._screen.getmaxyx())
+                except self._curses.error:
+                    pass
+                self._screen.erase()
+                self.toasts.tick(time.monotonic())
+                return True
         key = key.lower() if isinstance(key, str) else key
         if self.activities.control(key):
             return True
@@ -890,63 +899,73 @@ class ExplorerGame:
                 pinned_end = False
                 offset = 0
 
+    def _conversation_hub(self, npc, branching, portrait):
+        """Menu chính khi đứng cạnh một người dân; trả về lựa chọn hoặc None."""
+        from .villagers import TOPICS, bond_title, family_line
+        from .artwork import hearts
+        from .bonds import help_available, item_name, request_ready
+        farm = self.farm
+        friendship = farm.friendships[npc.id]
+        title = (f'{npc.name} · {npc.role} · {bond_title(friendship)} · '
+                 f'{hearts(friendship, unicode=self.unicode_map)} {friendship}/10')
+        family = family_line(npc.id)
+        details = [
+            f'“{npc.motto}”',
+            f'Thích: {npc.likes}',
+            (f'Gia đình: {family}' if family else npc.description),
+            npc.description if family else f'Lịch sinh hoạt: {npc.schedule}',
+        ]
+        options, kinds = [], []
+        if branching:
+            for key in TOPICS:
+                options.append(TOPICS[key])
+                kinds.append(key)
+        else:
+            options.append('Trò chuyện vài câu')
+            kinds.append('chat')
+        gifted = farm.gifted_on.get(npc.id) == farm.day
+        options.append('Tặng quà' + (' · hôm nay đã tặng rồi' if gifted else ''))
+        kinds.append('gift')
+        options.append('Giúp một việc nhỏ'
+                       + (' · hôm nay đã giúp rồi' if not help_available(farm, npc.id)
+                          else ''))
+        kinds.append('help')
+        if request_ready(farm, npc.id):
+            item = item_name(farm.request_item)
+            count = f'×{farm.request_count}' if farm.request_count > 1 else ''
+            options.append(f'Giao thư nhờ: {item}{count}')
+            kinds.append('request')
+        index = self._choose(title, options, details, art=portrait)
+        return None if index is None else kinds[index]
+
     def _conversation(self):
         from .villagers import TOPICS, bond_title, family_line, nearby_npc
-        from .dialogue import BRANCHING_NPC_IDS, begin_dialogue, begin_light_chat, choose_response, dialogue_node
+        from .dialogue import (BRANCHING_NPC_IDS, begin_dialogue,
+                               begin_light_chat, choose_response, dialogue_node)
         from .artwork import hearts, npc_portrait
-        from .bonds import (deliver_request, gift_options, give_gift,
-                            help_favour, help_available, request_line)
+        from .bonds import deliver_request, give_gift, help_favour
         npc = nearby_npc(self.farm)
         if npc is None:
             return
         branching = npc.id in BRANCHING_NPC_IDS
-        topics = list(TOPICS) if branching else ['greet']
         portrait = npc_portrait(npc.id, unicode=self.unicode_map) if self._screen else ()
         while True:
-            friendship = self.farm.friendships[npc.id]
-            title = (f'{npc.name} · {npc.role} · {bond_title(friendship)} · '
-                     f'{hearts(friendship, unicode=self.unicode_map)} {friendship}/10')
-            family = family_line(npc.id)
-            details = [
-                f'“{npc.motto}”',
-                f'Thích: {npc.likes}',
-                (f'Gia đình: {family}' if family else npc.description),
-                npc.description if family else f'Lịch sinh hoạt: {npc.schedule}',
-            ]
-            if branching:
-                actions = ([('topic', key) for key in topics]
-                           + [('gift', 'Tặng quà'), ('help', 'Giúp một việc nhỏ')])
-            else:
-                actions = [('chat', 'Trò chuyện'), ('gift', 'Tặng quà'),
-                           ('help', 'Giúp một việc nhỏ')]
-            request = request_line(self.farm, npc.id)
-            if request and not request.startswith('Việc nhờ'):
-                actions.append(('request', request))
-            if branching:
-                labels = ([TOPICS[key] for _, key in actions[:len(topics)]]
-                          + [label for _, label in actions[len(topics):]])
-            else:
-                labels = [label for _, label in actions]
-            index = self._choose(title, labels, details, art=portrait)
-            if index is None:
+            kind = self._conversation_hub(npc, branching, portrait)
+            if kind is None:
                 return
-            kind, value = actions[index]
             if kind == 'gift':
                 self._gift_menu(npc, portrait)
                 continue
             if kind == 'help':
-                reply = help_favour(self.farm, npc.id)
-                self._log(reply)
-                self._save()
+                self._action(help_favour, self.farm, npc.id)
                 continue
             if kind == 'request':
-                reply = deliver_request(self.farm, npc.id)
-                self._log(reply)
-                self._save()
+                self._action(deliver_request, self.farm, npc.id)
                 continue
-            conversation = (begin_dialogue(self.farm, npc.id, value)
+            conversation = (begin_dialogue(self.farm, npc.id, kind)
                             if branching else begin_light_chat(self.farm, npc.id))
-            topic_label = TOPICS[value] if branching else 'Trò chuyện'
+            topic_label = TOPICS[kind] if branching else 'Trò chuyện'
+            friendship = self.farm.friendships[npc.id]
             boxed = bool(self._screen is not None
                          and callable(getattr(self._screen, 'getmaxyx', None)))
             while not conversation.done:
@@ -1007,21 +1026,29 @@ class ExplorerGame:
 
     def _gift_menu(self, npc, portrait):
         """Pick a giftable item and hand it over, with the villager's reaction."""
-        from .bonds import give_gift
+        from .bonds import _GIFT_LOVES, gift_options, give_gift
         options = gift_options(self.farm)
         if not options:
-            self._reader(f'Tặng quà cho {npc.name}',
-                         'Túi bạn đang trống, không có gì để tặng. Cây và ao sẽ đầy lên sớm thôi.')
+            self._reader(
+                f'Tặng quà cho {npc.name}',
+                'Túi bạn đang trống, không có gì để tặng.\n\n'
+                'Thu hoạch vài cây hoặc câu một con cá là sẽ có món '
+                'để mang đến người dân rồi. Mỗi người mỗi ngày chỉ nhận '
+                'một món quà, nên đừng ngại chọn món hợp ý họ.')
             return
-        labels = [label for _, label in options]
-        index = self._choose(f'Tặng quà cho {npc.name}', labels,
-                             [f'Thích: {npc.likes} · mỗi người mỗi ngày nhận một món quà.'],
-                             art=portrait)
+        loved = set(_GIFT_LOVES.get(npc.id, ()))
+        options.sort(key=lambda option: option[0] not in loved)
+        labels = [f'★ {label}' if key in loved else label
+                  for key, label in options]
+        index = self._choose(
+            f'Tặng quà cho {npc.name}', labels,
+            [f'Thích: {npc.likes}.',
+             '★ là món người này mê nhất (+2 thân thiết, món khác +1).',
+             'Mỗi người mỗi ngày nhận một món quà, tặng xong sẽ nhắc bạn.'],
+            art=portrait)
         if index is None:
             return
-        reply = give_gift(self.farm, npc.id, options[index][0])
-        self._log(reply)
-        self._save()
+        self._action(give_gift, self.farm, npc.id, options[index][0])
 
     def _dialogue_box(self, npc, node, portrait, friendship, topic):
         """An RPG-style bottom dialogue box with typewriter text and choices."""
