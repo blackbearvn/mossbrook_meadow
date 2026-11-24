@@ -314,6 +314,107 @@ _CLOSE = {
     'son': 'Nghe bước chân quen là tôi biết có bạn tới thăm.',
 }
 
+# A second greeting script per person, used on even days, so the same bench
+# does not open with the same small talk twice in a row.
+_GREET_VARIANTS = {
+    'lan': (
+        'Mình vừa dọn kho, tìm ra một túi hạt vụ đầu năm. Bạn muốn nghe mình định làm gì với nó, hay kể mình nghe góc ruộng của bạn dạo này?',
+        ('Kể mình nghe chuyện túi hạt cũ đi.',
+         'Túi ấy còn đúng một nắm, hạt hơi xỉn màu nhưng vẫn chắc tay. Bạn nghĩ mình nên gieo thử hay cất làm kỷ niệm?',
+         ('Gieo thử đi, hạt nào cũng muốn được lên luống.', 'Mình cũng nghĩ vậy. Hạt nằm trong túi thì chỉ là chuyện đã qua, xuống đất thì thành hy vọng. Mai mình gieo cạnh lối vào, để ai ghé cũng thấy.'),
+         ('Giữ làm kỷ niệm thì giữ thế nào cho lâu?', 'Mình sẽ chọn vài hạt đẹp nhất bỏ vào lọ thủy tinh, dán nhãn vụ đầu năm. Đôi khi giữ một thứ nhỏ thôi cũng là giữ cả một mùa.')),
+        ('Ở ruộng mình đang lo chuyện nước.',
+         'Trời mấy hôm nắng gắt thật. Bạn tưới buổi sáng hay buổi tối? Mình hỏi để tính việc để sẵn vài can nước ngoài hiên cho khách.',
+         ('Mình tưới sáng, cây đỡ bị sốc.', 'Sáng là chuẩn rồi. Mình sẽ để can đựng nước mưa ngay ngoài hiên, ai quên mang bình thì ghé lấy, khỏi ngại.'),
+         ('Tiệm mình có bán bình tưới không?', 'Chưa, mình hay chỉ khách dùng lại can cũ. Nhưng nếu bạn cần thì mình đặt thêm một lượt nhỏ, giá vừa túi người mới bắt đầu.'))),
+    'tu': (
+        'Bác vừa nhặt được một viên sỏi đẹp lắm, tròn và mát tay như vảy cá. Cháu muốn ngắm cùng bác hay kể bác nghe chuyện ở nhà?',
+        ('Cháu ngắm viên sỏi với bác.',
+         'Bác để nó trong túi áo cả buổi, lúc nào sờ cũng thấy mát. Cháu có thứ nhỏ nào hôm nay khiến cháu vui không?',
+         ('Có, cháu thấy mầm đầu tiên nhô lên.', 'Mầm đầu tiên ấy à. Bác hiểu cảm giác đó lắm, cứ đi qua đi lại xem hoài không chán. Nhớ tưới nhẹ tay, đất còn non.'),
+         ('Chưa có, cháu toàn gặp chuyện rắc rối.', 'Cũng đừng lo. Ngồi yên một lát đi, viên sỏi này bác nhường cháu cầm. Có thứ mát trong tay, chuyện rắc rối tự nhẹ đi một nửa.')),
+        ('Cháu kể bác nghe chuyện ở nhà.',
+         'Bác nghe đây. Hôm nay ở nhà cháu có bữa nào vui không, hay cứ loay hoay việc suốt?',
+         ('Có, bữa cơm tối cả nhà cười suốt.', 'Thế là tốt. Bác nghe tiếng cười qua lời kể cũng thấy vui theo. Cơm ngon hay dở không quan trọng bằng tiếng cười ở bàn ấy.'),
+         ('Cháu cứ loay hoay việc mãi.', 'Thì giờ ngồi đây coi như nghỉ. Bác rót chén trà cho cháu này. Việc thì ở lại đó, người thì phải khỏe đã.'))),
+    'an': (
+        'Mình vừa nhặt một con ốc sên khỏi luống, tay run còn chưa hết. Bạn muốn nghe chuyện con ốc ấy, hay kể mình nghe chuyện của bạn?',
+        ('Kể chuyện con ốc ấy đi, nghe buồn cười quá.',
+         'Nó chậm lắm mà mình vẫn phải nhặt nhẹ tay. Bạn đoán xem mình làm gì sau khi thả nó sang luống khác?',
+         ('Chắc bạn lặng lẽ dặn dò nó vài lời?', 'Đúng thật, mình nói nhỏ "cứ ăn ở luống kia nhé". Nghe ngốc lắm, nhưng trong vườn mình ai cũng được sống, kể cả ốc.'),
+         ('Chắc bạn ghi nó vào sổ vườn?', 'Mình không có sổ, nhưng mình nhớ từng con. Vườn mà, khách ghé muốn ăn, chủ nhà muốn giữ, thì chia đôi đất cho thôi.')),
+        ('Mình kể bạn nghe chuyện của mình.',
+         'Mình ngồi xuống nghe đây. Hôm nay có điều nào khiến bạn vừa mệt mà vẫn thấy vui không?',
+         ('Có, mình nhổ cỏ xong lưng đau mà lòng nhẹ.', 'Đó là loại mệt đáng giá nhất đó. Cỏ nhổ rồi thì luống thở được, người cũng thở được theo.'),
+         ('Không hẳn, mình hơi chán.', 'Vậy cứ ngồi đây với mình một lát. Hoa không hỏi bạn phải vui, chúng cứ nở thôi. Thỉnh thoảng mình cũng thế.'))),
+    'mai': (
+        'Mình vừa đọc được một dòng trong sổ cũ, chữ ai đó nháp nửa vời. Bạn muốn đoán xem người ấy định viết gì, hay kể mình nghe chuyện hôm nay của bạn?',
+        ('Đoán dòng chữ dở của người kia đi.',
+         'Dòng ấy viết: "nếu hôm ấy mình dám nói..." rồi dừng đúng đó. Bạn đoán người ấy muốn nói gì?',
+         ('Chắc là một lời cảm ơn chưa kịp nói.', 'Mình cũng nghi về phía đó. Thật ra mình định chừa trống trang ấy, để ai đọc cũng tự điền nốt câu của riêng mình.'),
+         ('Chắc là lời hứa rồi lại quên.', 'Cũng có thể. Nhưng mình thương cái kiểu "dám" ấy. Ai viết được nửa câu như vậy chắc đã nghĩ rất lâu.')),
+        ('Mình kể bạn nghe chuyện hôm nay.',
+         'Mình gấp sách lại nghe đây. Chuyện hôm nay của bạn là chuyện muốn kể, hay chuyện cần người nghe?',
+         ('Là chuyện muốn kể, có một điều vui nhỏ.', 'Điều vui nhỏ mới là thứ mình thích ghi. Chuyện to người ta tự kể được, chuyện nhỏ mà không ai nghe thì mất hay.'),
+         ('Là chuyện cần người nghe hơn.', 'Vậy mình ngồi gần hơn một chút. Bạn cứ nói chậm thôi, mình không vội, sổ thì luôn mở sẵn.'))),
+    'son': (
+        'Tôi vừa băng bó cho một cây non bị gió gãy nhánh. Bạn muốn xem vết thương của nó, hay kể tôi nghe chuyện đường về nhà của bạn?',
+        ('Xem cây non ấy một chút.',
+         'Nó đây, nhánh gãy được buộc bằng dây vỏ cây. Bạn nghĩ nó sống lại được không?',
+         ('Sống được, vết thương đâu phải hết mất.', 'Tôi cũng tin vậy. Rừng dạy tôi thế: cây gãy mà cứ đứng chịu sống, rồi tự lành. Người đôi khi cũng cần điều đó.'),
+         ('Khó nói, nhưng tôi mong nó khỏe.', 'Mong của bạn là một phần thuốc rồi. Tôi sẽ ghé nó mỗi sáng. Có người trông chừng thì cây bớt cô đơn.')),
+        ('Tôi kể bạn nghe chuyện đường về nhà.',
+         'Tôi gạt đống cành sang một bên cho bạn chỗ ngồi. Đường về nhà hôm nay của bạn thế nào?',
+         ('Bình thường, đi mãi cũng quen chân.', 'Quen chân cũng là một điều đáng quý. Có người đi mãi vẫn không thấy quen, vì trong lòng không có chỗ để về.'),
+         ('Hôm nay đường lầy, đi vất vả.', 'Mưa rồi ai cũng vất vả. Lát nữa tôi rắc thêm cát ở khúc ngập. Đi khó một chút mà về được nhà là một ngày vẫn ổn.'))),
+}
+
+# Everyday, emotional beats so a conversation is about this farm today, not a
+# script on loop.  Milestones join the pool once the player earns them.
+_EVERYDAY = {
+    'lan': ('Sáng nay mình hắt nước rửa quầy, bắn cả lên người khách đầu tiên, hai đứa cười muốn ngã.',
+            'Tối qua mình mơ giỏ hạt tự mọc thành luống, dậy còn tiếc.',
+            'Khách sáng nay có bà lão mua một túi dâu, bảo cháu gái thích lắm. Nghe một câu ấy mình khỏe cả ngày.',
+            'Ghế gỗ ngoài hiên vừa được phơi nắng, ngồi xuống còn ấm lưng.'),
+    'tu': ('Sáng nay mặt hồ phẳng như tấm gương, bác ngồi ngắm quên cả thả cần.',
+           'Có con cá nhảy một cái rồi lặn, chắc nó cũng ngại gặp người già.',
+           'Đêm qua mưa, sáng ra mùi đất thơm lạ. Cháu có ngửi thấy không?',
+           'Bác vừa đếm lại, mùa này thả về nhiều hơn bắt. Lúc thả tim cứ nhẹ hửng.'),
+    'an': ('Sáng nay hoa dại ven đường tự nở, mình đứng nhìn quên cả việc đang làm.',
+           'Có con bướm cứ đậu lên bình tưới của mình, như chờ được tưới cùng.',
+           'Tối qua mình ôm cây con đi tránh mưa, ai cũng cười, nhưng cây thì khô ráo.',
+           'Mùi đất sau mưa là mùi mình thích nhất trên đời, thứ hai mới tới mùi hoa.'),
+    'mai': ('Sáng nay có đứa trẻ hỏi sách mình kể chuyện gì, mình bảo "kể chuyện em đấy", nó đỏ mặt bỏ chạy.',
+            'Mình vừa tìm thấy một lá thư kẹp trong sách cũ, chưa kịp đọc đã thấy run tay.',
+            'Chiều qua mây tím quá, mình viết được ba trang liền tay không kịp nghỉ.',
+            'Mình thích nhất là khoảnh khắc người kể chuyện ngừng một nhịp để nhớ cho kỹ.'),
+    'son': ('Sáng nay sương dày, lối mòn trắng một dải, mình đi chậm để nghe rừng dậy.',
+            'Có đàn chim đậu kín hàng thông ven đường, mình đứng dựa vào xem đến khi chân tê.',
+            'Hôm qua có người lạ cảm ơn mình vì bảng chỉ dẫn, vui lâng lâng cả buổi.',
+            'Rừng có mùi riêng mỗi mùa, ai chịu đi chậm mới nhận ra.'),
+}
+_HARVEST = {
+    'lan': 'Nghe nói ruộng nhà {farm} đã có mấy luống cho quả rồi. Lần nào nghe chuyện ấy mình cũng thấy vui hộ bạn.',
+    'tu': 'Nghe bảo cánh đồng {farm} bắt đầu có mùa rồi. Bác mừng thay cháu, ruộng không phụ người chăm.',
+    'an': 'Mình đi ngang thấy luống của {farm} lên xanh tốt. Chỉ trông xa thôi mà muốn chạy vào ôm một cái.',
+    'mai': 'Mình đang ghi chuyện về cánh đồng {farm}. Vụ mùa đầu tiên của người mới là chuyện muốn kể nhất đấy.',
+    'son': 'Từ trên đồi nhìn xuống, màu ruộng của {farm} đẹp hẳn ra. Chăm thì đất chẳng phụ ai.',
+}
+_FISH = {
+    'lan': 'Nghe đồn bạn gần đây câu được nhiều cá lắm. Sắp tới mình phải xin một con về nướng mới được.',
+    'tu': 'Cháu câu cá khéo lên rồi, nghe bảo giỏ cháu hôm nào cũng có thứ để ngắm. Bác vui lắm, tay nghề là một niềm vui đấy.',
+    'an': 'Bạn câu cá giỏi ghê, chẳng hiểu hoa ngoài ruộng có mùi gì dụ cá không nữa.',
+    'mai': 'Mình nghe kể chuyến câu gần nhất của bạn có chuyện để kể. Đỗi câu cá cũng là chuyện làng chứ.',
+    'son': 'Hồ có cá to lên là nhờ người biết thả. Bạn làm nghề câu mà giữ được lòng hồ, khó lắm đấy.',
+}
+_LEVEL = {
+    'lan': 'Cả làng đang nhắc tên bạn nhiều lắm đấy, người mới mà nhanh thế thật khó tin.',
+    'tu': 'Cháu giờ khác ngày đầu rồi, bước chân chắc hẳn ra. Bác nhìn mà thấy mừng.',
+    'an': 'Bao nhiêu việc bạn làm dạo này đều thấy kết quả cả. Người chăm như bạn, vườn nào cũng nở.',
+    'mai': 'Sổ của mình có hẳn một trang cho chuyện của bạn rồi, viết suốt hai trang giấy.',
+    'son': 'Người làng giờ gặp bạn đều chào trước. Nhìn bạn lớn lên trong làng này, tôi thấy yên tâm.',
+}
+
 # Additional story routes.  They use the same two-turn shape as the original
 # topics so the dialogue engine, rewards and save behaviour stay unchanged.
 _EXTRA_SCRIPTS = {
@@ -527,46 +628,109 @@ _FRIEND_SCENES = {
 }
 _REACTIONS = {
     'lan': {
-        'warm': 'Lan mỉm cười, ngón tay khẽ gõ lên mặt quầy.',
-        'practical': 'Lan gật gù, rút cây bút ra khỏi túi tạp dề.',
+        'warm': ('Lan mỉm cười, ngón tay khẽ gõ lên mặt quầy.',
+                 'Lan bật cười khẽ, như vừa nghe được điều mình thích lắm.',
+                 'Lan nhìn bạn một giây, rồi thả vai ra, ánh mắt mềm hẳn.'),
+        'practical': ('Lan gật gù, rút cây bút ra khỏi túi tạp dề.',
+                      'Lan cau mày suy nghĩ một giây rồi bật cười: "À, ra thế".',
+                      'Lan gật đầu chậm rãi, tay đã rời khỏi quầy sẵn sàng làm ngay.'),
     },
     'tu': {
-        'warm': 'Bác Tư chậm rãi gật đầu, ánh mắt dịu xuống.',
-        'practical': 'Bác Tư nhìn mặt hồ một lát rồi mới đáp.',
+        'warm': ('Bác Tư chậm rãi gật đầu, ánh mắt dịu xuống.',
+                 'Bác Tư bật cười khẽ khàng, hàm răng khoms da nắng gió.',
+                 'Bác Tư vỗ đùi một cái: "Cháu nói đúng ý bác quá".'),
+        'practical': ('Bác Tư nhìn mặt hồ một lát rồi mới đáp.',
+                      'Bác Tư nghiêng cần câu sang một bên, ngồi thẳng dậy nghe kỹ.',
+                      'Bác Tư gật đầu từng nhịp, như đang điểm lại từng chữ của bạn.'),
     },
     'an': {
-        'warm': 'An cười, đưa tay phủi một chiếc lá vương trên vai bạn.',
-        'practical': 'An cúi xuống nhặt que, vạch thử một đường trên đất.',
+        'warm': ('An cười, đưa tay phủi một chiếc lá vương trên vai bạn.',
+                 'An cười rạng cả góc vườn, mắt cong lên như hai cánh hoa.',
+                 'An ôm bình tưới vào lòng, kể như đang kể chuyện đời mình.'),
+        'practical': ('An cúi xuống nhặt que, vạch thử một đường trên đất.',
+                      'An nhíu mày nghĩ thật kỹ, ngón tay vẫn bận bóp nhẹ gốc cây non.',
+                      'An gật đầu, quay sang so luống kia như vừa nảy ra một ý mới.'),
     },
     'mai': {
-        'warm': 'Mai khép sổ lại, như muốn dành trọn câu chuyện cho bạn.',
-        'practical': 'Mai lật về trang trước, đánh dấu một đoạn bằng bút chì.',
+        'warm': ('Mai khép sổ lại, như muốn dành trọn câu chuyện cho bạn.',
+                 'Mai cười khẽ, chỗ cong nơi đuôi mắt chưa kịp tàn.',
+                 'Mai ôm cuốn sổ vào ngực, nói chậm lại để nghe bạn cho kỹ.'),
+        'practical': ('Mai lật về trang trước, đánh dấu một đoạn bằng bút chì.',
+                      'Mai nhíu mày, xoay viên bút một vòng rồi mới đáp.',
+                      'Mai gật đầu, bắt đầu bấm đốt ngón tay như đang tính thời gian.'),
     },
     'son': {
-        'warm': 'Sơn khẽ cười, bẻ một cành nhỏ rồi vứt ra khỏi lối.',
-        'practical': 'Sơn chỉ tay về phía lối mòn, giọng chậm và rõ.',
+        'warm': ('Sơn khẽ cười, bẻ một cành nhỏ rồi vứt ra khỏi lối.',
+                 'Sơn bật cười thành tiếng, vang cả một khoảng rừng vắng.',
+                 'Sơn nhìn bạn lâu hơn bình thường, rồi gật đầu như ghi nhớ điều đó.'),
+        'practical': ('Sơn chỉ tay về phía lối mòn, giọng chậm và rõ.',
+                      'Sơn phủi tay, ngồi xổm xuống vẽ hình trên đất bằng que khô.',
+                      'Sơn gật đầu, ánh mắt lướt qua tán cây như đang kiểm lại điều bạn nói.'),
+    },
+}
+# Affectionate variants unlock at bond 6; higher trust talks like old friends.
+_REACTIONS_CLOSE = {
+    'lan': {
+        'warm': ('Lan cười sảng khoái, quên luôn mâm hạt đang dở trên quầy.',
+                 'Lan nhìn bạn hơi lâu, rồi nói khẽ: "May mà làng này có bạn".'),
+        'practical': ('Lan gật lia lịa: "Cần mình làm gì, nói một câu thôi".',
+                      'Lan đẩy sổ ghi chép về phía bạn: "Xem trước đi, không cần khách khí".'),
+    },
+    'tu': {
+        'warm': ('Bác Tư cười vỡ cả mắt, vai nhún nhún theo nhịp cười.',
+                 'Bác Tư nhìn bạn không chớp: "Ngồi với cháu, hồ như có thêm màu".'),
+        'practical': ('Bác Tư nhích sang ghế gần hơn: "Nào, tính cho bác xem thế nào".',
+                      'Bác Tư vỗ vai bạn: "Cháu cứ làm theo ý cháu, bác dốc cả hồ che chở".'),
+    },
+    'an': {
+        'warm': ('An bật cười rung cả bình tưới: "Vui ghê, hôm nay vườn mình có khách vui miệng".',
+                 'An nhích lại gần, giọng nhỏ hẳn: "Được bạn nghe chuyện này, mình mừng lắm".'),
+        'practical': ('An gật mạnh: "Đúng vậy, mình cứ làm như bạn nói cho khỏe".',
+                      'An nhìn bạn nghiêm túc hẳn: "Nói thật lòng đi, bạn nghĩ sao mình làm vậy".'),
+    },
+    'mai': {
+        'warm': ('Mai bật cười, bút rơi khỏi tay cũng không hay: "Câu đó mình phải ghi ngay".',
+                 'Mai nhìn bạn dịu dàng: "Có bạn ở đây, chuyện gì nghe cũng ấm hơn".'),
+        'practical': ('Mai gật nhanh rồi viết vội: "Để mình ghi lại, quên là tiếc lắm".',
+                      'Mai nhìn bạn: "Bạn nói nhìn xa hơn mình nghĩ đấy".'),
+    },
+    'son': {
+        'warm': ('Sơn bật cười hề hê, vỗ tay một cái giục giã: "Chuẩn luôn, như ý mình nghĩ".',
+                 'Sơn nhìn bạn thẳng: "Có bạn ở làng này, rừng mình cũng bớt cô đơn".'),
+        'practical': ('Sơn gật gù: "Được, cứ theo đó mà làm, có gì thiếu mình bù".',
+                      'Sơn nhìn bạn lâu rồi gật: "Bạn đã hiểu con đường của mình muốn đi rồi".'),
     },
 }
 _FAREWELL = {
     'lan': {
-        'warm': 'Lan đưa mắt theo bạn ra cửa, rồi mới quay lại giỏ hạt.',
-        'practical': 'Lan ghi thêm một dòng vào sổ, cạnh đó là tên bạn.',
+        'warm': ('Lan đưa mắt theo bạn ra cửa, rồi mới quay lại giỏ hạt.',
+                 'Lan hắng giọng: "Hôm nào ghé lại nhé, đừng để chén trà này đợi lâu".'),
+        'practical': ('Lan ghi thêm một dòng vào sổ, cạnh đó là tên bạn.',
+                      'Lan vẫy tay: "Về cẩn thận, ruộng không chạy đi đâu được đâu".'),
     },
     'tu': {
-        'warm': 'Bác Tư ngồi thêm một lát, nhìn mặt nước như đang giữ lại câu chuyện.',
-        'practical': 'Bác Tư gật đầu, tay đã đặt sẵn cần câu về phía bạn.',
+        'warm': ('Bác Tư ngồi thêm một lát, nhìn mặt nước như đang giữ lại câu chuyện.',
+                 'Bác Tư cười cười: "Hôm nào mệt quá thì xuống đây, khỏi phải nói nhiều".'),
+        'practical': ('Bác Tư gật đầu, tay đã đặt sẵn cần câu về phía bạn.',
+                      'Bác Tư phẩy tay đuổi về: "Mệt rồi thì về ngủ, hồ không đi đâu được đâu".'),
     },
     'an': {
-        'warm': 'An đứng nhìn theo bạn một quãng, tay còn cầm bông hoa dở.',
-        'practical': 'An quay lại luống đất, miệng vẫn lẩm nhẩm điều vừa nghe.',
+        'warm': ('An đứng nhìn theo bạn một quãng, tay còn cầm bông hoa dở.',
+                 'An vụt nhét vào tay bạn một bông hoa: "Cầm về cắm đi, trồng với mình là được".'),
+        'practical': ('An quay lại luống đất, miệng vẫn lẩm nhẩm điều vừa nghe.',
+                      'An phủi tay trên tạp dề: "Lát mình ghé ruộng xem cây của bạn thế nào".'),
     },
     'mai': {
-        'warm': 'Mai đóng sổ thật nhẹ, như sợ làm vỡ khoảng lặng vừa có.',
-        'practical': 'Mai viết thêm một chữ, rồi cài bút vào giữa trang.',
+        'warm': ('Mai đóng sổ thật nhẹ, như sợ làm vỡ khoảng lặng vừa có.',
+                 'Mai nói nhỏ theo bước chân bạn: "Trang sau mình để dành cho bạn đấy".'),
+        'practical': ('Mai viết thêm một chữ, rồi cài bút vào giữa trang.',
+                      'Mai gật đầu: "Đi cẩn thận, chuyện hôm nay mình sẽ nhớ cho kỹ".'),
     },
     'son': {
-        'warm': 'Sơn đứng lại nhìn theo bạn, tay vẫn vịn vào cành thông.',
-        'practical': 'Sơn quay lại lối mòn, bước chân chậm hơn lúc đến.',
+        'warm': ('Sơn đứng lại nhìn theo bạn, tay vẫn vịn vào cành thông.',
+                 'Sơn cười mỏm: "Lát nữa tôi dọn khúc đường bên kia, bạn về cho vững chân".'),
+        'practical': ('Sơn quay lại lối mòn, bước chân chậm hơn lúc đến.',
+                      'Sơn chỉ tay về làng: "Men theo lối này về, chỗ cát lún tôi đã rắc rồi".'),
     },
 }
 
@@ -612,10 +776,45 @@ def _validate_nearby(farm: 'Farm', npc_id: str, topic: str) -> None:
         raise GameError(f'Hãy đứng cạnh {npc.name} để trò chuyện.')
 
 
+def _life_line(farm: 'Farm', npc_id: str) -> str:
+    """An everyday beat about this farm, today: mood first, story after.
+
+    The pool rotates by day and grows as the player earns real milestones,
+    so repeated visits never read like the same line on a loop.
+    """
+    pool = list(_EVERYDAY[npc_id])
+    if farm.harvested >= 3:
+        pool.append(_HARVEST[npc_id].format(farm=farm.name))
+    if farm.fish_caught >= 3:
+        pool.append(_FISH[npc_id])
+    if farm.level >= 4:
+        pool.append(_LEVEL[npc_id])
+    return pool[farm.day % len(pool)]
+
+
+def _pick(pool: tuple[str, ...], farm: 'Farm', branch: str) -> str:
+    """Rotate small gestures by day, keeping the two branches distinct."""
+    return pool[(farm.day + (0 if branch == 'warm' else 1)) % len(pool)]
+
+
+def _reaction_line(farm: 'Farm', npc_id: str, branch: str) -> str:
+    if farm.friendships.get(npc_id, 0) >= 6:
+        return _pick(_REACTIONS_CLOSE[npc_id][branch], farm, branch)
+    return _pick(_REACTIONS[npc_id][branch], farm, branch)
+
+
+def _farewell_line(farm: 'Farm', npc_id: str, branch: str) -> str:
+    return _FAREWELL[npc_id][branch][(farm.day + 1) % len(_FAREWELL[npc_id][branch])]
+
+
 def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversation:
     """Open a conversation without changing any saved game state."""
     _validate_nearby(farm, npc_id, topic)
-    question, warm, practical = _SCRIPTS[npc_id][topic]
+    script = _SCRIPTS[npc_id][topic]
+    if topic == 'greet' and (farm.day - 1) % 2 == 1:
+        # Even days open with a different, everyday scene.
+        script = _GREET_VARIANTS[npc_id]
+    question, warm, practical = script
     scene = _scene_line(farm, npc_id)
     if topic == 'greet':
         greeting = _SALUTATIONS[npc_id][(farm.day - 1) % 3]
@@ -631,7 +830,7 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
             greeting += ' ' + _WEATHER[npc_id]
         question = scene + ' ' + greeting + ' ' + question
     else:
-        question = scene + ' ' + question
+        question = scene + ' ' + _life_line(farm, npc_id) + ' ' + question
     nodes = {}
     first_choices = []
     for branch_id, branch in (('warm', warm), ('practical', practical)):
@@ -646,6 +845,39 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
     nodes['opening'] = DialogueNode('opening', question, tuple(first_choices))
     return Conversation(npc_id, topic, 'opening',
                         [f'{NPCS[npc_id].name}: {question}'], _nodes=nodes)
+
+
+# Family members (Hà, Bác Hai, Minh) chat in short everyday beats instead of
+# the branching topic scripts.
+BRANCHING_NPC_IDS = frozenset(_SCRIPTS)
+
+
+def _light_line(farm: 'Farm', npc_id: str) -> str:
+    """A statement-first everyday line; family members rarely interview you."""
+    from .villagers import _LIGHT_TALK
+    pool = _LIGHT_TALK[npc_id]
+    line = pool[(farm.day - 1) % len(pool)]
+    bond = farm.friendships[npc_id]
+    if bond >= 6:
+        line += ' Mà này, lần sau ghé sớm hơn nhé, người mình thương mà.'
+    elif bond >= 3:
+        line += ' Với bạn thì mình kể thế là đủ, khỏi cần hỏi thêm.'
+    return line
+
+
+def begin_light_chat(farm: 'Farm', npc_id: str) -> Conversation:
+    """Open a short family chat: one warm line, no interview questions.
+
+    The visit still warms the bond once a day, exactly like a topic talk.
+    """
+    _validate_nearby(farm, npc_id, 'greet')
+    line = _light_line(farm, npc_id)
+    if farm.talked_on[npc_id] != farm.day:
+        talk(farm, npc_id, 'greet')
+        farm.award_xp(3)
+    return Conversation(npc_id, 'greet', 'opening',
+                        [f'{NPCS[npc_id].name}: {line}'],
+                        _nodes={'opening': DialogueNode('opening', line, ())})
 
 
 def dialogue_node(conversation: Conversation) -> DialogueNode:
@@ -672,11 +904,11 @@ def choose_response(farm: 'Farm', conversation: Conversation, choice_id: str) ->
     branch = choice.next_node.split('_', 1)[0]
     npc_line = following.npc_line
     if following.choices:
-        reaction = _REACTIONS[conversation.npc_id].get(branch, '')
+        reaction = _reaction_line(farm, conversation.npc_id, branch)
         if reaction:
             npc_line = f'{reaction} {npc_line}'
     else:
-        farewell = _FAREWELL[conversation.npc_id].get(branch, '')
+        farewell = _farewell_line(farm, conversation.npc_id, branch)
         if farewell:
             npc_line = f'{npc_line} {farewell}'
     new_lines = [f'Bạn: {choice.text}',

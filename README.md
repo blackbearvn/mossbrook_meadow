@@ -3,11 +3,14 @@
 **Mossbrook Meadow** là game nông trại tiếng Việt chạy trực tiếp trong terminal.
 Bạn bắt đầu với một mảnh vườn nhỏ, trồng trọt, chăm vật nuôi, câu cá, nấu ăn,
 trò chuyện với dân làng và dần mở rộng cuộc sống ở Mossbrook Meadow.
-Màn hình chính đặt logo ở giữa, phía trên danh sách lựa chọn. Hội thoại có
-cử chỉ, phản ứng và lời tạm biệt riêng theo thời tiết, mức thân thiết và
-tính cách từng người, thay vì chỉ đọc câu hỏi–đáp cố định. Bản đồ thế giới mở
-rộng 1280 × 720 ô: làng cũ vẫn nguyên vẹn ở góc tây bắc, còn đồng cỏ, rừng,
-hồ và bờ biển mới nối tiếp về phía đông và nam.
+Màn hình chính đặt logo ở giữa, phía trên danh sách lựa chọn. Menu có
+cảnh nền sống động: sao nhấp nháy, mây trôi, cối xay gió quay, sóng chảy
+và đom đóm bay quanh logo. Trên bản đồ, hoa và mặt nước cũng có hoạt cảnh
+nhẹ (nhấn `V` để bật/tắt). Hội thoại có cử chỉ, phản ứng và lời tạm biệt
+riêng theo thời tiết, mức thân thiết và tính cách từng người, thay vì chỉ
+đọc câu hỏi–đáp cố định. Bản đồ thế giới mở rộng 1280 × 720 ô: làng cũ vẫn
+nguyên vẹn ở góc tây bắc, còn đồng cỏ, rừng, hồ và bờ biển mới nối tiếp về
+phía đông và nam.
 
 Trò chơi có bản đồ làng 1280 × 720 ô, hệ thống ngày – thời tiết – năng lượng, nhiệm vụ
 hằng ngày, túi đồ, chợ, nhà ở, chuồng trại và hồ câu. Ngoài phần nông trại còn
@@ -25,6 +28,26 @@ chữ hiện dần và các lựa chọn trả lời. Mỗi dân làng có 8 tuy
 chào hỏi, công việc, chuyện làng, ước mơ, kỷ niệm, lễ hội, điều chưa kể và
 chuyện ngày mai. Mỗi cuộc trò chuyện có thêm cử chỉ, phản ứng theo lựa chọn
 và lời kết riêng, nên người dân không còn nói như một cỗ máy.
+
+Làng có **8 dân làng** gắn kết thành 4 gia đình: vợ chồng Bác Tư & Bác Hai
+(một là Lan và em trai Minh), chị em An – Mai, và vợ chồng Sơn – Hà.
+Ngoài 5 người có tuyến chủ đề đầy đủ, ba người thân (Bác Hai, Minh, Hà)
+chỉ kể chuyện đời thường ngắn gọn, không chất vấn. Thân thiết có thể lên
+10 ❤ qua nhiều cách, không chỉ trò chuyện:
+
+- **Tặng quà**: đứng cạnh người đó, chọn *Tặng quà* trong hội thoại. Món
+  mà người đó mê (bỏi lời "Thích:" trên màn hình) cho +2 ❤, món khác cho
+  +1 ❤. Mỗi người nhận mỗi ngày một món, và người thân của họ cũng vui theo.
+- **Giúp việc nhỏ**: mỗi người có một việc vặt hằng ngày (An nhặt cỏ,
+  Sơn sửa cúp, Hà vá rò rỉ…). Phần lớn chỉ tốn 1 năng lượng; Sơn và Hà
+  cần 1 khúc gỗ. Giúp xong +1 ❤ và 3 XP.
+- **Thư nhờ giúp đỡ**: mỗi sáng một người dân gửi thư xin một món nhỏ
+  (thường là nông sản mình trồng được). Đọc thư trong tin nhắn sáng hôm
+  đó, mang món đến đúng người và chọn *Thư nhờ* để giao. Giao đúng món
+  cho +2 ❤ cùng một khoản tiền cảm ơn hậu hĩnh.
+
+Các mối quan hệ này được lưu trong file save, nên ván cũ vẫn chơi tiếp
+được ngay.
 
 Bảng nhiệm vụ ngày có hơn 20 loại nhiệm vụ, gồm trồng trọt, chăn nuôi, câu cá,
 khai mỏ, nấu ăn, rèn trang bị và Hang Sâu. Hệ thống **thành tựu** có 12 nhóm,
@@ -107,6 +130,7 @@ Mặc định tiến trình được lưu tại `saves/farm.json`.
 | `K` | Bộ sưu tầm cá |
 | `G` | Đổi giao diện Unicode / ASCII |
 | `Z` | Bật/tắt bản đồ toàn màn hình |
+| `V` | Bật/tắt hoạt cảnh hoa và sóng trên bản đồ |
 | `H` / `?` | Trợ giúp |
 | `P` / `F5` | Lưu game |
 | `Q` | Lưu và về menu chính |

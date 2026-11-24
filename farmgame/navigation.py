@@ -62,8 +62,8 @@ def route(farm: 'Farm', target_area: str, target: Point, *, kind: str = '') -> R
 @lru_cache(maxsize=256)
 def _goal_states(area: str, size: int, target: Point, kind: str,
                  blockers: tuple[Point, ...]) -> frozenset[State]:
-    grid = world.terrain_grid(area, size)
-    width, height = len(grid[0]), len(grid)
+    width, height = world.dimensions(area)
+    tile = world.tile_at
     tx, ty = target
     if not (0 <= tx < width and 0 <= ty < height):
         return frozenset()
@@ -71,7 +71,7 @@ def _goal_states(area: str, size: int, target: Point, kind: str,
         return frozenset()
     if kind in ('forest', 'water'):
         glyph = 'T' if kind == 'forest' else '~'
-        if area != 'village' or grid[ty][tx] != glyph:
+        if area != 'village' or tile(area, tx, ty, size) != glyph:
             return frozenset()
     if kind == 'rock' and (area != 'mine' or (tx, ty) not in world.MINE_ROCKS):
         return frozenset()
@@ -83,7 +83,7 @@ def _goal_states(area: str, size: int, target: Point, kind: str,
     goals = set()
     for x, y in points:
         if not (0 <= x < width and 0 <= y < height
-                and grid[y][x] in '.:=,' and (x, y) not in blockers):
+                and tile(area, x, y, size) in '.:=,' and (x, y) not in blockers):
             continue
         for _, _, facing in _DIRECTIONS:
             if kind in ('plot', 'forest', 'water', 'rock'):
@@ -121,8 +121,7 @@ def _navigate(area: str, size: int, player_x: int, player_y: int,
     start = player_x, player_y, facing
     if start in goals:
         return target, (), 'E'
-    grid = world.terrain_grid(area, size)
-    width, height = len(grid[0]), len(grid)
+    width, height = world.dimensions(area)
     blocked = frozenset(blockers)
     tx, ty = target
     # Actionable goals are at most one step from the target. This Manhattan
@@ -149,7 +148,8 @@ def _navigate(area: str, size: int, player_x: int, player_y: int,
         for dx, dy, direction in _DIRECTIONS:
             nx, ny = x + dx, y + dy
             if not (0 <= nx < width and 0 <= ny < height
-                    and grid[ny][nx] in '.:=,' and (nx, ny) not in blocked):
+                    and world.tile_at(area, nx, ny, size) in '.:=,'
+                    and (nx, ny) not in blocked):
                 continue
             step = nx, ny, direction if track_facing else ''
             new_cost = cost + 1

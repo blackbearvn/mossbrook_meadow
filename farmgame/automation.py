@@ -14,7 +14,8 @@ from .animals import (ANIMAL_TYPES, buy_animal, buy_feed, collect_products,
                       feed_animals, pet_animal, zone_animals, zone_for)
 from .catalog import CROPS, EXTRA_ITEMS
 from .daily import claim_all, ensure_daily
-from .dialogue import begin_dialogue, choose_response, dialogue_node
+from .dialogue import (BRANCHING_NPC_IDS, begin_dialogue, choose_response,
+                       dialogue_node)
 from .dungeon import (MAX_DEPTH, advance, flee, player_attack,
                       start_run, use_potion)
 from .forge import (forge, mining_energy_cost, missing_for,
@@ -491,7 +492,9 @@ class Automation:
                 return self._work_intent()
             if self._daily_left('fish') and farm.energy >= action_cost(farm, 'fish'):
                 return self._fish_intent()
-            neighbours = [npc for npc in NPCS.values() if farm.talked_on[npc.id] != farm.day]
+            neighbours = [npc for npc in NPCS.values()
+                          if farm.talked_on[npc.id] != farm.day
+                          and npc.id in BRANCHING_NPC_IDS]
             if neighbours and (self._daily_left('talk') or farm.talked_on['lan'] != farm.day):
                 npc = min(neighbours, key=lambda npc: (
                     abs(farm.player_x - npc.position[0]) + abs(farm.player_y - npc.position[1]), npc.id))

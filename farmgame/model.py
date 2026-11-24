@@ -78,6 +78,15 @@ class Farm:
     fish_caught: int = 0
     friendships: dict[str, int] = field(default_factory=empty_friendships)
     talked_on: dict[str, int] = field(default_factory=empty_talked_on)
+    # Bonds beyond talking: one gift and one small favour per villager per day,
+    # plus today's request letter (see farmgame.bonds).
+    gifted_on: dict[str, int] = field(default_factory=dict)
+    helped_on: dict[str, int] = field(default_factory=dict)
+    request_day: int = 0
+    request_npc: str = ''
+    request_item: str = ''
+    request_count: int = 0
+    request_done: bool = True
     attributes: dict[str, int] = field(default_factory=empty_attributes)
     skills: dict[str, int] = field(default_factory=empty_skills)
     player_name: str = 'Người làm vườn'
@@ -292,6 +301,9 @@ class Farm:
         self.mine_used = {}
         self.weather = next_weather
         self.forecast = random.choices(list(WEATHER), weights=[5, 2, 3], k=1)[0]
+        # Morning mail: today's help-request letter arrives with the day.
+        from .bonds import ensure_request
+        letter = ensure_request(self)
         ensure_daily(self)
         message = (f"Chào ngày {self.day}! {WEATHER[next_weather]}. "
                    f"Đã hồi đầy {self.energy_limit} năng lượng.")
@@ -303,6 +315,8 @@ class Farm:
             message += f" {wilted} cây héo vì thiếu nước 3 ngày."
         if next_weather == "rainy":
             message += " Mưa tưới ruộng hôm nay, bạn có thể nghỉ tay."
+        if letter:
+            message += f" {letter}"
         if animal_report:
             message += f" {animal_report}"
         from .tutorial import record_event

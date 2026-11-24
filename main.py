@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
                     save_path, graphical=explore, color=not args.no_color,
                     clear_screen=not args.no_clear, default_name=name,
                     force_new=force_new, force_intro=force_intro,
-                    skip_intro=args.skip_intro,
+                    skip_intro=args.skip_intro, ascii_only=args.ascii,
                 )
                 if result.farm is None:
                     return result.exit_code

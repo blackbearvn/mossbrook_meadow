@@ -48,7 +48,51 @@ NPCS = {
                motto='Lối đi rõ ràng là món quà cho người đến sau.',
                likes='Cành khô đã dọn, tiếng chim và trà rừng',
                schedule='Đi một vòng rừng mỗi sáng, về trước khi trời tối'),
+    'hai': NPC('hai', 'Bác Hai', 'Vợ Bác Tư · pha trà', '6', (32, 10),
+               'Bác Hai luôn mang theo bình trà nóng, ngồi cạnh Bác Tư bên hồ.',
+               motto='Chén trà nóng là cách hỏi han dịu dàng nhất của người già.',
+               likes='Trà hoa hồng, sữa và những chén cháo nóng',
+               schedule='Sáng nấu trà đưa ra bờ hồ, chiều kể chuyện với Bác Tư'),
+    'minh': NPC('minh', 'Minh', 'Em trai Lan', '7', (25, 4),
+                'Minh phụ việc tiệm hạt của chị Lan, chuyên chở và xếp hàng.',
+                motto='Hàng sạch sẽ thì khách nhìn cái là muốn mua.',
+                likes='Bánh mì nướng, trứng và chuyện vui trên đường chở hàng',
+                schedule='Sáng chở hàng về tiệm, chiều phụ chị Lan dọn kho'),
+    'ha': NPC('ha', 'Hà', 'Vợ Sơn · thợ sửa đồ', '8', (21, 24),
+              'Hà là thợ sửa đồ của làng, ghế gãy hay mái dột đều nhờ tay cô.',
+              motto='Đồ cũ mà được chăm, còn dùng được cả chục năm.',
+              likes='Gỗ, đá và một ly sữa khi tay cô đang bận',
+              schedule='Sáng sửa đồ ở xưởng nhỏ ven rừng, chiều cùng Sơn đi vòng rừng'),
 }
+
+# Family ties, Stardew-style: gifting one member also warms their relative.
+_FAMILIES = {
+    'tu': 'hai', 'hai': 'tu',
+    'lan': 'minh', 'minh': 'lan',
+    'son': 'ha', 'ha': 'son',
+    'an': 'mai', 'mai': 'an',
+}
+_FAMILY_LABELS = {
+    ('tu', 'hai'): 'vợ chồng', ('an', 'mai'): 'chị em',
+}
+
+
+def relative_of(npc_id: str) -> str | None:
+    """The npc's family member in the village, or None."""
+    return _FAMILIES.get(npc_id)
+
+
+def family_line(npc_id: str) -> str:
+    """One short line naming the family tie, for the directory and cards."""
+    relative = _FAMILIES.get(npc_id)
+    if relative is None:
+        return ''
+    label = _FAMILY_LABELS.get((npc_id, relative),
+                               _FAMILY_LABELS.get((relative, npc_id),
+                                                  'người thân của'))
+    return f'{label} {NPCS[relative].name}'
+
+
 TOPICS = {
     'greet': 'Chào hỏi',
     'work': 'Hỏi về công việc',
@@ -288,6 +332,34 @@ def empty_talked_on() -> dict[str, int]:
 NPC_POSITIONS = {npc.position: npc for npc in NPCS.values()}
 
 
+# Family members chat in short everyday beats instead of the branching
+# scripts: they share, tease and remember, they do not interview you.
+_LIGHT_TALK = {
+    'hai': ('Bác vừa pha trà xong, mùi gừng thơm lắm. Cháu ngồi uống chung một chén đi, không cần nói gì cả.',
+            'Hôm qua bác Tư ngồi ngắm mặt hồ đến tối mời. Bác Hai không nhắc, cứ nấu thêm chén trà chờ thế.',
+            'Cháu làm vườn khỏe thế thì bác yên tâm phần nào. Con cái của làng này ai cũng thế cả.'),
+    'minh': ('Sáng nay chở một mẻ hạt lên, xe kêu lục cục suốt đường, anh em làng cười cả dãy.',
+            'Chị Lan dọn kho kỹ lắm, hàng ai cũng nhớ tên. Học được từ chị cả đấy.',
+            'Hôm nay bác Tư gửi lại một nắm sỏi đẹp, bảo mai đem ra hồ trả. Mỗi người một thú, hay ghê.'),
+    'ha': ('Cái ghế này là của quảng trường, khớp gãy mà Sơn vẫn dìu về cho cô sửa. Nhà mình thế đấy.',
+           'Sáng nay sửa xong cánh cửa nhà ai đó, được cảm ơn ba lần. Tay nghề là để giữ lòng người chứ không chỉ giữ tiền.',
+           'Cậu có gỗ vụn nào thì đừng đốt, mang cho cô. Gỗ nhỏ ghép lại vẫn làm được cả tay nắm cửa.'),
+}
+
+
+def _light_line(farm: 'Farm', npc_id: str) -> str:
+    """A short, everyday line for a family member; tier shifts the tone."""
+    pool = _LIGHT_TALK[npc_id]
+    line = pool[(farm.day - 1) % len(pool)]
+    if farm.friendships[npc_id] >= 6:
+        line += ' Lâu lâu ghé cho cô/bác đỡ nhớ, nghe chưa?' \
+            if npc_id in ('hai', 'ha') else ' Lâu lâu ghé nói chuyện cho vui, nghe chưa?'
+    elif farm.friendships[npc_id] >= 3:
+        line += ' Nghe giọng quen nên mình kể dài hơn chút đấy.' \
+            if npc_id == 'minh' else ' Mình kể dài hơn ngày đầu chút, đừng cười.'
+    return line
+
+
 def npc_at(x: int, y: int, area: str = 'village') -> NPC | None:
     if area != 'village':
         return None
@@ -325,14 +397,21 @@ def talk(farm: 'Farm', npc_id: str, topic: str = 'greet') -> str:
     before = farm.friendships[npc_id]
     first_today = farm.talked_on[npc_id] != farm.day
     if topic == 'greet':
-        line = (_RAIN[npc_id] if farm.weather == 'rainy' else
-                _GREETINGS[npc_id][(farm.day - 1) % len(_GREETINGS[npc_id])])
+        if npc_id in _GREETINGS:
+            line = (_RAIN[npc_id] if farm.weather == 'rainy' else
+                    _GREETINGS[npc_id][(farm.day - 1) % len(_GREETINGS[npc_id])])
+        else:
+            line = _light_line(farm, npc_id)
     elif topic in _STORY:
         choices = _STORY[topic][npc_id]
         line = choices[(farm.day - 1) % len(choices)]
     else:
-        choices = {'work': _WORK, 'village': _VILLAGE,
-                   'dream': _DREAMS, 'memory': _MEMORIES}[topic][npc_id]
+        table = {'work': _WORK, 'village': _VILLAGE,
+                 'dream': _DREAMS, 'memory': _MEMORIES}.get(topic)
+        choices = table.get(npc_id) if table else None
+        if not choices:
+            # Family members have no story scripts; they share everyday beats.
+            choices = _LIGHT_TALK[npc_id]
         line = choices[(farm.day - 1) % len(choices)]
     if before == 0:
         line = f'Chào chủ nông trại {farm.name}! {npc.description} {line}'

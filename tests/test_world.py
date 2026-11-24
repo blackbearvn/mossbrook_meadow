@@ -375,6 +375,24 @@ class WorldTests(unittest.TestCase):
         for point in ((91, 10), (91, 30), (91, 50)):
             self.assertEqual(world.tile_at('village', *point), '~')
 
+    def test_expansion_is_decorated_with_designed_features(self):
+        # Every eastern and southern page gained its own water feature.
+        for point in ((850, 30), (230, 130), (560, 250), (1060, 420),
+                      (210, 610), (1040, 590)):
+            self.assertEqual(world.tile_at('village', *point), '~', point)
+        # Orchard planting lines run straight, with cross alleys between blocks.
+        self.assertEqual(world.tile_at('village', 152, 71), 'T')
+        self.assertEqual(world.tile_at('village', 342, 81), 'T')
+        # Lake shores wear a one-cell lotus ring.
+        self.assertEqual(world.tile_at('village', 630, 300), ',')
+        # The southern bands each mix grass, groves and flower drifts.
+        for box in (((500, 540), (300, 340)), ((60, 140), (560, 600)),
+                    ((300, 380), (400, 440))):
+            tiles = {world.tile_at('village', x, y)
+                     for x in range(*box[0]) for y in range(*box[1])}
+            self.assertIn('T', tiles, box)
+            self.assertIn(',', tiles, box)
+
 
 if __name__ == '__main__':
     unittest.main()

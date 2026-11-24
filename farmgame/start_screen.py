@@ -1,7 +1,9 @@
 """Safe startup transaction and title/wizard UIs; curses is loaded on demand."""
 from __future__ import annotations
 
+import math
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,6 +60,7 @@ HELP = ('WASD / phím mũi tên: di chuyển. E: tương tác với người và
         'I: túi đồ/rương hai cột, tab lọc, minh họa và tổng xu. M: bản đồ. J: thẻ dân làng.\n'
         'R: đi nhanh giữa các khu vực; bản đồ theo trang chỉ hiện một khu, đi qua đường ở rìa để sang trang.\n'
         'Z: khung bản đồ rộng, hiện nhiều ô hơn quanh nhân vật.\n'
+        'V: bật/tắt hoạt cảnh bản đồ (sóng nước, hoa nở).\n'
         'Mỏ Khoáng ở Đồi Gió (76,6): E vào mỏ, đứng cạnh đá rồi E để đào quặng.\n'
         'Trong mỏ: F lò rèn (mũ/kiếm/giáp/quần/giày), G Hang Sâu, D ra ngoài; ngủ để mỏ hồi đầy.\n'
         'Hang Sâu: cửa sổ chiến đấu riêng; 1 tấn công, 2 thuốc, 3 rút, 4 đỡ, 5 kỹ năng (3 MP).\n'
@@ -68,6 +71,184 @@ HELP = ('WASD / phím mũi tên: di chuyển. E: tương tác với người và
         'M tại cửa tiệm: chợ chia ô có hình minh họa; Tab đổi quầy, Enter chọn.\n'
         'H: hướng dẫn trong game. P: lưu. Q: lưu và về menu chính.\n'
         'Từ quảng trường, đi về ruộng ở (26, 42). Mỗi ngày là một khởi đầu mới.')
+
+
+# --- Animated title scene ---------------------------------------------------
+# The frame is repainted on every key-poll tick (~10 fps).  Everything is
+# derived from a frame counter, so the scene stays deterministic and works
+# with or without colour and Unicode glyphs.
+
+_CLOUD = '☁☁ ☁☁☁ ☁☁'
+_CLOUD_ASCII = '(~~--~~)'
+_WAVES = '≈≈~──≈~'
+_WAVES_ASCII = '~--~~--'
+_WINDMILL = ('─◉─', '╱◉╲', '│◉│', '╲◉╱')
+_WINDMILL_ASCII = ('-O-', '/O\\', '|O|', '\\O/')
+
+
+def _hill_height(x: float, width: float) -> float:
+    """Rounded silhouette height for one skyline column."""
+    a = (x - width * 0.24) / (width * 0.30)
+    b = (x - width * 0.74) / (width * 0.40)
+    return max(0.0, (1.0 - a * a) * 3.4, (1.0 - b * b) * 2.4)
+
+
+def _cloud_head(start: float, speed: float, frame: int, width: int) -> int:
+    span = width + len(_CLOUD) + 8
+    return int(start - frame * speed) % span - len(_CLOUD) - 4
+
+
+def _draw_cloud(ui, row, head, width, uni, color):
+    shape = _CLOUD if uni else _CLOUD_ASCII
+    for offset in range(len(shape)):
+        x = head + offset
+        if 0 <= x < width:
+            ui._put(row, x, shape[offset], color)
+
+
+def _paint_title_scene(ui, height, width, frame, options, selected, body):
+    """Paint one animated frame of the title screen around the menu card."""
+    uni = ui.unicode_map
+    sky_h = max(3, min(7, height // 3))
+    meadow_top = sky_h + 2
+    river_top = height - 2
+    # Stars: a fixed sparse field whose brightness twinkles over time.
+    for y in range(sky_h):
+        for x in range(width):
+            if (x * 7 + y * 13) % 23 != 0:
+                continue
+            bright = (x + y + (frame >> 1)) % 3 == 0
+            ui._put(y, x, '*' if bright else ('·' if uni else '.'), 'dim', bright)
+    # Moon with a soft halo; clouds drift across it.
+    mx, my = width - 7, 1
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if abs(dx) + abs(dy) == 2:
+                continue
+            char = '◉' if (dx, dy) == (0, 0) else '·'
+            if not uni:
+                char = 'O' if (dx, dy) == (0, 0) else '.'
+            ui._put(max(0, my + dy), mx + dx, char,
+                    'yellow' if (dx, dy) == (0, 0) else 'dim',
+                    (dx, dy) == (0, 0))
+    for row, speed, start, color in ((2, 0.35, 6.0, 'white'),
+                                     (3, 0.22, 40.0, 'dim'),
+                                     (4, 0.5, 70.0, 'white')):
+        if row < sky_h:
+            _draw_cloud(ui, row, _cloud_head(start, speed, frame, width),
+                        width, uni, color)
+    # Hills: two silhouette rows under the sky.
+    for x in range(width):
+        p = int(_hill_height(x, width))
+        if p >= 3:
+            ui._put(sky_h, x, '♣' if uni else '^', 'forest', True)
+        elif p >= 2:
+            ui._put(sky_h, x, '▒' if uni else '^', 'forest')
+        if p >= 1:
+            ui._put(sky_h + 1, x, '▒' if uni else '#', 'forest')
+    # Meadow: grass tufts, swaying flowers and scattered trees.
+    sway = (frame // 3) % 2
+    for y in range(meadow_top, river_top):
+        for x in range(width):
+            roll = (x * 11 + y * 7) % 53
+            if roll == 0:
+                ui._put(y, x, '♣' if uni else 'T', 'forest', True)
+            elif (x * 3 + y * 5) % 17 == 0:
+                flower = ((x + sway) % 2 == 0)
+                ui._put(y, x, ('❀' if flower else '✿') if uni else
+                        ('*' if flower else ','), 'flower', flower)
+            elif (x * 7 + y * 13) % 29 == 0:
+                ui._put(y, x, '`' if uni else "'", 'grass')
+    # Fireflies blink and drift above the river bank.
+    for i in range(5):
+        if (frame + i) % 4 == 0:
+            continue
+        fx = (2 + (i * width) // 6
+              + int(3 * math.sin((frame + i * 6) / 4.0))) % max(1, width - 2)
+        fy = max(meadow_top, river_top - 2 - (i % 2))
+        ui._put(fy, fx, '✦' if uni else '*', 'sand', True)
+    # A river flows along the bottom edge of the screen.
+    shift = frame >> 1
+    waves = _WAVES if uni else _WAVES_ASCII
+    for offset, color in ((0, 'lake'), (1, 'sea')):
+        y = river_top + offset
+        for x in range(width):
+            ui._put(y, x, waves[(x - shift) % len(waves)], color)
+    # --- floating title card ------------------------------------------------
+    summary_all = wrap_cells(body, max(8, width - 16)) if body else []
+    summary = summary_all[:min(3, max(0, height - 18))]
+    panel_w = min(width - 6, 64)
+    panel_h = 16 + len(summary)
+    px = max(0, (width - panel_w) // 2)
+    py = max(1, min((height - panel_h) // 2, height - panel_h - 1))
+    rect = tui.Rect(px, py, panel_w, panel_h)
+    hint = ('↑↓ chọn · Enter/số xác nhận · Esc thoát' if uni else
+            'W/S chọn · Enter/số xác nhận · Esc thoát')
+    body_rect = tui.draw_panel(
+        ui, rect, footer=hint, unicode=uni, accent='magenta',
+        title_color='yellow', shadow=True, bounds=(height, width))
+    row = body_rect.y
+    logo_colors = ('green', 'green', 'green', 'yellow', 'yellow')
+    sweep = frame % (panel_w + 12) - 6
+    for index, line in enumerate(TITLE_LOGO):
+        text = tui.ellipsize(line, body_rect.width, unicode=uni)
+        left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
+        color = logo_colors[index]
+        if index >= 3:
+            # A soft light sweeps across the name letters.
+            offset = 0
+            for ci, char in enumerate(text):
+                cell = tui.cells(char)
+                glowing = abs(ci - sweep) <= 1
+                ui._put(row, left + offset, char,
+                        'white' if glowing else color, True)
+                offset += cell
+        else:
+            ui._put(row, left, text, color, True)
+        row += 1
+    tagline = tui.ellipsize(TITLE_TAGLINE, body_rect.width, unicode=uni)
+    left = body_rect.x + max(0, (body_rect.width - tui.cells(tagline)) // 2)
+    ui._put(row, left, tagline, 'cyan' if (frame // 3) % 2 else 'dim')
+    row += 1
+    for index, line in enumerate(summary):
+        text = tui.ellipsize(line, body_rect.width - 4, unicode=uni)
+        left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
+        ui._put(row, left, text, 'cyan' if index == 0 else 'dim')
+        row += 1
+    row += 1
+    markers = ('›', '›', '·') if uni else ('>', '>', '.')
+    marker_colors = ('yellow', 'cyan', 'green')
+    mi = (frame // 2) % 3
+    for index, (key, label) in enumerate(options):
+        active = index == selected
+        text = f'{key}. {label}'
+        left = body_rect.x + max(6, (body_rect.width - tui.cells(text)) // 2)
+        if active:
+            ui._put(row, body_rect.x + 2,
+                    ' ' * max(1, body_rect.width - 4), 'selected')
+            ui._put(row, left - 2, markers[mi], marker_colors[mi], True)
+            ui._put(row, left, text, 'selected', True)
+        else:
+            ui._put(row, left, text, 'green')
+        row += 1
+    # A small windmill turns on the meadow beside the card, always clear of
+    # the panel itself.
+    if river_top - meadow_top >= 4:
+        if width - (px + panel_w) >= 5:
+            wx = px + panel_w + 2
+        elif px >= 6:
+            wx = px - 5
+        else:
+            wx = None
+        if wx is not None:
+            wy = meadow_top + 1
+            arms = _WINDMILL if uni else _WINDMILL_ASCII
+            state = arms[(frame // 2) % 4]
+            ui._put(wy, wx, state[0], 'sand', True)
+            ui._put(wy, wx + 1, state[1], 'building', True)
+            ui._put(wy, wx + 2, state[2], 'sand', True)
+            ui._put(wy + 1, wx + 1, '▒' if uni else '#', 'stone')
+            ui._put(wy + 2, wx, '▒▒▒' if uni else '###', 'stone')
 
 
 class TextUI:
@@ -124,8 +305,9 @@ class TextUI:
 
 class CursesUI(ExplorerGame):
     """Reuse cell-safe painting only, never ExplorerGame's autosaving run()."""
-    def __init__(self, color=True, clear_screen=True):
-        super().__init__(None, Path('.'), color, clear_screen)
+    def __init__(self, color=True, clear_screen=True, ascii_only=False):
+        super().__init__(None, Path('.'), color, clear_screen,
+                         ascii_only=ascii_only)
 
     def attach(self, screen, curses):
         self._screen, self._curses = screen, curses
@@ -443,7 +625,7 @@ class CursesUI(ExplorerGame):
                         self._creator_cycle(profile, field, 1)
 
     def _title_menu(self, title, options, body='', default=None):
-        """Centered title card: logo first, then the menu choices."""
+        """Animated title card: a living scene behind the glowing logo."""
         height, width = self._screen.getmaxyx()
         if height < 18 or width < 54:
             return None
@@ -451,58 +633,14 @@ class CursesUI(ExplorerGame):
                          if pair[0] == default), 0)
         while True:
             height, width = self._screen.getmaxyx()
+            if height < 18 or width < 54:
+                return None
+            # Clear every frame: moving clouds, fireflies and shimmer would
+            # otherwise leave trails on top of the previous frame.
             self._screen.erase()
-            panel_w = min(width - 4, 72)
-            panel_h = min(height - 2, 22)
-            x = max(0, (width - panel_w) // 2)
-            y = max(1, (height - panel_h) // 2)
-            rect = tui.Rect(x, y, panel_w, panel_h)
-            body_rect = tui.draw_panel(
-                self, rect, footer='', unicode=self.unicode_map,
-                accent='magenta', title_color='yellow', shadow=True,
-                bounds=(height, width))
-            row = body_rect.y + 1
-            logo_colors = ('green', 'green', 'green', 'yellow', 'yellow')
-            for line, color in zip(TITLE_LOGO, logo_colors):
-                text = tui.ellipsize(line, body_rect.width,
-                                     unicode=self.unicode_map)
-                left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
-                self._put(row, left, text, color, True)
-                row += 1
-            tagline = tui.ellipsize(TITLE_TAGLINE, body_rect.width,
-                                    unicode=self.unicode_map)
-            left = body_rect.x + max(0, (body_rect.width - tui.cells(tagline)) // 2)
-            self._put(row, left, tagline, 'dim')
-            row += 2
-            summary = wrap_cells(body, max(8, body_rect.width - 6))
-            summary_room = max(0, body_rect.y + body_rect.height - 10 - row)
-            for line in summary[:summary_room]:
-                text = tui.ellipsize(line, body_rect.width - 4,
-                                     unicode=self.unicode_map)
-                left = body_rect.x + max(0, (body_rect.width - tui.cells(text)) // 2)
-                self._put(row, left, text, 'cyan')
-                row += 1
-            row += 1
-            for index, (key, label) in enumerate(options):
-                active = index == selected
-                text = f'{key}. {label}'
-                prefix = '› ' if self.unicode_map else '> '
-                text = (prefix if active else '  ') + text
-                left = body_rect.x + max(6, (body_rect.width - tui.cells(text)) // 2)
-                if active:
-                    self._put(row, body_rect.x + 2,
-                              ' ' * max(1, body_rect.width - 4), 'selected')
-                self._put(row, left, text,
-                          'selected' if active else 'green', active)
-                row += 1
-            hint = ('↑↓ chọn · Enter/số xác nhận · Esc thoát'
-                    if self.unicode_map else
-                    'W/S chọn · Enter/số xác nhận · Esc thoát')
-            if body_rect.y + body_rect.height > row:
-                self._put(body_rect.y + body_rect.height - 1,
-                          body_rect.x + 1,
-                          tui.ellipsize(hint, body_rect.width - 2,
-                                        unicode=self.unicode_map), 'dim')
+            frame = int(time.monotonic() * 8)
+            _paint_title_scene(self, height, width, frame, options,
+                               selected, body)
             self._refresh()
             key = self.key()
             if key in dict(options):
@@ -618,21 +756,23 @@ class CursesUI(ExplorerGame):
         play_curses_credits(self)
 
 
-def _with_ui(callback, graphical, color, clear_screen):
+def _with_ui(callback, graphical, color, clear_screen, ascii_only=False):
     if not graphical:
         return callback(TextUI())
     import curses
-    ui = CursesUI(color, clear_screen)
+    ui = CursesUI(color, clear_screen, ascii_only=ascii_only)
     def wrapped(screen):
         ui.attach(screen, curses)
         return callback(ui)
     return curses.wrapper(wrapped)
 
 
-def show_intro(farm, *, graphical, color=True, clear_screen=True) -> bool:
+def show_intro(farm, *, graphical, color=True, clear_screen=True,
+               ascii_only=False) -> bool:
     """Show personalized pages without changing farm state or writing a save."""
     try:
-        return _with_ui(lambda ui: ui.intro(farm), graphical, color, clear_screen)
+        return _with_ui(lambda ui: ui.intro(farm), graphical, color,
+                        clear_screen, ascii_only=ascii_only)
     except (KeyboardInterrupt, EOFError):
         return False
     except Exception as exc:
@@ -770,11 +910,12 @@ def _startup(ui, save_path, default_name, force_new, force_intro, skip_intro):
 
 def run_startup(save_path: Path, *, graphical: bool, color=True, clear_screen=True,
                 default_name='Mossbrook Meadow', force_new=False, force_intro=False,
-                skip_intro=False) -> StartupResult:
+                skip_intro=False, ascii_only=False) -> StartupResult:
     """Return a chosen farm only after a successful final-confirmation save."""
     try:
         return _with_ui(lambda ui: _startup(ui, Path(save_path), default_name,
-                         force_new, force_intro, skip_intro), graphical, color, clear_screen)
+                         force_new, force_intro, skip_intro), graphical, color,
+                         clear_screen, ascii_only=ascii_only)
     except (KeyboardInterrupt, EOFError):
         return StartupResult(None)
     except ImportError:

@@ -137,7 +137,9 @@ def _legacy_fields(data: object, expected: set[str], message: str) -> dict:
         raise ValueError(message)
     optional = {'fish_collection', 'retired_attribute_points',
                 'retired_skill_points', 'map_pages', 'hp', 'gear',
-                'mine_used', 'dungeon_best', 'mined_total', 'achievements'}
+                'mine_used', 'dungeon_best', 'mined_total', 'achievements',
+                'gifted_on', 'helped_on', 'request_day', 'request_npc',
+                'request_item', 'request_count', 'request_done'}
     keys = set(data)
     if keys >= expected and keys - expected <= optional:
         data = {key: value for key, value in data.items()
@@ -282,7 +284,14 @@ def _decode_farm(data: object) -> Farm:
                                ('mine_used', dict),
                                ('dungeon_best', int),
                                ('mined_total', int),
-                               ('achievements', empty_achievements)):
+                               ('achievements', empty_achievements),
+                               ('gifted_on', dict),
+                               ('helped_on', dict),
+                               ('request_day', int),
+                               ('request_npc', str),
+                               ('request_item', str),
+                               ('request_count', int),
+                               ('request_done', bool)):
             if field not in data:
                 data = {**data, field: default()}
     if not isinstance(data, dict) or set(data) != expected:
@@ -384,10 +393,27 @@ def _decode_farm(data: object) -> Farm:
             raise ValueError('Tọa độ mỏ đã khai thác không hợp lệ.')
     for key, maximum in (('friendships', 10), ('talked_on', data['day'])):
         values = data[key]
-        if not isinstance(values, dict) or set(values) != set(NPCS):
+        if not isinstance(values, dict) or not set(values) <= set(NPCS):
             raise ValueError('Dữ liệu quan hệ dân làng không hợp lệ.')
+        # New family members start unknown in old saves.
+        for missing in NPCS:
+            values.setdefault(missing, 0)
         for value in values.values():
             _integer(value, maximum=maximum)
+    for key in ('gifted_on', 'helped_on'):
+        marks = data[key]
+        if not isinstance(marks, dict) or not set(marks) <= set(NPCS):
+            raise ValueError('Dữ liệu quà tặng/giúp đỡ không hợp lệ.')
+        for value in marks.values():
+            _integer(value, maximum=data['day'])
+    _integer(data['request_day'], maximum=data['day'])
+    if data['request_npc'] not in NPCS and data['request_npc'] != '':
+        raise ValueError('Người gửi thư nhờ không hợp lệ.')
+    if data['request_item'] not in ITEMS and data['request_item'] != '':
+        raise ValueError('Món nhờ giúp đỡ không hợp lệ.')
+    _integer(data['request_count'], maximum=9)
+    if type(data['request_done']) is not bool:
+        raise ValueError('Trạng thái thư nhờ không hợp lệ.')
     if type(data['barn_capacity']) is not int or data['barn_capacity'] not in (4, 8):
         raise ValueError('Sức chứa chuồng không hợp lệ.')
     animals = _decode_animals(data['animals'], data['barn_capacity'])
@@ -460,7 +486,9 @@ def load_game(path: Path) -> Farm:
             optional = {'fish_collection', 'retired_attribute_points',
                         'retired_skill_points', 'map_pages', 'hp', 'gear',
                         'mine_used', 'dungeon_best', 'mined_total',
-                        'achievements'}
+                        'achievements', 'gifted_on', 'helped_on',
+                        'request_day', 'request_npc', 'request_item',
+                        'request_count', 'request_done'}
             if (not isinstance(data, dict)
                     or not set(data) >= VERSION_SIX_FIELDS
                     or set(data) - VERSION_SIX_FIELDS - optional):

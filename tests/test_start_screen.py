@@ -170,6 +170,30 @@ class CursesTitleMenuTests(unittest.TestCase):
         self.assertLess(rendered.index('M O S S B R O O K'),
                         rendered.index('1. Tiếp tục'))
 
+    def test_animated_title_scene_stays_inside_the_terminal(self):
+        from unittest.mock import Mock
+        from tests.test_floating_ui import CellScreen, curses_namespace
+        from farmgame.start_screen import CursesUI, _paint_title_scene
+        for uni in (False, True):
+            ui = CursesUI(color=False)
+            ui._screen = CellScreen(24, 80)
+            ui._curses = curses_namespace()
+            ui._colors = {}
+            ui.unicode_map = uni
+            ui.key = Mock(side_effect=['\x1b'])
+            choice = ui.choose(
+                'MOSSBROOK MEADOW · Một cuộc sống chậm giữa mây trời',
+                [('1', 'Tiếp tục'), ('0', 'Thoát')], body='Ngày 1 · Cấp 1')
+            self.assertEqual(choice, '0')
+            rendered = '\n'.join(ui._screen.lines())
+            self.assertIn('M O S S B R O O K', rendered)
+            self.assertIn('1. Tiếp tục', rendered)
+            # A sweep of animation frames keeps every glyph in bounds.
+            options = [('1', 'Tiếp tục'), ('0', 'Thoát')]
+            for frame in range(0, 64, 7):
+                ui._screen.erase()
+                _paint_title_scene(ui, 24, 80, frame, options, 0, 'Ngày 1')
+
 
 class CursesInputTests(unittest.TestCase):
     def ui(self):

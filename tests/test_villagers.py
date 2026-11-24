@@ -57,7 +57,7 @@ class ConversationTests(unittest.TestCase):
             self.assertEqual(nearby_npc(farm).id, key)
             replies.add(talk(farm, key, 'work'))
             self.assertEqual(farm.friendships[key], 1)
-        self.assertEqual(len(replies), 5)
+        self.assertEqual(len(replies), len(NPCS))
 
     def test_legacy_player_on_npc_tile_can_chat_and_leave(self):
         self.farm.player_x, self.farm.player_y = NPCS['lan'].position

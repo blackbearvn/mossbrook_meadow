@@ -125,9 +125,11 @@ def overview_rows(farm, width, height, *, unicode=False):
 
 
 def directory_lines(farm):
-    from .villagers import NPCS
-    return [f'{npc.glyph}. {npc.name} · {npc.role} · ({npc.position[0]}, {npc.position[1]})'
-            f' · Thân {farm.friendships[npc.id]}/10' for npc in NPCS.values()]
+    from .villagers import NPCS, family_line
+    return [f'{npc.glyph}. {npc.name} · {npc.role}'
+            + (f' ({family_line(npc.id)})' if family_line(npc.id) else '')
+            + f' · ({npc.position[0]}, {npc.position[1]})'
+            + f' · Thân {farm.friendships[npc.id]}/10' for npc in NPCS.values()]
 
 
 class ExplorerGame:
@@ -140,6 +142,8 @@ class ExplorerGame:
         self.play_intro = intro
         self.messages: list[str] = ["Chào mừng đến Mossbrook Meadow! WASD di chuyển, E tương tác, H trợ giúp."]
         self.map_expanded = False
+        self.animate_map = True
+        self._anim_frame = 0
         self.return_to_menu = False
         self.quit_to_menu = True
         from .toast import ToastCenter
@@ -256,7 +260,8 @@ class ExplorerGame:
         if self.play_intro:
             self._draw()
             from .start_screen import CursesUI
-            opening = CursesUI(self.color, self.clear_screen)
+            opening = CursesUI(self.color, self.clear_screen,
+                               ascii_only=not self.unicode_map)
             opening._screen = screen
             opening._curses = self._curses
             opening._colors = self._colors
@@ -267,12 +272,22 @@ class ExplorerGame:
             screen.timeout(100)
         self.coach.offer()
         self.coach.sync()
+        from .bonds import ensure_request
+        letter = ensure_request(self.farm)
+        if letter:
+            self._log(letter)
         redraw = True
         last_draw = 0.0
         while True:
             now = time.monotonic()
             redraw |= self.toasts.tick(now)
             redraw |= self.activities.tick(now)
+            if self.animate_map:
+                # Nature art (waves, flowers) cycles on a shared phase whose
+                # length is the lcm of both cycles, so each loop is seamless.
+                frame = int(now * 3) % 299
+                if frame != self._anim_frame:
+                    self._anim_frame, redraw = frame, True
             if redraw and (not self.activities.running or now - last_draw >= 0.035):
                 self._draw()
                 last_draw, redraw = now, False
@@ -371,6 +386,11 @@ class ExplorerGame:
             self.activities.open_auto()
         elif key == "g":
             self._toggle_map_style()
+        elif key == "v":
+            self.animate_map = not self.animate_map
+            self._anim_frame = 0
+            self._log('Hoạt cảnh bản đồ: BẬT.' if self.animate_map
+                      else 'Hoạt cảnh bản đồ: TẮT.')
         elif key == "z":
             self._toggle_map_width()
         elif key == "i":
@@ -456,7 +476,7 @@ class ExplorerGame:
                 self._refresh()
             return
         layout = map_layout(farm, width, height, expanded=expanded)
-        grid = world.terrain_grid(farm.area, farm.size)
+        area_width, area_height = world.dimensions(farm.area)
         path = (self.activities.path_points() if self.activities.running
                 else self.coach.path_points())
         if layout.framed:
@@ -478,22 +498,29 @@ class ExplorerGame:
         npc_points = ({npc.position for npc in NPCS.values()}
                       if farm.area == 'village' else set())
         player = (farm.player_x, farm.player_y)
+        phase = self._anim_frame
+        rows: dict[int, str] = {}
         for row in range(layout.rows):
             y = row + layout.top
             for col in range(layout.cols):
                 x = col + layout.left
-                tile = (grid[y][x] if 0 <= y < len(grid)
-                        and 0 <= x < len(grid[y]) else '#')
+                if 0 <= y < area_height and 0 <= x < area_width:
+                    tile = rows.setdefault(
+                        y, world.terrain_row(farm.area, y, farm.size))[x]
+                else:
+                    tile = '#'
                 # Only a few cells can change between frames.  Everything
                 # else uses the cached static art, avoiding per-cell NPC and
                 # plot lookups on very wide terminals.
                 dynamic = ((x, y) == player or (x, y) in path
                            or (farm.area == 'village'
                                and ((x, y) in npc_points or tile == ':'))
-                           or (farm.area == 'mine' and tile == 'R'))
+                           or (farm.area == 'mine' and tile == 'R')
+                           or (phase and farm.area == 'village'
+                               and tile in (',', '~', 'S')))
                 if dynamic:
                     art = map_cell(farm, x, y, unicode=self.unicode_map,
-                                   path=path, tile=tile)
+                                   path=path, tile=tile, phase=phase)
                 else:
                     art = _static_cell(farm.area, farm.size, self.unicode_map,
                                        x, y, tile)
@@ -527,8 +554,8 @@ class ExplorerGame:
                       tui.ellipsize(line, width, unicode=self.unicode_map))
         if self._save_error:
             self._put(height - 2, 0, "LỖI LƯU: " + self._save_error, "red", True)
-        controls = (f"{g['icon']} Q về menu · WASD đi · E dùng · R khu vực · F ruộng · B chuồng · K cá · N/O · T tân thủ · G · Z rộng"
-                    if width >= 90 else f"{g['icon']} Q · E · R khu vực · F/B/K · N/O · T tân thủ · G/Z"
+        controls = (f"{g['icon']} Q về menu · WASD đi · E dùng · R khu vực · F ruộng · B chuồng · K cá · N/O · T tân thủ · G · Z rộng · V hoạt cảnh"
+                    if width >= 90 else f"{g['icon']} Q · E · R khu vực · F/B/K · N/O · T tân thủ · G/Z · V"
                     if width >= 48 else f"{g['icon']} Q · E · R · T tân thủ · G/Z"
                     if width >= 30 else f"{g['icon']} Q · E · G")
         self._put(height - 1, 0, controls, "cyan")
@@ -864,36 +891,75 @@ class ExplorerGame:
                 offset = 0
 
     def _conversation(self):
-        from .villagers import TOPICS, bond_title, nearby_npc
-        from .dialogue import begin_dialogue, choose_response, dialogue_node
+        from .villagers import TOPICS, bond_title, family_line, nearby_npc
+        from .dialogue import BRANCHING_NPC_IDS, begin_dialogue, begin_light_chat, choose_response, dialogue_node
         from .artwork import hearts, npc_portrait
+        from .bonds import (deliver_request, gift_options, give_gift,
+                            help_favour, help_available, request_line)
         npc = nearby_npc(self.farm)
         if npc is None:
             return
-        topics = list(TOPICS)
+        branching = npc.id in BRANCHING_NPC_IDS
+        topics = list(TOPICS) if branching else ['greet']
         portrait = npc_portrait(npc.id, unicode=self.unicode_map) if self._screen else ()
         while True:
             friendship = self.farm.friendships[npc.id]
             title = (f'{npc.name} · {npc.role} · {bond_title(friendship)} · '
                      f'{hearts(friendship, unicode=self.unicode_map)} {friendship}/10')
+            family = family_line(npc.id)
             details = [
                 f'“{npc.motto}”',
                 f'Thích: {npc.likes}',
-                f'Lịch sinh hoạt: {npc.schedule}',
-                npc.description,
+                (f'Gia đình: {family}' if family else npc.description),
+                npc.description if family else f'Lịch sinh hoạt: {npc.schedule}',
             ]
-            index = self._choose(title, [TOPICS[key] for key in topics], details,
-                                 art=portrait)
+            if branching:
+                actions = ([('topic', key) for key in topics]
+                           + [('gift', 'Tặng quà'), ('help', 'Giúp một việc nhỏ')])
+            else:
+                actions = [('chat', 'Trò chuyện'), ('gift', 'Tặng quà'),
+                           ('help', 'Giúp một việc nhỏ')]
+            request = request_line(self.farm, npc.id)
+            if request and not request.startswith('Việc nhờ'):
+                actions.append(('request', request))
+            if branching:
+                labels = ([TOPICS[key] for _, key in actions[:len(topics)]]
+                          + [label for _, label in actions[len(topics):]])
+            else:
+                labels = [label for _, label in actions]
+            index = self._choose(title, labels, details, art=portrait)
             if index is None:
                 return
-            conversation = begin_dialogue(self.farm, npc.id, topics[index])
+            kind, value = actions[index]
+            if kind == 'gift':
+                self._gift_menu(npc, portrait)
+                continue
+            if kind == 'help':
+                reply = help_favour(self.farm, npc.id)
+                self._log(reply)
+                self._save()
+                continue
+            if kind == 'request':
+                reply = deliver_request(self.farm, npc.id)
+                self._log(reply)
+                self._save()
+                continue
+            conversation = (begin_dialogue(self.farm, npc.id, value)
+                            if branching else begin_light_chat(self.farm, npc.id))
+            topic_label = TOPICS[value] if branching else 'Trò chuyện'
             boxed = bool(self._screen is not None
                          and callable(getattr(self._screen, 'getmaxyx', None)))
             while not conversation.done:
                 node = dialogue_node(conversation)
+                if not node.choices:
+                    # Trò chuyện gọn với người thân: một câu kể rồi thôi.
+                    conversation.done = True
+                    self._reader(f'{npc.name} · trò chuyện',
+                                 '\n\n'.join(conversation.history))
+                    break
                 if boxed:
                     choice_id = self._dialogue_box(
-                        npc, node, portrait, friendship, TOPICS[topics[index]])
+                        npc, node, portrait, friendship, topic_label)
                     if choice_id is None:
                         self._draw()
                         if conversation.done:
@@ -914,7 +980,7 @@ class ExplorerGame:
                                 readable) is False:
                     return
                 response = self._choose(
-                    f'{npc.name} đang chờ bạn trả lời · {TOPICS[topics[index]]}',
+                    f'{npc.name} đang chờ bạn trả lời · {topic_label}',
                     [choice.text for choice in node.choices],
                     [f'Thân {friendship}/10 · {bond_title(friendship)} · Chọn một hướng trò chuyện.'],
                     art=portrait)
@@ -938,6 +1004,24 @@ class ExplorerGame:
                          + f'\n\n{hearts(self.farm.friendships[npc.id], unicode=self.unicode_map)} '
                            f'{self.farm.friendships[npc.id]}/10 · {bond_title(self.farm.friendships[npc.id])}')
             self.coach.event('talk', npc_id=npc.id, done=conversation.done)
+
+    def _gift_menu(self, npc, portrait):
+        """Pick a giftable item and hand it over, with the villager's reaction."""
+        from .bonds import give_gift
+        options = gift_options(self.farm)
+        if not options:
+            self._reader(f'Tặng quà cho {npc.name}',
+                         'Túi bạn đang trống, không có gì để tặng. Cây và ao sẽ đầy lên sớm thôi.')
+            return
+        labels = [label for _, label in options]
+        index = self._choose(f'Tặng quà cho {npc.name}', labels,
+                             [f'Thích: {npc.likes} · mỗi người mỗi ngày nhận một món quà.'],
+                             art=portrait)
+        if index is None:
+            return
+        reply = give_gift(self.farm, npc.id, options[index][0])
+        self._log(reply)
+        self._save()
 
     def _dialogue_box(self, npc, node, portrait, friendship, topic):
         """An RPG-style bottom dialogue box with typewriter text and choices."""

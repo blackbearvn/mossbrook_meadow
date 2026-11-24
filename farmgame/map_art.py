@@ -111,14 +111,16 @@ def terrain_glyph(tile: str, *, unicode: bool = True) -> str:
 
 def _line_cell(area: str, size: int, x: int, y: int, *, unicode: bool,
                wall: bool = False) -> MapCell:
-    grid = world.terrain_grid(area, size)
-    height, width = len(grid), len(grid[0])
+    width, height = world.dimensions(area)
+    row = world.terrain_row(area, y, size)
     mask = 0
     connections = '#D' if wall else '='
     for bit, dx, dy in ((1, 0, -1), (2, 1, 0), (4, 0, 1), (8, -1, 0)):
         nx, ny = x + dx, y + dy
-        if 0 <= nx < width and 0 <= ny < height and grid[ny][nx] in connections:
-            mask |= bit
+        if 0 <= nx < width and 0 <= ny < height:
+            glyph = row[nx] if ny == y else world.terrain_row(area, ny, size)[nx]
+            if glyph in connections:
+                mask |= bit
     if unicode:
         glyph = _LINES[mask]
         tail = '─' if mask & 2 else ' '
@@ -151,6 +153,25 @@ def _building_cell(x: int, y: int, *, unicode: bool) -> MapCell | None:
             tail = '-' if tail == '─' else tail
         return MapCell(glyph, color, tail=tail)
     return None
+
+
+def _nature_cell(x: int, y: int, tile: str, unicode: bool,
+                 phase: int) -> MapCell:
+    """Living art for water and flower tiles.
+
+    Phase 0 matches ``_static_cell`` exactly; later phases drift the wave
+    crest across lakes and the sea and cycle the flower blooms in place.
+    """
+    if tile == ',':
+        texture = (x * 11 + y * 17 + phase) % 13
+        if unicode:
+            glyph = '❀' if texture == 0 else ('✾' if texture == 1 else '✿')
+            return MapCell(glyph, 'flower', bold=texture < 2)
+        glyph = '%' if texture == 0 else ('*' if texture == 4 else ',')
+        return MapCell(glyph, 'flower', bold=glyph != ',')
+    texture = (x * 7 + y * 11 + phase * 7) % 23
+    wave = ('≋' if texture == 0 else '≈') if unicode else '~'
+    return MapCell(wave, 'lake' if tile == '~' else 'sea', tail=wave)
 
 
 @lru_cache(maxsize=4096)
@@ -212,11 +233,14 @@ def _static_cell(area: str, size: int, unicode: bool, x: int, y: int,
 
 
 def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
-             path=frozenset(), tile: str | None = None) -> MapCell:
+             path=frozenset(), tile: str | None = None,
+             phase: int = 0) -> MapCell:
     """Style a logical tile without progressing quests, crops, time, or RNG.
 
     The renderer can pass an already-validated ``tile`` from a cached terrain
     grid, which avoids repeating coordinate validation for every visible cell.
+    ``phase`` steps the living nature art (drifting waves, blooming flowers);
+    phase 0 reproduces the static art exactly, keeping renders repeatable.
     """
     if tile is None:
         # Validate through the world before an actor or route can mask bad inputs.
@@ -245,6 +269,8 @@ def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
                        tail=tail)
     if (x, y) in path and tile in ('.', '=', ',', ':'):
         return MapCell('·' if unicode else '+', 'yellow', True)
+    if phase and farm.area == 'village' and tile in (',', '~', 'S'):
+        return _nature_cell(x, y, tile, unicode, phase)
     if farm.area == 'mine' and tile == 'R':
         from .mining import rock_exhausted
         from . import world as mine_world
@@ -259,6 +285,7 @@ def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
 
 def map_legend(farm: Farm, *, unicode: bool = True) -> list[str]:
     """One or two compact Vietnamese lines matching the active symbol palette."""
+    from .villagers import NPCS
     arrow = (_ARROWS if unicode else _ASCII_ARROWS).get(farm.facing, ' ')
     player = f'{farm.avatar}{arrow} bạn'
     guide = '·' if unicode else '+'
@@ -282,7 +309,7 @@ def map_legend(farm: Farm, *, unicode: bool = True) -> list[str]:
     else:
         tree, flower, water, sand = 'T/Y', ',/*', '~', 's'
     return [
-        f'{player} | 1-5 dân làng | H nhà  M tiệm  B chuồng | {guide} lối dẫn',
+        f'{player} | {len(NPCS)} dân làng | H nhà  M tiệm  B chuồng | {guide} lối dẫn',
         f'{soil} đất  {seedling} mầm  {growing} lớn  {ripe} chín  {wilt} héo | '
         f'{tree} cây  {flower} hoa  {water} hồ/biển  {sand} cát | ~ ướt',
     ]

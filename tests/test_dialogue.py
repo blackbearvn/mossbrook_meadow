@@ -13,8 +13,9 @@ class BranchingDialogueTests(unittest.TestCase):
         return Farm(player_x=x, player_y=y + 1, **kwargs)
 
     def test_every_conversation_has_two_meaningful_choice_turns(self):
+        from farmgame.dialogue import BRANCHING_NPC_IDS
         openings = set()
-        for npc_id in NPCS:
+        for npc_id in BRANCHING_NPC_IDS:
             for topic in TOPICS:
                 farm = self.farm_near(npc_id)
                 conversation = dialogue.begin_dialogue(farm, npc_id, topic)
@@ -46,14 +47,15 @@ class BranchingDialogueTests(unittest.TestCase):
                             self.assertTrue(ending.history[index].startswith(NPCS[npc_id].name + ': '))
                 self.assertEqual(len(followups), len(start.choices))
                 self.assertEqual(len(conclusions), 4)
-        self.assertEqual(len(openings), len(NPCS) * len(TOPICS))
+        self.assertEqual(len(openings), len(BRANCHING_NPC_IDS) * len(TOPICS))
 
     def test_extended_story_routes_are_wired_for_every_npc(self):
         extended = ('festival', 'secret', 'future')
         self.assertEqual([TOPICS[key] for key in extended],
                          ['Lễ hội mùa', 'Điều chưa kể', 'Chuyện ngày mai'])
         self.assertEqual(len(TOPICS), 8)
-        for npc_id in NPCS:
+        from farmgame.dialogue import BRANCHING_NPC_IDS
+        for npc_id in BRANCHING_NPC_IDS:
             for topic in extended:
                 farm = self.farm_near(npc_id)
                 conversation = dialogue.begin_dialogue(farm, npc_id, topic)
@@ -151,7 +153,8 @@ class BranchingDialogueTests(unittest.TestCase):
         self.assertEqual((farm.xp, farm.friendships['lan']), (3, 10))
 
     def test_greetings_vary_by_day_weather_and_friendship_and_freeze_in_session(self):
-        for npc_id in NPCS:
+        from farmgame.dialogue import BRANCHING_NPC_IDS
+        for npc_id in BRANCHING_NPC_IDS:
             farm = self.farm_near(npc_id)
             original = dialogue.begin_dialogue(farm, npc_id)
             original_line = dialogue.dialogue_node(original).npc_line

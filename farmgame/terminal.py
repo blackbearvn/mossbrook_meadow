@@ -455,6 +455,10 @@ class TerminalGame:
                 self.play_intro = False
             self.coach.offer()
             self.coach.sync()
+            from .bonds import ensure_request
+            letter = ensure_request(self.farm)
+            if letter:
+                self.wrapped(letter)
             while True:
                 self.draw()
                 choice = self.ask("Bạn muốn làm gì? > ").lower()

@@ -4,6 +4,7 @@ Coordinates are zero based. Doors and furniture are solid interaction targets;
 only their orthogonal neighbours can use them. Fields remain walkable as the
 farm expands, so every plot can always be reached.
 """
+import math
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -164,11 +165,17 @@ def plot_at(x: int, y: int, size: int) -> str | None:
 
 
 def tile_at(area: str, x: int, y: int, size: int = 4) -> str:
-    """Return one map glyph; coordinates outside the map render as a wall."""
+    """Return one map glyph; coordinates outside the map render as a wall.
+
+    Village tiles resolve through the lazy row cache, so looking up one tile
+    never has to build the full 1280 x 720 grid first.
+    """
     _validate_tile(area, x, y, size)
     width, height = _DIMENSIONS[area]
     if not (0 <= x < width and 0 <= y < height):
         return '#'
+    if area == 'village':
+        return _village_row(y, size)[x]
     return _terrain_grid(area, size)[y][x]
 
 
@@ -176,6 +183,41 @@ def terrain_grid(area: str, size: int = 4) -> tuple[str, ...]:
     """Return immutable static map rows, shared by rendering and navigation."""
     _validate_tile(area, 0, 0, size)
     return _terrain_grid(area, size)
+
+
+def dimensions(area: str) -> tuple[int, int]:
+    """Public (width, height) for an area, validating its name."""
+    if area not in _DIMENSIONS:
+        _invalid('Khu vực không hợp lệ.')
+    return _DIMENSIONS[area]
+
+
+@lru_cache(maxsize=None)
+def _village_row(y: int, size: int) -> str:
+    """One village row, built on demand.
+
+    The old renderer materialised the whole 1280 x 720 grid before showing a
+    single tile, which stalled the first map draw for over a second.  Row
+    caching keeps every row shared and identical to the full grid.
+    """
+    if y < LEGACY_HEIGHT:
+        return _legacy_core_grid(size)[y] + _expansion_row(y)[LEGACY_WIDTH:]
+    return _expansion_row(y)
+
+
+def terrain_row(area: str, y: int, size: int = 4) -> str:
+    """One validated map row; village rows build lazily, one at a time."""
+    if area not in _DIMENSIONS:
+        _invalid('Khu vực không hợp lệ.')
+    if type(y) is not int:
+        _invalid('Tọa độ phải là số nguyên.')
+    _validate_size(size)
+    height = _DIMENSIONS[area][1]
+    if not 0 <= y < height:
+        _invalid('Hàng nằm ngoài bản đồ.')
+    if area == 'village':
+        return _village_row(y, size)
+    return _terrain_grid(area, size)[y]
 
 
 @lru_cache(maxsize=12)
@@ -263,7 +305,84 @@ def _expanded_outdoor_tile(x: int, y: int) -> str:
     return _expansion_row(y)[x]
 
 
-_LAKES = ((780, 310, 150, 90), (245, 505, 110, 65), (480, 145, 120, 70))
+# Named water bodies: the three original lakes plus smaller designed ponds
+# so every eastern and southern page has its own shoreline.
+_LAKES = (
+    (780, 310, 150, 90), (245, 505, 110, 65), (480, 145, 120, 70),
+    (850, 30, 60, 18),     # Hồ Lớn pond beneath the eastern pines
+    (230, 130, 40, 22),    # Đồng Cỏ Nam lotus pond (the road bridges it)
+    (560, 250, 34, 18),    # Rừng Nam mirror pond
+    (1060, 420, 46, 20),   # Thung Lũng Sương pond
+    (210, 610, 38, 16),    # Đầm Lau marsh pool
+    (1040, 590, 40, 16),   # Chân Trời lagoon
+)
+
+# --- Designed scenery fields -------------------------------------------------
+# Every decoration term is (x-frequency, y-frequency, amplitude) over a shared
+# sine table, so groves, flower drifts and marshes form smooth organic shapes
+# instead of the old salt-and-pepper hash noise.
+_SIN_TABLE = tuple(math.sin(i * (2.0 * math.pi) / 1024) for i in range(1024))
+
+
+def _field(x: int, y: int, *terms: tuple[int, int, float]) -> float:
+    value = 0.0
+    for ax, ay, amp in terms:
+        value += amp * _SIN_TABLE[(x * ax + y * ay) & 1023]
+    return value
+
+
+# Per southern band: grove terms with their tree and flower-edge thresholds,
+# then a wider flower-drift field with its own threshold.
+_GROVES = {
+    0: (((13, 9, 1.0), (26, -6, 0.7), (-4, 19, 0.5)), 1.75, 1.25),
+    1: (((11, 17, 1.0), (19, -9, 0.8), (5, 29, 0.6)), 0.8, 0.45),
+    2: (((17, 11, 1.0), (29, 7, 0.7), (9, -23, 0.5)), 1.55, None),
+    3: (((9, 13, 1.0), (21, 5, 0.8), (-7, 27, 0.5)), 1.7, None),
+}
+_DRIFTS = {
+    0: ((9, 21, 1.0), (23, -14, 0.8), 1.35),
+    1: ((7, 25, 1.0), (17, -11, 0.7), 1.5),
+    2: ((15, 9, 1.0), (31, -11, 0.6), 1.3),
+    3: ((13, 7, 1.0), (27, -13, 0.6), 1.35),
+}
+_TERRACE = 0.95          # contour threshold for the valley's flower terraces
+_MARSH = (((7, 17, 1.0), (13, -9, 0.7)), 1.85)
+_EAST_STYLES = (0, 1, 2, 3)  # scenery style for each eastern page strip
+
+
+def _orchard_row(x: int, y: int) -> bool:
+    """True on an orchard planting line, with cross alleys every few rows."""
+    return (x + 2 * y) % 14 < 2 and y % 5 != 0
+
+
+def _scenery_tile(x: int, y: int, band: int) -> str:
+    """One designed decoration cell for a southern band of the countryside."""
+    if band == 0 and x < 640 and _orchard_row(x, y):
+        return 'T'
+    if band == 2 and _SIN_TABLE[(x * 7 + y * 31) & 1023] > _TERRACE:
+        return ','
+    if band == 3 and y >= LEGACY_HEIGHT and x < 880:
+        terms, threshold = _MARSH
+        if _field(x, y, *terms) > threshold:
+            return '~'
+    terms, tree_line, edge = _GROVES[band]
+    value = _field(x, y, *terms)
+    if value > tree_line:
+        return 'T'
+    if edge is not None and value > edge:
+        return ','
+    first, second, threshold = _DRIFTS[band]
+    if _field(x, y, first, second) > threshold:
+        return ','
+    return '.'
+
+
+def _east_strip_tile(x: int, y: int) -> str:
+    """Decoration for the legacy-height eastern strip (y < 64, x >= 128)."""
+    band = min(3, (x - 128) // 288)
+    if band == 0 and _orchard_row(x, y):
+        return 'T'
+    return _scenery_tile(x, y, _EAST_STYLES[band])
 
 
 @lru_cache(maxsize=1)
@@ -282,34 +401,31 @@ def _lake_ranges() -> dict[int, tuple[tuple[int, int], ...]]:
 
 @lru_cache(maxsize=720)
 def _expansion_row(y: int) -> str:
-    """Build one row in O(width) with cheap local branches."""
+    """Build one designed row: scenery, water with lotus shores, roads."""
     width = VILLAGE_WIDTH
     if y in (0, VILLAGE_HEIGHT - 1):
         return 'T' * width
     if y == 55 or y in SOUTH_ROAD_ROWS:
         return 'T' + '=' * (width - 2) + 'T'
-    band = (y - LEGACY_HEIGHT) // SOUTH_PAGE_HEIGHT
-    if y < LEGACY_HEIGHT:
-        row = [('T' if (x * 7 + y * 5) % 31 < 3 else
-                ',' if (x * 13 + y * 3) % 23 == 0 else '.')
-               for x in range(width)]
-    elif band == 0:
-        row = [',' if (x * 13 + y * 7) % 19 < 3 else '.' for x in range(width)]
-    elif band == 1:
-        row = ['T' if ((x // 5) * 13 + (y // 7) * 17) % 29 < 11 else '.'
-               for x in range(width)]
-    elif band == 2:
-        row = ['T' if ((x // 7) * 11 + (y // 9) * 5) % 37 < 7 else
-               ',' if (x + y * 3) % 21 == 0 else '.'
-               for x in range(width)]
+    south = y >= LEGACY_HEIGHT
+    if south:
+        band = (y - LEGACY_HEIGHT) // SOUTH_PAGE_HEIGHT
+        row = [_scenery_tile(x, y, band) for x in range(width)]
     else:
-        row = ['T' if ((x // 6) * 7 + (y // 8) * 13) % 31 < 9 else ','
-               for x in range(width)]
-    # Lakes are precomputed per row so no exponentiation runs per cell.
-    for left, right in _lake_ranges().get(y, ()):
+        row = [_east_strip_tile(x, y) for x in range(width)]
+    # Lakes and ponds, each ringed with a lotus shore one cell wide.
+    ranges = _lake_ranges()
+    marks: set[int] = set()
+    for ny in (y - 1, y, y + 1):
+        for left, right in ranges.get(ny, (())):
+            marks.update(range(max(1, left - 1), min(width - 2, right + 1) + 1))
+    for left, right in ranges.get(y, (())):
         left, right = max(1, left), min(width - 2, right)
         if left <= right:
             row[left:right + 1] = ['~'] * (right - left + 1)
+    for x in marks:
+        if row[x] in ('.', ','):
+            row[x] = ','
     coast = 1114 + (y * 17) % 82
     if coast < width - 1:
         row[coast:coast + 26] = ['s'] * max(0, min(26, width - 1 - coast))
@@ -321,8 +437,14 @@ def _expansion_row(y: int) -> str:
         row[bay:end] = ['s'] * (end - bay)
         if end < width - 1:
             row[end:width - 1] = ['S'] * (width - 1 - end)
-    # Roads are laid last so they always form bridge crossings.
-    if y >= LEGACY_HEIGHT:
+    # Flower posts line every road; roads are laid last so they always form
+    # bridge crossings.
+    for column in ((26, 39, *SOUTH_BOUNDARIES) if south else EAST_BOUNDARIES):
+        for offset in (-2, 2):
+            x = column + offset
+            if 1 <= x < width - 1 and y % 4 == 0 and row[x] in ('.', ','):
+                row[x] = ','
+    if south:
         for x in (26, 39, *SOUTH_BOUNDARIES):
             row[x] = '='
     else:
@@ -381,10 +503,15 @@ def _countryside_tile(x: int, y: int) -> str:
     if 45 <= x <= 47 or (54 <= x <= 72 and 26 <= y <= 31):
         return '~'
     if 32 <= x <= 44 and 3 <= y <= 16:
-        return ',' if (x + 2 * y) % 5 != 0 else '.'
+        # Flower drifts sweep across the meadow instead of a fixed lattice.
+        return ',' if _field(x, y, (9, 21, 1.0), (23, -14, 0.8)) > -0.2 else '.'
     if 2 <= x <= 34 and 17 <= y <= 33:
-        # Scattered pines leave generous glades on either side of the paths.
-        return 'T' if (x * 7 + y * 11) % 9 < 5 else '.'
+        # Scattered pines clump into groves, leaving generous glades on
+        # either side of the paths.  The hash gate keeps every old-save
+        # walkable tile exactly where it was.
+        if (x * 7 + y * 11) % 9 >= 5:
+            return '.'
+        return 'T' if _field(x, y, (11, 17, 1.0), (19, -9, 0.8)) > -0.4 else '.'
     if 49 <= x <= 68 and 12 <= y <= 23:
         # A flower border surrounds an open village square.
         if x in (49, 68) or y in (12, 23):
@@ -414,7 +541,7 @@ def _outer_countryside_tile(x: int, y: int) -> str:
         # Open grass around the largest field keeps every plot approachable.
         return '.'
     if 82 <= x <= 104 and 15 <= y <= 32:
-        return ',' if (x + y) % 6 == 0 else '.'
+        return ',' if _field(x, y, (13, 7, 1.0), (27, -13, 0.6)) > 0.4 else '.'
     if 102 <= x <= 122 and 3 <= y <= 16:
         # Tea terraces leave broad walking lanes between rows of shrubs.
         return 'T' if y % 4 == 0 and x % 6 not in (0, 1) else ','
