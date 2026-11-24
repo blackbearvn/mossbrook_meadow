@@ -69,6 +69,7 @@ class Automation:
     # An unusual map or repeatedly changing goal gets one bounded trip home.
     _DAY_STEP_LIMIT = 4000
     _HOME_STEP_LIMIT = 512
+    _SPECIALIST_RESERVE = 100
     _DIRECTIONS = {(0, -1): 'up', (0, 1): 'down',
                    (-1, 0): 'left', (1, 0): 'right'}
     KEEP_FOR_CRAFTING = frozenset(('da', 'quang_dong', 'quang_sat',
@@ -571,7 +572,11 @@ class Automation:
     def _invest(self):
         farm = self.farm
         # Keep seed money and two days of feed before optional purchases.
+        # Specialists hold a little more back so investing never drains the
+        # budget of the activity the player explicitly selected.
         reserve = 20 + 2 * len(farm.animals) * EXTRA_ITEMS['feed'].buy_price
+        if self.options.mode != 'all':
+            reserve += self._SPECIALIST_RESERVE
         for kind, info in ANIMAL_TYPES.items():
             zone = zone_for(kind)
             if (farm.level >= zone.level
@@ -589,14 +594,25 @@ class Automation:
                 return self._shop('upgrade', kind)
         return None
 
+    def _with_investment(self, intent):
+        """Use spare coins for animals/upgrades instead of idling.
+
+        Specialist runs still finish their chosen work first; investing only
+        replaces the sleep intent, so it does not steal energy or steps from
+        the selected activity.
+        """
+        if intent.action != 'sleep':
+            return intent
+        return self._invest() or intent
+
     def _choose_intent(self):
         farm = self.farm
         if self._resting:
             return _Intent('claim') if self._claim_ready() else self._sleep_intent()
         if self.options.mode == 'mine':
-            return self._mine_intent()
+            return self._with_investment(self._mine_intent())
         if self.options.mode == 'dungeon':
-            return self._dungeon_intent()
+            return self._with_investment(self._dungeon_intent())
         guided = (self.options.mode == 'all' and farm.tutorial.status == 'active'
                   and current_step(farm) is not None)
         grows = self.options.mode in ('all', 'farm') or guided
@@ -652,7 +668,7 @@ class Automation:
                 return self._talk_intent(npc)
         if self.options.mode in ('all', 'fish') and farm.energy >= action_cost(farm, 'fish'):
             return self._fish_intent()
-        return self._sleep_intent()
+        return self._with_investment(self._sleep_intent())
 
     def _tutorial_intent(self):
         farm = self.farm

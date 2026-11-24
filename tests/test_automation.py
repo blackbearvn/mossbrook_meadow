@@ -350,18 +350,22 @@ class AutomationTests(unittest.TestCase):
         self.assertGreaterEqual(farm.skill_points, 0)
         self.assertGreaterEqual(farm.coins, 0)
 
-    def test_specialist_modes_do_not_buy_animals_upgrades_or_allocate_points(self):
-        for mode in ('farm', 'ranch', 'fish'):
-            farm = Farm(coins=4000, xp=120)
-            auto = self.engine(farm, mode=mode)
-            self.run_until(auto)
-            self.assertEqual(farm.animals, [])
-            self.assertEqual((farm.size, farm.max_energy, farm.sprinkler), (4, 20, False))
-            self.assertFalse(any(farm.attributes.values()))
-            self.assertFalse(any(farm.skills.values()))
+    def test_specialist_modes_buy_animals_and_upgrades_but_do_not_allocate_points(self):
+        for mode in ('farm', 'ranch', 'fish', 'mine', 'dungeon'):
+            with self.subTest(mode=mode):
+                farm = Farm(coins=4000, xp=120)
+                auto = self.engine(farm, mode=mode)
+                self.run_until(auto)
+                self.assertEqual({animal.kind for animal in farm.animals},
+                                 set(ANIMAL_TYPES))
+                self.assertTrue(farm.sprinkler)
+                self.assertGreater(farm.size, 4)
+                self.assertGreater(farm.max_energy, 20)
+                self.assertFalse(any(farm.attributes.values()))
+                self.assertFalse(any(farm.skills.values()))
 
-    def test_specialists_respect_mode_scope_even_with_an_active_tutorial(self):
-        for mode in ('farm', 'ranch', 'fish'):
+    def test_specialists_ignore_active_tutorial_but_still_invest(self):
+        for mode in ('farm', 'ranch', 'fish', 'mine', 'dungeon'):
             with self.subTest(mode=mode):
                 farm = Farm(coins=4000, xp=120)
                 start_tutorial(farm)
@@ -370,8 +374,10 @@ class AutomationTests(unittest.TestCase):
                 self.assertFalse(any(farm.attributes.values()))
                 self.assertFalse(any(farm.skills.values()))
                 self.assertFalse(farm.tutorial.reward_given)
-                self.assertEqual((farm.size, farm.max_energy, farm.sprinkler), (4, 20, False))
-                self.assertEqual(farm.animals, [])
+                self.assertEqual({animal.kind for animal in farm.animals},
+                                 set(ANIMAL_TYPES))
+                self.assertTrue(farm.sprinkler)
+                self.assertGreater(farm.size, 4)
                 if mode != 'farm':
                     self.assertEqual(farm.harvested, 0)
                     self.assertFalse(any(plot.crop for plot in farm.plots.values()))
@@ -436,7 +442,7 @@ class AutomationTests(unittest.TestCase):
         self.assertTrue(auto.done)
 
     def test_unexpected_action_error_stops_with_a_readable_message(self):
-        farm = Farm(area='home', player_x=12, player_y=3, energy=0)
+        farm = Farm(area='home', player_x=12, player_y=3, energy=0, coins=0)
         auto = self.engine(farm, mode='farm')
         with patch.object(Farm, 'sleep', side_effect=RuntimeError('thử lỗi hành động')):
             messages = self.run_until(auto, limit=8)

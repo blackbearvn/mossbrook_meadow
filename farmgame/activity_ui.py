@@ -131,7 +131,7 @@ class ActivityUI:
             'Toàn bộ: việc ngày (đào, rèn, nấu, Hang Sâu), ruộng, vật nuôi, câu cá, giao tiếp, mua/bán, nâng cấp và ngủ.',
             'Đào khoáng: tự vào mỏ, đào đá, rèn cúp và mang quặng về ngủ.',
             'Hang Sâu: tự rèn kiếm/giáp, mua thuốc và chiến đấu từng tầng.',
-            'Chế độ riêng chỉ làm lĩnh vực đã chọn, rồi nghỉ sang ngày tiếp theo.',
+            'Chế độ riêng ưu tiên lĩnh vực đã chọn nhưng vẫn tự mua vật nuôi và nâng cấp khi đủ tiền.',
             'Auto giữ quặng và thuốc để rèn, không bán mất nguyên liệu quý.',
             'Chỉ Toàn bộ mới hoàn tất hướng dẫn đang chạy; chế độ riêng không tự phân bổ điểm.',
         ])

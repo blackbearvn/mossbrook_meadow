@@ -54,8 +54,8 @@ khai mỏ, nấu ăn, rèn trang bị và Hang Sâu. Hệ thống **thành tựu
 mỗi nhóm 5 bậc từ Bình thường đến Huyền thoại, theo dõi tiến độ dài hạn và
 tặng điểm thành tựu. Người chơi có thể tự do khám phá hoặc dùng chế độ **Auto**
 để nhân vật tự làm việc. Chế độ **Toàn bộ** ưu tiên hoàn tất bảng nhiệm vụ
-ngày, kể cả đào khoáng, rèn, nấu ăn và Hang Sâu; các chế độ riêng chỉ tập
-trung vào lĩnh vực đã chọn rồi nghỉ sang ngày tiếp theo.
+ngày, kể cả đào khoáng, rèn, nấu ăn và Hang Sâu; các chế độ riêng ưu tiên
+lĩnh vực đã chọn nhưng vẫn tự mua vật nuôi và nâng cấp khi đủ tiền.
 
 Game chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói và không cần
 kết nối mạng.
