@@ -514,7 +514,7 @@ LIGHT_TALK = {
     'minh': ('Sáng nay em chở hạt, xe kêu lục cục. Cả dãy cười, em cũng cười.',
              'Chị Lan dọn kho kỹ lắm. Em học được mấy cách xếp, đỡ mệt hơn.',
              'Bác Tư gửi nắm sỏi đẹp, bảo mai đem ra hồ. Em quên mất hai lần rồi.',
-             'Em vừa ăn bánh mì, còn nửa cái. Để phần anh/chị.',
+             'Em vừa ăn bánh mì, còn nửa cái. Để phần anh/chị nè.',
              'Chiều nay chị Lan bảo em nghỉ. Em định ra quảng trường ngồi.'),
     'ha': ('Cái ghế này khớp gãy, Sơn vẫn dìu về cho mình sửa. Nhà mình thế đấy.',
            'Sáng nay sửa xong cánh cửa. Có người cảm ơn, mình cũng vui.',
