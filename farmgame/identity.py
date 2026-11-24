@@ -67,7 +67,7 @@ def intro_pages(farm: 'Farm') -> list[tuple[str, str]]:
          f'và trên tấm bản đồ là cái tên thân thương: {farm.name}. '
          'Xa xa, tiếng nước và tiếng người gọi nhau hòa trong gió.'),
         ('Lan đón bạn',
-         f'“Chào {farm.player_name}! Mình là Lan. Chào mừng bạn về {farm.name}!”\n\n'
+         f'“Chào {farm.player_name}! Tớ là Lan. Chào mừng cậu về {farm.name}!”\n\n'
          'Dùng WASD hoặc các phím mũi tên để đi; E tương tác, C xem nhân vật. '
          'Từ khu nhà, theo đường làng về phía nam tới cánh đồng: ô đầu ở tọa độ (26, 42). '
          'Ở ruộng, E mở việc gieo trồng, tưới và thu hoạch. Về nhà ngủ để sang ngày.\n\n'

@@ -104,6 +104,7 @@ class BranchingDialogueTests(unittest.TestCase):
                     lines.extend((branch[2][1], branch[3][1]))
         joined = ' '.join(lines).lower()
         self.assertNotIn('bạn', joined)
+        self.assertNotRegex(joined, r'(?<!\w)tớ(?!\w)')
         self.assertIn('cháu', joined)
 
     def test_peers_use_to_and_cau(self):
@@ -127,7 +128,7 @@ class BranchingDialogueTests(unittest.TestCase):
                 for branch in (warm, practical):
                     lines.extend((branch[0], branch[1], branch[2][0],
                                   branch[2][1], branch[3][0], branch[3][1]))
-        joined = ' '.join(lines).lower()
+        joined = ' '.join(lines).lower().replace('giật mình', '')
         for old in ('bạn', 'mình', 'tôi'):
             self.assertNotIn(old, joined)
         self.assertIn('tớ', joined)

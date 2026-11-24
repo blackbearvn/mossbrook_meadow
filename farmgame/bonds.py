@@ -56,34 +56,35 @@ _REQUEST_POOL = {
 }
 
 _GIFT_THANKS = {
-    'lan': ('Lan ôm {item} trước ngực như ôm cả một mùa: \"Đúng thứ mình đang thèm thấy ở vườn bạn\".',
-            'Lan đặt {item} lên quầy, lau tay thật kỹ mới dám chạm vào: \"Cảm ơn bạn, thứ này làm tiệm sáng hẳn\".'),
-    'tu': ('Bác Tư cầm {item} ngắm thật lâu: \"Đây, thứ người ta câu cả mùa chỉ để biết là có nó tồn tại\".',
-           'Bác Tư gật đầu mãn nguyện: \"Cháu để ý bác thật đấy. Về nhà cất kỹ nhé, thứ quý thì ít\".'),
-    'an': ('An ôm {item} sát vào mũi hít một hơi: \"Mùi này! Bạn thật là biết đường lắm đấy\".',
-           'An cười sáng cả mặt: \"Mình sẽ trồng lại thứ này ven đường, để người đi qua cũng nhận được phần\".'),
-    'mai': ('Mai nhận {item} bằng hai tay: \"Mình sẽ ghi chuyện món này vào sổ, với cả tên người tặng\".',
-            'Mai khẽ cười, hai mắt cong lên: \"Món quà nhỏ mà được kể chuyện kèm thì thành kỷ niệm rồi\".'),
-    'son': ('Sơn cầm {item} lật lên lật xuống: \"Được làm bằng tay thật, thứ này quý hơn cả mua được\".',
-            'Sơn gật đầu: \"Để mình dành chỗ tốt trong nhà. Người tặng mà nhớ từng ngày thì không thể quên\".'),
-    'hai': ('Bác Hai xoa đầu bạn như cháu trong nhà: \"Vâng, để bác pha trà mời lại ngay\".',
-            'Bác Hai đặt {item} vào giỏ mây: \"Cháu của làng này thương người già thật lòng\".'),
-    'minh': ('Minh nhún nhảy: \"Chị Lan thấy món này chắc xiết tay em cho lắm! Cảm ơn cậu nha\".',
+    'lan': ('Lan ôm {item} trước ngực: \"Đúng thứ tớ đang cần. Cậu để ý thật đấy\".',
+            'Lan đặt {item} lên quầy, lau tay mới chạm vào: \"Cảm ơn cậu. Tớ để chỗ dễ thấy\".'),
+    'tu': ('Bác Tư cầm {item} ngắm thật lâu: \"Thứ này quý. Cháu để ý bác thật\".',
+           'Bác Tư gật đầu: \"Cháu để ý bác thật đấy. Bác cất kỹ, để dành\".'),
+    'an': ('An ôm {item} sát mũi hít một hơi: \"Mùi này! Cậu chọn đúng thứ tớ thích rồi\".',
+           'An cười sáng cả mặt: \"Tớ sẽ trồng lại thứ này ven đường, để người đi qua cũng thấy\".'),
+    'mai': ('Mai nhận {item} bằng hai tay: \"Tớ sẽ ghi món này vào sổ, cả tên cậu nữa\".',
+            'Mai khẽ cười: \"Có chuyện để kể thì món quà nhớ lâu hơn\".'),
+    'son': ('Sơn cầm {item} lật lên lật xuống: \"Thứ này chắc. Tớ dùng được, cảm ơn cậu\".',
+            'Sơn gật đầu: \"Tớ để chỗ dễ thấy. Cậu tặng thì tớ dùng, đừng để phí\".'),
+    'hai': ('Bác Hai cười hiền: \"Được, để bác pha trà mời lại\".',
+            'Bác Hai đặt {item} vào giỏ mây: \"Cháu chu đáo thật. Bác giữ món này\".'),
+    'minh': ('Minh nhún nhảy: \"Em sẽ khoe chị Lan món này! Cảm ơn anh/chị nha\".',
              'Minh cầm {item} vừa đi vừa ngắm: \"Được quà giữa đường chở hàng là vui nhất ngày\".'),
-    'ha': ('Hà lau tay trên tạp dề rồi mới nhận: \"Cảm ơn cậu. Đồ này cậu giữ kỹ đấy, mình nhận bằng cả hai tay\".',
-           'Hà cười gật gù: \"Coi như mình nợ cậu một lần sửa đồ miễn phí nhé, giữ lời đấy\".'),
+    'ha': ('Hà lau tay trên tạp dề rồi mới nhận: \"Cảm ơn cậu. Món này tớ nhận bằng cả hai tay\".',
+           'Hà cười gật gù: \"Coi như tớ nợ cậu một lần sửa đồ miễn phí nhé. Giữ lời đấy\".'),
 }
 
 _GIFT_NORMAL = (
-    'Cảm ơn bạn, món này làm hôm nay của mình ấm hơn hẳn.',
-    'Bạn thật lòng quá. Mình nhận bằng cả hai tay nhé.',
-    'Cảm ơn! Có món quà kèm lời hỏi thăm thì quý gấp đôi.',
+    'Cảm ơn nhé, món này quý lắm.',
+    'Cảm ơn nhé. Món quà kèm lời hỏi thăm thì quý hơn.',
+    'Cảm ơn nhé. Có món quà với lời hỏi thăm là vui rồi.',
 )
 
 _THANKS_FAMILY = {
-    'tu': 'Bác Tư',
-    'hai': 'Bác Tư', 'lan': 'chị Lan', 'minh': 'chị Lan',
-    'son': 'Sơn', 'ha': 'Sơn', 'mai': 'An', 'an': 'Mai',
+    'tu': 'Bác Tư', 'hai': 'Bác Hai',
+    'lan': 'chị Lan', 'minh': 'Minh',
+    'son': 'Sơn', 'ha': 'Hà',
+    'mai': 'Mai', 'an': 'An',
 }
 
 
@@ -195,7 +196,7 @@ def help_favour(farm: 'Farm', npc_id: str) -> str:
     farm.friendships[npc_id] = min(10, before + 1)
     farm.helped_on[npc_id] = farm.day
     lines = [f'Bạn {flavour}.',
-             f'{npc.name} cười tạ: \"Có bạn thì việc gì cũng nhẹ hều.\" '
+             f'{npc.name} cười: \"Có người giúp thì việc gì cũng nhẹ.\" '
              f'Thân {farm.friendships[npc_id]}/10 (+{farm.friendships[npc_id] - before}) {cost_note}.']
     xp_status = farm.award_xp(3)
     if xp_status:
@@ -265,7 +266,7 @@ def deliver_request(farm: 'Farm', npc_id: str) -> str:
     coins = max(10, int(value * 1.5))
     farm.coins += coins
     lines = [f'Bạn đưa {farm.request_count} {item_name(farm.request_item)} cho {npc.name}.',
-             f'{npc.name}: \"Chuẩn luôn cái mình đang cần! Cảm ơn bạn nhiều lắm.\" '
+             f'{npc.name}: \"Đúng thứ đang cần. Cảm ơn nhé.\" '
              f'Thân {farm.friendships[npc_id]}/10 (+{farm.friendships[npc_id] - before}) · '
              f'+{coins} xu cảm ơn.']
     xp_status = farm.award_xp(6)

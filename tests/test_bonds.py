@@ -33,6 +33,39 @@ class GiftTests(unittest.TestCase):
         farm.items['ca_vang'] = 1
         return farm
 
+    def test_family_thanks_name_the_relative_not_the_giver(self):
+        for npc_id, relative in FAMILIES.items():
+            with self.subTest(npc=npc_id):
+                farm = self.farm(npc_id)
+                farm.items['banh_mi'] = 1
+                output = give_gift(farm, npc_id, 'banh_mi')
+                self.assertIn(NPCS[relative].name, output)
+
+    def test_gift_lines_keep_each_speakers_address(self):
+        from farmgame.bonds import _GIFT_NORMAL, _GIFT_THANKS
+        for line in _GIFT_NORMAL:
+            self.assertNotIn('bạn', line.lower())
+            self.assertNotIn('mình', line.lower())
+
+        def spoken(npc_id):
+            return ' '.join(
+                part for line in _GIFT_THANKS[npc_id]
+                for part in line.split('"')[1::2]).lower()
+
+        for npc_id in ('lan', 'an', 'mai', 'son', 'ha'):
+            joined = spoken(npc_id)
+            self.assertNotIn('bạn', joined)
+            self.assertNotIn('mình', joined)
+        minh = spoken('minh')
+        self.assertIn('anh/chị', minh)
+        self.assertNotIn('bạn', minh)
+        self.assertNotIn('mình', minh)
+        self.assertNotIn('cậu', minh)
+        for npc_id in ('tu', 'hai'):
+            joined = spoken(npc_id)
+            self.assertNotIn('bạn', joined)
+            self.assertNotIn('mình', joined)
+
     def test_liked_gift_warms_two_hearts_and_consumes_one_item(self):
         farm = self.farm()
         options = gift_options(farm)
@@ -116,7 +149,7 @@ class RequestLetterTests(unittest.TestCase):
         self.assertEqual(farm.friendships[farm.request_npc], 2)
         self.assertGreater(farm.coins, coins_before)
         self.assertTrue(farm.request_done)
-        self.assertIn('Chuẩn luôn', output)
+        self.assertIn('Đúng thứ đang cần', output)
         # The same letter cannot be claimed twice.
         before = asdict(farm)
         with self.assertRaises(GameError):

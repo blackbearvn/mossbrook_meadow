@@ -63,11 +63,11 @@ def current_step(farm: 'Farm') -> Step | None:
 def start_tutorial(farm: 'Farm') -> str:
     state = farm.tutorial
     if state.status == 'completed':
-        return 'Lan: Bạn đã hoàn tất 15 bước. Chúc nông trại luôn xanh!'
+        return 'Lan: Cậu đã hoàn tất 15 bước. Chúc nông trại luôn xanh!'
     if state.status in ('active', 'paused'):
         return resume_tutorial(farm)
     farm.tutorial = TutorialState(status='active', reward_given=state.reward_given)
-    return 'Lan: Mình cùng thực hành nhé! ' + STEPS[0].instructions
+    return 'Lan: Tớ với cậu cùng thực hành nhé! ' + STEPS[0].instructions
 
 
 def pause_tutorial(farm: 'Farm') -> str:
@@ -81,14 +81,14 @@ def resume_tutorial(farm: 'Farm') -> str:
     if farm.tutorial.status != 'paused':
         return ''
     farm.tutorial.status = 'active'
-    return 'Lan: Mình tiếp tục nhé!'
+    return 'Lan: Tớ với cậu tiếp tục nhé!'
 
 
 def skip_tutorial(farm: 'Farm') -> str:
     if farm.tutorial.status in ('skipped', 'completed'):
         return ''
     farm.tutorial.status = 'skipped'
-    return 'Lan: Bạn cứ tự khám phá. Nhấn T nếu muốn mình hướng dẫn lại.'
+    return 'Lan: Cậu cứ tự khám phá. Nhấn T nếu muốn tớ hướng dẫn lại.'
 
 
 def _advance(farm: 'Farm') -> str:
@@ -96,7 +96,7 @@ def _advance(farm: 'Farm') -> str:
     state.step += 1
     if state.step == len(STEPS):
         state.status = 'completed'
-        return 'Lan: Bạn đã hoàn tất 15 bước! Chúc nông trại luôn xanh; nhấn T để xem tổng kết.'
+        return 'Lan: Cậu đã hoàn tất 15 bước! Chúc nông trại luôn xanh; nhấn T để xem tổng kết.'
     return 'Lan: Tốt lắm! ' + STEPS[state.step].instructions
 
 
@@ -112,7 +112,7 @@ def sync_tutorial(farm: 'Farm') -> str:
             if plot is None or (plot.crop and plot.crop != 'lua_mi' and not plot.dead):
                 state.plot = None
             state.planted_on = state.watered_on = 0
-            return 'Lan: Cây lúa mì đã mất hoặc héo. Dọn cây héo nếu cần rồi trồng lại; mình sẽ chăm cùng một ô.'
+            return 'Lan: Cây lúa mì đã mất hoặc héo. Dọn cây héo nếu cần rồi trồng lại; tớ sẽ hướng dẫn lại từ ô này.'
     if step.id == 'field':
         from .world import target_plot
         if target_plot(farm) is not None:
