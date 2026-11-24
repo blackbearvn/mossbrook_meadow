@@ -735,12 +735,18 @@ _FAREWELL = {
 }
 
 
-def _scene_line(farm: 'Farm', npc_id: str) -> str:
+def _topic_turn(topic: str) -> int:
+    """Offset a line by the topic being discussed, not just the day."""
+    keys = tuple(TOPICS)
+    return keys.index(topic) if topic in keys else 0
+
+
+def _scene_line(farm: 'Farm', npc_id: str, topic: str) -> str:
     if farm.weather == 'rainy':
         return _RAIN_SCENES[npc_id]
     if farm.friendships.get(npc_id, 0) >= 5:
         return _FRIEND_SCENES[npc_id]
-    return _SCENES[npc_id][(farm.day - 1) % 3]
+    return _SCENES[npc_id][(farm.day - 1 + _topic_turn(topic)) % 3]
 
 _SALUTATIONS = {
     'lan': ('Mừng bạn ghé tiệm.', 'Mình vừa xếp hàng xong, ghé chơi nhé.',
@@ -776,11 +782,11 @@ def _validate_nearby(farm: 'Farm', npc_id: str, topic: str) -> None:
         raise GameError(f'Hãy đứng cạnh {npc.name} để trò chuyện.')
 
 
-def _life_line(farm: 'Farm', npc_id: str) -> str:
+def _life_line(farm: 'Farm', npc_id: str, topic: str) -> str:
     """An everyday beat about this farm, today: mood first, story after.
 
-    The pool rotates by day and grows as the player earns real milestones,
-    so repeated visits never read like the same line on a loop.
+    The pool rotates by day and topic and grows as the player earns real
+    milestones, so repeated visits never read like the same line on a loop.
     """
     pool = list(_EVERYDAY[npc_id])
     if farm.harvested >= 3:
@@ -789,22 +795,24 @@ def _life_line(farm: 'Farm', npc_id: str) -> str:
         pool.append(_FISH[npc_id])
     if farm.level >= 4:
         pool.append(_LEVEL[npc_id])
-    return pool[farm.day % len(pool)]
+    return pool[(farm.day - 1 + _topic_turn(topic)) % len(pool)]
 
 
-def _pick(pool: tuple[str, ...], farm: 'Farm', branch: str) -> str:
-    """Rotate small gestures by day, keeping the two branches distinct."""
-    return pool[(farm.day + (0 if branch == 'warm' else 1)) % len(pool)]
+def _pick(pool: tuple[str, ...], farm: 'Farm', branch: str, topic: str) -> str:
+    """Rotate small gestures by day and topic, keeping branches distinct."""
+    shift = 0 if branch == 'warm' else 1
+    return pool[(farm.day + shift + _topic_turn(topic)) % len(pool)]
 
 
-def _reaction_line(farm: 'Farm', npc_id: str, branch: str) -> str:
+def _reaction_line(farm: 'Farm', npc_id: str, branch: str, topic: str) -> str:
     if farm.friendships.get(npc_id, 0) >= 6:
-        return _pick(_REACTIONS_CLOSE[npc_id][branch], farm, branch)
-    return _pick(_REACTIONS[npc_id][branch], farm, branch)
+        return _pick(_REACTIONS_CLOSE[npc_id][branch], farm, branch, topic)
+    return _pick(_REACTIONS[npc_id][branch], farm, branch, topic)
 
 
-def _farewell_line(farm: 'Farm', npc_id: str, branch: str) -> str:
-    return _FAREWELL[npc_id][branch][(farm.day + 1) % len(_FAREWELL[npc_id][branch])]
+def _farewell_line(farm: 'Farm', npc_id: str, branch: str, topic: str) -> str:
+    pool = _FAREWELL[npc_id][branch]
+    return pool[(farm.day + 1 + _topic_turn(topic)) % len(pool)]
 
 
 def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversation:
@@ -815,11 +823,12 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
         # Even days open with a different, everyday scene.
         script = _GREET_VARIANTS[npc_id]
     question, warm, practical = script
-    scene = _scene_line(farm, npc_id)
+    scene = _scene_line(farm, npc_id, topic)
     if topic == 'greet':
         greeting = _SALUTATIONS[npc_id][(farm.day - 1) % 3]
         if farm.friendships[npc_id] == 0:
-            greeting += f' Chào {farm.player_name}, chủ nông trại {farm.name}!'
+            greeting += (f' Chào {farm.player_name}. Mình nghe nói bạn mới nhận'
+                         f' nông trại {farm.name}.')
         elif farm.friendships[npc_id] >= 9:
             greeting += ' ' + _TRUST[npc_id]
         elif farm.friendships[npc_id] >= 5:
@@ -830,7 +839,7 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
             greeting += ' ' + _WEATHER[npc_id]
         question = scene + ' ' + greeting + ' ' + question
     else:
-        question = scene + ' ' + _life_line(farm, npc_id) + ' ' + question
+        question = scene + ' ' + _life_line(farm, npc_id, topic) + ' ' + question
     nodes = {}
     first_choices = []
     for branch_id, branch in (('warm', warm), ('practical', practical)):
@@ -904,11 +913,13 @@ def choose_response(farm: 'Farm', conversation: Conversation, choice_id: str) ->
     branch = choice.next_node.split('_', 1)[0]
     npc_line = following.npc_line
     if following.choices:
-        reaction = _reaction_line(farm, conversation.npc_id, branch)
+        reaction = _reaction_line(farm, conversation.npc_id, branch,
+                                  conversation.topic)
         if reaction:
             npc_line = f'{reaction} {npc_line}'
     else:
-        farewell = _farewell_line(farm, conversation.npc_id, branch)
+        farewell = _farewell_line(farm, conversation.npc_id, branch,
+                                  conversation.topic)
         if farewell:
             npc_line = f'{npc_line} {farewell}'
     new_lines = [f'Bạn: {choice.text}',

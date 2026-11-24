@@ -49,6 +49,16 @@ class BranchingDialogueTests(unittest.TestCase):
                 self.assertEqual(len(conclusions), 4)
         self.assertEqual(len(openings), len(BRANCHING_NPC_IDS) * len(TOPICS))
 
+    def test_topics_on_the_same_day_do_not_reuse_the_same_beats(self):
+        farm = self.farm_near()
+        for npc_id in ('lan', 'tu'):
+            scenes = {dialogue._scene_line(farm, npc_id, topic)
+                      for topic in TOPICS}
+            lives = {dialogue._life_line(farm, npc_id, topic)
+                     for topic in TOPICS}
+            self.assertGreater(len(scenes), 1)
+            self.assertGreater(len(lives), 1)
+
     def test_extended_story_routes_are_wired_for_every_npc(self):
         extended = ('festival', 'secret', 'future')
         self.assertEqual([TOPICS[key] for key in extended],
