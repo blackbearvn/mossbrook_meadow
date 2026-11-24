@@ -106,6 +106,33 @@ class BranchingDialogueTests(unittest.TestCase):
         self.assertNotIn('bạn', joined)
         self.assertIn('cháu', joined)
 
+    def test_peers_use_to_and_cau(self):
+        from farmgame.dialogue_content import (CLOSE_HELLO, FIRST_MEET, HELLO,
+                                               LIGHT_CLOSE, LIGHT_TALK,
+                                               RAIN_HELLO, SCRIPTS)
+        lines = []
+        for npc_id in ('lan', 'an', 'mai', 'son', 'ha'):
+            lines.extend(HELLO.get(npc_id, ()))
+            if npc_id in RAIN_HELLO:
+                lines.append(RAIN_HELLO[npc_id])
+            if npc_id in FIRST_MEET:
+                lines.append(FIRST_MEET[npc_id])
+            if npc_id in CLOSE_HELLO:
+                lines.append(CLOSE_HELLO[npc_id])
+            lines.extend(LIGHT_TALK.get(npc_id, ()))
+            lines.extend(LIGHT_CLOSE.get(npc_id, ()))
+            for topics in SCRIPTS.get(npc_id, {}).values():
+                opening, warm, practical = topics
+                lines.append(opening)
+                for branch in (warm, practical):
+                    lines.extend((branch[0], branch[1], branch[2][0],
+                                  branch[2][1], branch[3][0], branch[3][1]))
+        joined = ' '.join(lines).lower()
+        for old in ('bạn', 'mình', 'tôi'):
+            self.assertNotIn(old, joined)
+        self.assertIn('tớ', joined)
+        self.assertIn('cậu', joined)
+
     def test_extended_story_routes_are_wired_for_every_npc(self):
         extended = ('festival', 'secret', 'future')
         self.assertEqual([TOPICS[key] for key in extended],
