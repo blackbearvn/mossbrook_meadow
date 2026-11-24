@@ -591,44 +591,85 @@ def interact(ui: 'TerminalGame') -> bool:
     return True
 
 
-def _dialogue_box_text(ui: 'TerminalGame', npc, node) -> None:
-    """Render one RPG-style dialogue box in the line interface."""
+def _dialogue_box_text(ui: 'TerminalGame', npc, node, history=(),
+                       topic: str = 'Trò chuyện', friendship: int = 0) -> None:
+    """Render the same chat transcript in the line interface."""
     from .explore import wrap_cells
+    from .villagers import bond_title
     unicode = getattr(ui, 'unicode_map', True)
     g = tui.glyphs(unicode)
     width = max(32, min(getattr(ui, 'width', 80), 88))
-    inner = max(20, width - 2)
-    raw_title = f' {npc.name} · {npc.role} '
+    inner = max(30, width - 2)
+    raw_title = f' {npc.name} · {npc.role} · {bond_title(friendship)} '
     title = tui.ellipsize(raw_title, inner - 2, unicode=unicode)
     ui.say(g['tl'] + g['h'] + title + g['h'] * max(0, inner - 1 - tui.cells(title)) + g['tr'],
            'cyan')
-    for line in wrap_cells(node.npc_line, max(12, inner - 2)):
-        ui.say(g['v'] + ' ' + tui.pad(line, inner - 2) + ' ' + g['v'], 'white')
+    entries = []
+    for raw in history or ():
+        speaker, separator, text = raw.partition(': ')
+        if separator:
+            entries.append((speaker, text))
+        else:
+            entries.append((npc.name, raw))
+    if not entries or entries[-1][1] != node.npc_line:
+        entries.append((npc.name, node.npc_line))
+    entries = entries[-5:]
+    label_w = max([3, *(tui.cells(speaker + ':') for speaker, _ in entries)])
+    body_w = max(12, inner - 2)
+    text_w = max(6, body_w - label_w - 2)
+    for index, (speaker, text) in enumerate(entries):
+        wrapped = wrap_cells(text, text_w) or ['']
+        for offset, line in enumerate(wrapped):
+            label = tui.pad((speaker + ':') if offset == 0 else '', label_w)
+            content = tui.pad(label + '  ' + line, body_w)
+            ui.say(g['v'] + ' ' + content + ' ' + g['v'],
+                   'cyan' if speaker == 'Bạn' else 'white')
+        if index < len(entries) - 1:
+            ui.say(g['v'] + ' ' + tui.pad('', body_w) + ' ' + g['v'], 'dim')
     if node.choices:
-        ui.say(g['v'] + ' ' + tui.pad('', inner - 2) + ' ' + g['v'], 'dim')
+        ui.say(g['v'] + ' ' + g['h'] * body_w + ' ' + g['v'], 'dim')
         for index, choice in enumerate(node.choices, 1):
-            for offset, line in enumerate(wrap_cells(
-                    f'{index}. {choice.text}', max(12, inner - 2))):
-                ui.say(g['v'] + ' ' + tui.pad(line, inner - 2) + ' ' + g['v'],
-                       'white')
+            for line in wrap_cells(f'{index}. {choice.text}', body_w):
+                ui.say(g['v'] + ' ' + tui.pad(line, body_w) + ' ' + g['v'],
+                       'cyan')
+    footer = (f'{topic} · chọn 1/2 để trả lời' if node.choices
+              else f'{topic} · kết thúc')
+    ui.say(g['v'] + ' ' + tui.pad(tui.ellipsize(footer, body_w, unicode=unicode),
+                                  body_w) + ' ' + g['v'], 'dim')
     ui.say(g['bl'] + g['h'] * inner + g['br'], 'cyan')
 
 
 def conversation(ui: 'TerminalGame') -> bool:
-    from .villagers import TOPICS, nearby_npc
-    from .dialogue import begin_dialogue, choose_response, dialogue_node
+    from .villagers import TOPICS, bond_title, nearby_npc
+    from .dialogue import (BRANCHING_NPC_IDS, begin_dialogue,
+                           begin_light_chat, choose_response, dialogue_node)
     npc = nearby_npc(ui.farm)
     if npc is None:
         raise GameError('Hãy đến gần một dân làng để trò chuyện.')
     from .artwork import hearts, npc_portrait
-    from .villagers import bond_title
+    unicode = getattr(ui, 'unicode_map', True)
     friendship = ui.farm.friendships[npc.id]
     ui.say(f'{npc.name} · {npc.role} · {bond_title(friendship)} · '
-           f'{hearts(friendship, unicode=getattr(ui, "unicode_map", True))} {friendship}/10', 'title')
-    for line in npc_portrait(npc.id, unicode=getattr(ui, 'unicode_map', True)):
+           f'{hearts(friendship, unicode=unicode)} {friendship}/10', 'title')
+    for line in npc_portrait(npc.id, unicode=unicode):
         ui.say('   ' + line, 'blue')
     ui.wrapped(npc.description)
     ui.wrapped(f'“{npc.motto}” · Thích: {npc.likes}')
+    branching = npc.id in BRANCHING_NPC_IDS
+    changed = False
+    if not branching:
+        current = begin_light_chat(ui.farm, npc.id)
+        _dialogue_box_text(ui, npc, dialogue_node(current), current.history,
+                           'Trò chuyện', friendship)
+        ui.ask('Enter để kết thúc: ')
+        ui.messages = ['\n'.join(current.history)]
+        ui.persist()
+        now = ui.farm.friendships[npc.id]
+        note = f'{bond_title(now)} · {hearts(now, unicode=unicode)} {now}/10'
+        note += (f' · {current.xp_reward}' if current.xp_reward else '.')
+        ui.wrapped(note, 'green')
+        ui.coach.event('talk', npc_id=npc.id, done=True)
+        return True
     topics = list(TOPICS)
     for index, key in enumerate(topics, 1):
         ui.wrapped(f'[{index}] {TOPICS[key]}')
@@ -637,24 +678,32 @@ def conversation(ui: 'TerminalGame') -> bool:
         return False
     if not choice.isdecimal() or not 1 <= int(choice) <= len(topics):
         raise GameError(f'Chọn chủ đề từ 1 đến {len(topics)}.')
-    current = begin_dialogue(ui.farm, npc.id, topics[int(choice) - 1])
-    changed = False
-    while not current.done:
+    topic_key = topics[int(choice) - 1]
+    current = begin_dialogue(ui.farm, npc.id, topic_key)
+    while True:
         node = dialogue_node(current)
-        _dialogue_box_text(ui, npc, node)
+        _dialogue_box_text(ui, npc, node, current.history,
+                           TOPICS[topic_key], friendship)
+        if not node.choices:
+            break
         answer = ui.ask('Bạn trả lời [1/2, 0/q = dừng trò chuyện]: ').lower()
         if answer in ('0', 'q', '', '\x1b'):
             break
         if answer not in tuple(str(i) for i in range(1, len(node.choices) + 1)):
             ui.wrapped('Chọn một câu trả lời có trong danh sách.')
             continue
-        reply = choose_response(ui.farm, current, node.choices[int(answer) - 1].id)
+        choose_response(ui.farm, current,
+                        node.choices[int(answer) - 1].id)
         changed = True
-        ui.messages = [reply]
+        friendship = ui.farm.friendships[npc.id]
+        ui.messages = current.history[-2:]
         ui.persist()
-        ui.wrapped(reply, 'blue')
-    if changed:
+    if changed and current.done:
         ui.messages = ['\n'.join(current.history)]
+        now = ui.farm.friendships[npc.id]
+        note = f'{bond_title(now)} · {hearts(now, unicode=unicode)} {now}/10'
+        note += (f' · {current.xp_reward}' if current.xp_reward else '.')
+        ui.wrapped(note, 'green')
     if current.done:
         ui.coach.event('talk', npc_id=npc.id, done=True)
     return changed

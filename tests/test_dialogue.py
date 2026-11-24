@@ -20,7 +20,7 @@ class BranchingDialogueTests(unittest.TestCase):
                 farm = self.farm_near(npc_id)
                 conversation = dialogue.begin_dialogue(farm, npc_id, topic)
                 start = dialogue.dialogue_node(conversation)
-                self.assertIn('?', start.npc_line)
+                self.assertGreaterEqual(len(start.npc_line), 20)
                 self.assertGreaterEqual(len(start.choices), 2)
                 openings.add(start.npc_line)
                 followups = set()
@@ -30,7 +30,6 @@ class BranchingDialogueTests(unittest.TestCase):
                     dialogue.choose_response(farm, branch, first.id)
                     followup = dialogue.dialogue_node(branch)
                     self.assertFalse(branch.done)
-                    self.assertIn('?', followup.npc_line)
                     self.assertGreaterEqual(len(followup.choices), 2)
                     followups.add(followup.npc_line)
                     for second in followup.choices:
@@ -49,15 +48,28 @@ class BranchingDialogueTests(unittest.TestCase):
                 self.assertEqual(len(conclusions), 4)
         self.assertEqual(len(openings), len(BRANCHING_NPC_IDS) * len(TOPICS))
 
-    def test_topics_on_the_same_day_do_not_reuse_the_same_beats(self):
-        farm = self.farm_near()
-        for npc_id in ('lan', 'tu'):
-            scenes = {dialogue._scene_line(farm, npc_id, topic)
-                      for topic in TOPICS}
-            lives = {dialogue._life_line(farm, npc_id, topic)
-                     for topic in TOPICS}
-            self.assertGreater(len(scenes), 1)
-            self.assertGreater(len(lives), 1)
+    def test_topics_have_distinct_openings_without_scene_padding(self):
+        from farmgame.dialogue import BRANCHING_NPC_IDS
+        for npc_id in BRANCHING_NPC_IDS:
+            farm = self.farm_near(npc_id)
+            openings = {dialogue.dialogue_node(
+                dialogue.begin_dialogue(farm, npc_id, topic)).npc_line
+                for topic in TOPICS}
+            self.assertEqual(len(openings), len(TOPICS))
+            for line in openings:
+                self.assertFalse(line.startswith('Trời '))
+                self.assertLess(len(line), 200)
+
+    def test_script_lines_are_not_repeated_across_topics(self):
+        from farmgame.dialogue_content import SCRIPTS
+        lines = []
+        for topics in SCRIPTS.values():
+            for opening, warm, practical in topics.values():
+                lines.append(opening)
+                for branch in (warm, practical):
+                    lines.append(branch[1])
+                    lines.extend((branch[2][1], branch[3][1]))
+        self.assertEqual(len(lines), len(set(lines)))
 
     def test_extended_story_routes_are_wired_for_every_npc(self):
         extended = ('festival', 'secret', 'future')
@@ -70,12 +82,10 @@ class BranchingDialogueTests(unittest.TestCase):
                 farm = self.farm_near(npc_id)
                 conversation = dialogue.begin_dialogue(farm, npc_id, topic)
                 node = dialogue.dialogue_node(conversation)
-                self.assertIn('?', node.npc_line)
                 self.assertEqual(len(node.choices), 2)
                 ending = deepcopy(conversation)
                 dialogue.choose_response(farm, ending, node.choices[0].id)
                 followup = dialogue.dialogue_node(ending)
-                self.assertIn('?', followup.npc_line)
                 dialogue.choose_response(farm, ending, followup.choices[0].id)
                 self.assertTrue(ending.done)
                 self.assertEqual(len(ending.history), 5)

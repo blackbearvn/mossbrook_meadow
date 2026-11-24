@@ -939,7 +939,7 @@ class ExplorerGame:
         return None if index is None else kinds[index]
 
     def _conversation(self):
-        from .villagers import TOPICS, bond_title, family_line, nearby_npc
+        from .villagers import TOPICS, bond_title, nearby_npc
         from .dialogue import (BRANCHING_NPC_IDS, begin_dialogue,
                                begin_light_chat, choose_response, dialogue_node)
         from .artwork import hearts, npc_portrait
@@ -968,29 +968,43 @@ class ExplorerGame:
             friendship = self.farm.friendships[npc.id]
             boxed = bool(self._screen is not None
                          and callable(getattr(self._screen, 'getmaxyx', None)))
-            while not conversation.done:
-                node = dialogue_node(conversation)
-                if not node.choices:
-                    # Trò chuyện gọn với người thân: một câu kể rồi thôi.
-                    conversation.done = True
-                    self._reader(f'{npc.name} · trò chuyện',
-                                 '\n\n'.join(conversation.history))
-                    break
-                if boxed:
+            if boxed:
+                while True:
+                    node = dialogue_node(conversation)
                     choice_id = self._dialogue_box(
-                        npc, node, portrait, friendship, topic_label)
+                        npc, node, portrait, friendship, topic_label,
+                        conversation.history)
                     if choice_id is None:
                         self._draw()
                         if conversation.done:
                             self.coach.event('talk', npc_id=npc.id, done=True)
                         return
+                    if not node.choices:
+                        break
                     if not choice_id:
                         break
-                    reply = choose_response(self.farm, conversation, choice_id)
+                    choose_response(self.farm, conversation, choice_id)
                     friendship = self.farm.friendships[npc.id]
-                    self._log(reply, toast=False)
+                    self._log('\n'.join(conversation.history[-2:]), toast=False)
                     self._save()
-                    continue
+                self._draw()
+                friendship_now = self.farm.friendships[npc.id]
+                summary = (f'Kết thúc trò chuyện với {npc.name} · '
+                           f'{hearts(friendship_now, unicode=self.unicode_map)} '
+                           f'{friendship_now}/10 · {bond_title(friendship_now)}')
+                summary += (f' · {conversation.xp_reward}'
+                            if conversation.xp_reward else '.')
+                self._log(summary, toast=False)
+                self.coach.event('talk', npc_id=npc.id, done=True)
+                return
+            # Screen-less fallback for tests and line-mode style harnesses.
+            while not conversation.done:
+                node = dialogue_node(conversation)
+                if not node.choices:
+                    conversation.done = True
+                    self._reader(f'{npc.name} · trò chuyện',
+                                 '\n\n'.join(conversation.history))
+                    break
                 available = '\n'.join(f'{number}. {choice.text}'
                                       for number, choice in enumerate(node.choices, 1))
                 readable = ('\n\n'.join(conversation.history)
@@ -1005,23 +1019,16 @@ class ExplorerGame:
                     art=portrait)
                 if response is None:
                     return
-                reply = choose_response(self.farm, conversation, node.choices[response].id)
-                self._log(reply)
+                choose_response(self.farm, conversation, node.choices[response].id)
+                friendship = self.farm.friendships[npc.id]
+                self._log('\n'.join(conversation.history[-2:]))
                 self._save()
-            if boxed:
-                self._draw()
-                friendship_now = self.farm.friendships[npc.id]
-                self._log(
-                    f'Kết thúc trò chuyện với {npc.name} · '
-                    f'{hearts(friendship_now, unicode=self.unicode_map)} '
-                    f'{friendship_now}/10 · {bond_title(friendship_now)}.',
-                    toast=False)
-                self.coach.event('talk', npc_id=npc.id, done=True)
-                return
-            self._reader(f'{npc.name} · Kết thúc cuộc trò chuyện',
-                         '\n\n'.join(conversation.history)
-                         + f'\n\n{hearts(self.farm.friendships[npc.id], unicode=self.unicode_map)} '
-                           f'{self.farm.friendships[npc.id]}/10 · {bond_title(self.farm.friendships[npc.id])}')
+            final_text = ('\n\n'.join(conversation.history)
+                          + f'\n\n{hearts(self.farm.friendships[npc.id], unicode=self.unicode_map)} '
+                            f'{self.farm.friendships[npc.id]}/10 · {bond_title(self.farm.friendships[npc.id])}')
+            if conversation.xp_reward:
+                final_text += f' · {conversation.xp_reward}'
+            self._reader(f'{npc.name} · Kết thúc cuộc trò chuyện', final_text)
             self.coach.event('talk', npc_id=npc.id, done=conversation.done)
 
     def _gift_menu(self, npc, portrait):
@@ -1050,8 +1057,8 @@ class ExplorerGame:
             return
         self._action(give_gift, self.farm, npc.id, options[index][0])
 
-    def _dialogue_box(self, npc, node, portrait, friendship, topic):
-        """An RPG-style bottom dialogue box with typewriter text and choices."""
+    def _dialogue_box(self, npc, node, portrait, friendship, topic, history=()):
+        """Khung chat đáy màn hình: lượt trước, chữ đang hiện, rồi lời đáp."""
         from .presentation import Typewriter
         from .villagers import bond_title
 
@@ -1059,24 +1066,53 @@ class ExplorerGame:
         writer = Typewriter(node.npc_line, chars_per_second=48.0)
         previous = time.monotonic()
         base_size = None
-        boxed = False
+        last_box = None
         set_timeout = getattr(self._screen, 'timeout', None)
         if callable(set_timeout):
             set_timeout(25)
+        entries = []
+        for raw in history or ():
+            speaker, separator, text = raw.partition(': ')
+            if separator:
+                entries.append((speaker, text))
+            else:
+                entries.append((npc.name, raw))
+        if not entries or entries[-1][1] != node.npc_line:
+            entries.append((npc.name, node.npc_line))
+        label_w = max([3, *(tui.cells(speaker + ':') for speaker, _ in entries)])
         try:
             while True:
                 height, width = self._screen.getmaxyx()
                 if height < 8 or width < 26:
                     writer.reveal()
-                if base_size != (height, width):
-                    self._draw()
-                    base_size = (height, width)
-                portrait_w = 13 if width >= 56 and height >= 16 else 0
+                portrait_w = 13 if width >= 66 and height >= 20 else 0
                 inner_w = max(8, width - 4 - portrait_w)
-                wrapped = wrap_cells(node.npc_line, max(6, inner_w))
+                text_w = max(6, inner_w - label_w - 3)
+
+                def build_rows(visible):
+                    built = []
+                    for index, (who, text) in enumerate(entries):
+                        current = index == len(entries) - 1
+                        shown = visible if current else text
+                        if current and not shown:
+                            shown = '…'
+                        wrapped = wrap_cells(shown, text_w) or ['']
+                        for offset, line in enumerate(wrapped):
+                            built.append(((who + ':') if offset == 0 else '',
+                                          line, who == 'Bạn'))
+                        built.append(('', '', False))
+                    if built:
+                        built.pop()
+                    return built
+
+                layout_rows = build_rows(node.npc_line)
                 choice_rows = len(node.choices)
                 max_box = max(8, height - 5)
-                box_h = min(max_box, max(8, len(wrapped) + choice_rows + 4))
+                box_h = min(max_box, max(8, len(layout_rows) + choice_rows + 5))
+                if base_size != (height, width) or box_h != last_box:
+                    self._draw()
+                    base_size = (height, width)
+                    last_box = box_h
                 rect = tui.Rect(0, max(0, height - box_h - 1),
                                 max(2, width), box_h)
                 footer = (
@@ -1091,9 +1127,7 @@ class ExplorerGame:
                     footer=footer, unicode=self.unicode_map, accent='cyan',
                     title_color='yellow', footer_color='cyan', shadow=True,
                     bounds=(height, width))
-                boxed = True
                 text_x = body.x + (portrait_w + 1 if portrait_w else 1)
-                text_w = max(6, body.right - text_x + 1)
                 if portrait_w:
                     for row, line in enumerate(portrait):
                         if body.y + row >= body.bottom:
@@ -1102,33 +1136,48 @@ class ExplorerGame:
                                   tui.ellipsize(line, portrait_w,
                                                 unicode=self.unicode_map),
                                   'magenta')
-                speaker = f'{npc.name} · {npc.role}'
+                header = f'{npc.name} · {npc.role}'
                 self._put(body.y, text_x,
-                          tui.ellipsize(speaker, text_w,
+                          tui.ellipsize(header, max(1, body.right - text_x + 1),
                                         unicode=self.unicode_map),
                           'yellow', True)
                 choice_top = body.y + body.height - choice_rows
-                text_room = max(0, choice_top - (body.y + 1))
-                lines = wrap_cells(writer.visible, max(6, text_w - 1))
-                if len(lines) > text_room:
-                    lines = lines[-text_room:] if text_room else []
-                for offset, line in enumerate(lines):
-                    self._put(body.y + 1 + offset, text_x, line, 'white')
-                if writer.done and node.choices:
-                    for index, choice in enumerate(node.choices):
-                        row = choice_top + index
-                        if row > body.bottom:
-                            break
-                        active = index == selected
-                        marker = ('› ' if self.unicode_map else '> ') if active else '  '
-                        text = f'{marker}{index + 1}. {choice.text}'
-                        if active:
-                            self._put(row, body.x + 1, ' ' * (body.width - 1),
-                                      'selected')
-                        self._put(row, text_x,
-                                  tui.ellipsize(text, max(1, body.right - text_x + 1),
-                                                unicode=self.unicode_map),
-                                  'selected' if active else 'cyan', active)
+                text_start = body.y + 1
+                text_end = (choice_top - 1) if node.choices else (body.y + body.height)
+                room = max(0, text_end - text_start)
+                rows = build_rows(writer.visible if not writer.done else node.npc_line)
+                if len(rows) > room:
+                    rows = rows[-room:] if room else []
+                for offset, (label, line, is_player) in enumerate(rows):
+                    row = text_start + offset
+                    if row >= text_end:
+                        break
+                    if label:
+                        self._put(row, text_x, label,
+                                  'cyan' if is_player else 'yellow', True)
+                    self._put(row, text_x + label_w + 2, line,
+                              'cyan' if is_player else 'white')
+                if node.choices:
+                    separator_row = choice_top - 1
+                    if separator_row >= text_start:
+                        g = tui.glyphs(self.unicode_map)
+                        self._put(separator_row, text_x,
+                                  g['h'] * max(1, body.right - text_x + 1), 'dim')
+                    if writer.done:
+                        for index, choice in enumerate(node.choices):
+                            row = choice_top + index
+                            if row > body.bottom:
+                                break
+                            active = index == selected
+                            marker = ('› ' if self.unicode_map else '> ') if active else '  '
+                            text = f'{marker}{index + 1}. {choice.text}'
+                            if active:
+                                self._put(row, body.x + 1, ' ' * (body.width - 1),
+                                          'selected')
+                            self._put(row, text_x,
+                                      tui.ellipsize(text, max(1, body.right - text_x + 1),
+                                                    unicode=self.unicode_map),
+                                      'selected' if active else 'cyan', active)
                 if not writer.done and body.height >= 2:
                     self._put(body.y + body.height - 1,
                               max(body.x + 1, body.right - 2), '…', 'dim')
@@ -1160,7 +1209,7 @@ class ExplorerGame:
                         if index < len(node.choices):
                             return node.choices[index].id
         finally:
-            if boxed and callable(set_timeout):
+            if callable(set_timeout):
                 try:
                     set_timeout(100)
                 except Exception:

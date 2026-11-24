@@ -1,4 +1,4 @@
-"""The villagers, their dialogue and daily friendship rules."""
+"""Dân làng, lời thoại ngắn và luật thân thiết hằng ngày."""
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -114,212 +114,6 @@ def bond_title(friendship: int) -> str:
             title = name
     return title
 
-_DREAMS = {
-    'lan': (
-        'Mình mơ một ngày tiệm có đủ chỗ cho mọi người ngồi uống trà sau khi mua hạt.',
-        'Mình muốn học cách làm bánh từ chính nông sản của làng mình.',
-        'Có lẽ mình sẽ mở một góc nhỏ bán hạt giống đổi bằng câu chuyện vụ mùa.',
-    ),
-    'tu': (
-        'Bác chỉ mong mỗi sáng còn đủ sức mang cần ra hồ, nghe nước kể chuyện.',
-        'Bác muốn vẽ lại bản đồ những chỗ cá hay nổi, để sau này còn ai dùng.',
-        'Ước mơ lớn nhất là một lần câu được cá vàng rồi thả nó về, chỉ để nhìn.',
-    ),
-    'an': (
-        'Mình muốn trồng một dải hoa nối đồng hoa với quảng trường, ai đi cũng thấy vui.',
-        'Mình mơ có một vườn ươm nhỏ để tặng cây con cho người mới làm vườn.',
-        'Mình muốn học đủ nghề để chăm một khu vườn lành cả khi mình đã già.',
-    ),
-    'mai': (
-        'Mình muốn hoàn thành cuốn sổ chuyện làng trước khi mùa mưa tới.',
-        'Mình mơ mở một phòng đọc nhỏ nơi trẻ trong làng có thể ngồi cả buổi chiều.',
-        'Mình muốn ghi lại cả những cách gọi tên cũ của từng con đường.',
-    ),
-    'son': (
-        'Tôi muốn trồng thêm một dải thông nối rừng với cánh đồng phía nam.',
-        'Tôi mơ một ngày lối mòn có đủ bảng chỉ dẫn cho người lạ cũng không lạc.',
-        'Tôi muốn dạy cho người mới cách đọc rừng mà không cần phải phá gì.',
-    ),
-}
-_MEMORIES = {
-    'lan': (
-        'Hồi mới mở tiệm, mình đã xếp nhầm hạt cà rốt vào túi bí ngô cho cả một nhà.',
-        'Ngày đầu tiên có khách quay lại cảm ơn, mình đã đứng sau quầy cười một mình rất lâu.',
-        'Mình vẫn giữ chiếc hộp gỗ đựng những đồng xu đầu tiên của tiệm.',
-    ),
-    'tu': (
-        'Lần đầu câu cá, bác ngã xuống hồ vì kéo cần quá mạnh. Cả làng còn nhớ.',
-        'Bác từng thả một con cá vàng về hồ và ngồi nhìn đến khi mặt trời lặn.',
-        'Có một mùa nước lớn, cả làng cùng kéo lưới; bác nhớ tiếng cười hơn cả mẻ cá.',
-    ),
-    'an': (
-        'Luống hoa đầu tiên của mình bị ốc ăn hết. Mình đã ngồi khóc rồi trồng lại.',
-        'Mình học được cách chờ hoa nở từ bà ngoại; bà bảo vội vàng thì hoa cũng biết.',
-        'Có người từng cảm ơn mình chỉ vì để một chậu hoa nhỏ bên lối đi.',
-    ),
-    'mai': (
-        'Trang sổ đầu tiên mình viết là về tiếng chuông gió ở quảng trường.',
-        'Mình từng mượn sách của một người lạ rồi quên trả; sau đó gửi lại kèm một lá thư.',
-        'Mình nhớ ngày làng mất điện, mọi người ra quảng trường kể chuyện đến khuya.',
-    ),
-    'son': (
-        'Tôi từng lạc trong rừng một đêm và học được cách nghe tiếng suối để tìm về.',
-        'Cây thông già ở lối vào do ông tôi trồng; tôi vẫn dọn cành cho nó mỗi mùa.',
-        'Có một con chim sẻ từng về đậu trên vai tôi mỗi sáng suốt cả mùa đông.',
-    ),
-}
-
-_GREETINGS = {
-    'lan': (
-        'Chào bạn! Sáng nay mình vừa xếp lại những túi hạt giống. Mong vườn của bạn luôn xanh.',
-        'Hôm nay bạn định trồng gì? Mình thích nhất lúc nghe mọi người kể về vụ mùa đầu tiên.',
-        'Đi dạo một chút cũng tốt đấy. Cửa tiệm vẫn ở đây khi bạn cần thêm hạt.',
-    ),
-    'tu': (
-        'Lại đây ngồi chơi. Câu cá còn có cái vui là được nhìn mặt hồ thật lâu.',
-        'Hôm nay nước lặng. Có mang cần không? Cứ bình tĩnh, cá không thích người nóng vội đâu.',
-        'Bác vừa thấy một vệt vàng dưới nước. Cá vàng hay nắng phản chiếu, phải câu mới biết!',
-    ),
-    'an': (
-        'Bạn thấy đồng hoa này thế nào? Mình thích để chừa một lối nhỏ cho mọi người đi ngang.',
-        'Sáng nay mùi đất dễ chịu thật. Chăm cây mỗi ngày làm mình có nhiều điều để mong đợi.',
-        'Đừng quên nghỉ tay nhé. Mình thường ra đây ngắm hoa giữa những lúc làm vườn.',
-    ),
-    'mai': (
-        'Chào bạn. Mình đang đọc những ghi chép về ngày ngôi làng được lập nên.',
-        'Bạn có câu chuyện nào về nông trại không? Mình muốn giữ lại cả những chuyện nhỏ.',
-        'Hôm nay quảng trường yên ả. Thật hợp để ngồi đọc thêm vài trang sách.',
-    ),
-    'son': (
-        'Chào người hàng xóm mới! Cứ theo lối mòn mà đi, bạn sẽ ra khỏi rừng dễ thôi.',
-        'Bạn có nghe tiếng chim không? Sáng nay cả khu rừng náo nhiệt hẳn lên.',
-        'Tôi vừa nhặt bớt cành khô trên đường. Đi dạo thong thả nhé, rừng có nhiều thứ để ngắm.',
-    ),
-}
-_RAIN = {
-    'lan': 'Trời mưa rồi! Hôm nay cây tự được tưới, bạn có thể dành thời gian gặp hàng xóm.',
-    'tu': 'Mưa làm mặt hồ nhảy múa cả lên. Thử thả cần xem hôm nay có gặp cá vàng không nhé.',
-    'an': 'Mưa xuống thật đúng lúc. Mình đang ngắm những giọt nước đọng trên cánh hoa.',
-    'mai': 'Ngày mưa khiến mình nhớ những trang sách cũ. Bạn đã xem dự báo trên tivi chưa?',
-    'son': 'Mưa làm lối rừng ướt hơn. Cứ theo đường đất, tôi đã dọn cành khô cho dễ đi rồi.',
-}
-_WORK = {
-    'lan': (
-        'Cửa tiệm ở ngay phía bắc chỗ mình. Bạn có thể mua giống, thức ăn và bán sản phẩm ở đó.',
-        'Hạt giống mới mở khi bạn lên cấp. Lúa mì chín nhanh, còn bí ngô cần kiên nhẫn hơn.',
-        'Trước khi bán hàng, cất món muốn giữ vào rương trong nhà. Tiệm chỉ lấy sản phẩm trong túi.',
-    ),
-    'tu': (
-        'Đứng kề hồ rồi quăng cần. Nhấn Space nâng thanh, thả để hạ; giữ con cá trong thanh nhé.',
-        'Đừng giữ cần cứng mãi. Nhấp từng nhịp rồi thả, thanh sẽ theo được con cá dễ hơn.',
-        'Mỗi lần quăng cần tốn ba sức. Nếu mệt, về ngủ rồi ngày mai mình lại ra hồ.',
-    ),
-    'an': (
-        'Mỗi đêm được tưới, cây lớn thêm một bước. Ba đêm thiếu nước liên tiếp thì cây héo đấy.',
-        'Cây đã chín không héo nữa. Bạn có thể thong thả đi chơi rồi quay lại thu hoạch.',
-        'Xem tivi trước khi lên kế hoạch nhé. Biết ngày mai mưa thì việc vườn sẽ nhẹ nhàng hơn.',
-    ),
-    'mai': (
-        'Mình ghi lại chuyện của người trong làng. Mỗi ngày ghé hỏi thăm một chút là đã có chuyện mới.',
-        'Có những cuốn sách nói về thân thiết: gặp đều đặn có ý nghĩa hơn là hỏi cả trăm lần một ngày.',
-        'Nếu lạc đường, mở bản đồ tổng quan. Những con số trên bản đồ là người trong làng đấy.',
-    ),
-    'son': (
-        'Tôi giữ lối đi qua rừng thông. Những đoạn đường sáng màu dẫn tới đồng hoa và các cây cầu.',
-        'Đứng cạnh cây là có thể giúp hàng xóm nhặt củi. Công việc nhỏ ấy kiếm được chút tiền mua giống.',
-        'Đừng quên đàn vật nuôi khi đi xa. Cho ăn mỗi ngày và vuốt ve để chúng thân với bạn hơn.',
-    ),
-}
-_VILLAGE = {
-    'lan': (
-        'Qua cầu phía đông là quảng trường. Mai thường mang sách ra đó, bạn thử ghé chào xem.',
-        'An chăm đồng hoa phía bên kia lối đông. Hoa ở đó làm đường về làng vui hơn hẳn.',
-        'Bác Tư ở cạnh hồ cũ. Bác ấy biết nhiều mẹo câu cá hơn bất kỳ ai ở đây.',
-    ),
-    'tu': (
-        'Phía đông nam còn có Hồ Sen rộng hơn. Qua suối rồi men đường xuống dưới sẽ tới.',
-        'Có hôm bác đi qua đồng hoa chỉ để nghe An kể chuyện trồng cây. Mỗi người một niềm vui.',
-        'Muốn ngắm làng từ xa thì lên Đồi Gió phía đông bắc. Nhớ mang theo chút thời gian rảnh.',
-    ),
-    'an': (
-        'Qua cầu đi tiếp về đông là quảng trường. Mai kể chuyện rất cuốn hút, bạn nên làm quen.',
-        'Rừng thông nằm phía tây nam. Sơn thường ở khoảng trống giữa những lối mòn.',
-        'Mình thích đường quanh Hồ Sen. Có lúc bạn đi xa chỉ để tìm thấy một chỗ ngồi yên.',
-    ),
-    'mai': (
-        'Ngôi làng bắt đầu từ những nông trại nhỏ bên hồ. Giờ đến lượt bạn viết thêm một chương.',
-        'Dòng suối chia làng thành hai phía. Có cầu ở lối bắc và lối giữa, nhớ chúng là khó lạc lắm.',
-        'Sơn biết những con đường trong rừng, còn Bác Tư biết những câu chuyện của mặt hồ.',
-    ),
-    'son': (
-        'Đi về phía đông sẽ ra quảng trường. Tới cây cầu là bạn đã đi đúng đường rồi.',
-        'Hồ Sen ở đông nam yên tĩnh lắm. Nếu đi, nhớ quay về thăm đàn vật nuôi trước khi ngủ nhé.',
-        'Tôi thích Đồi Gió phía đông bắc. Từ đó nhìn xuống, ngôi làng cứ như một khu vườn lớn.',
-    ),
-}
-_CLOSE = {
-    'lan': 'Có bạn ghé, cửa tiệm thấy ấm áp hơn hẳn.',
-    'tu': 'Gặp bạn hoài thành quen, hôm nào vắng bác lại ngóng đấy.',
-    'an': 'Lần sau có chuyện vui ở vườn, nhớ kể mình nghe nhé.',
-    'mai': 'Mình đã dành một trang riêng cho những câu chuyện bạn kể.',
-    'son': 'Bạn đã thành người quen của cả khu rừng này rồi.',
-}
-
-
-_STORY = {
-    'festival': {
-        'lan': ('Lễ hội là dịp để tiệm mở cửa muộn hơn. Mình đang chuẩn bị một quầy hạt nhỏ và chỗ ngồi cho người mỏi chân.',
-                'Nếu bạn rảnh, ghé phụ mình xếp túi hạt. Làm cùng nhau thì việc nhỏ cũng thành vui.',
-                'Mình học được rằng lễ hội không cần hoành tráng, chỉ cần ai đi ngang cũng thấy được chào.'),
-        'tu': ('Lễ hội năm nay bác muốn kể chuyện bên hồ. Một cái ghế, một ấm trà, nghe tiếng nước là đủ.',
-               'Bác đang tập kể ngắn lại. Chuyện dài quá thì người nghe mỏi, mà chuyện hay thì cần chỗ để thở.',
-               'Bác mong lễ hội xong, có đứa trẻ sẽ nhớ một câu chuyện và kể lại cho người khác.'),
-        'an': ('Mình đang trồng một con đường hoa cho lễ hội. Hoa phải nở đúng dịp, nên mình chăm từng ngày.',
-               'Mình muốn người đi qua sẽ chậm lại một chút. Đôi khi một bông hoa đẹp làm người ta nhớ cả buổi.',
-               'Mình học được rằng chuẩn bị cho một ngày vui cũng là cách sống chậm lại.'),
-        'mai': ('Mình đang chọn sách cho góc đọc ở lễ hội. Sách phải mở được ngay, không cần đọc từ đầu.',
-                'Mình sẽ để một cuốn sổ trắng cho ai muốn ghi lại chuyện của mình. Lễ hội cũng là một trang để viết tiếp.',
-                'Mình mong sau lễ hội, sổ làng có thêm vài giọng nói mới.'),
-        'son': ('Mình đang dọn một lối ngắn qua rừng cho khách lễ hội. Lối phải dễ đi mà vẫn giữ được vẻ tự nhiên.',
-                'Mình thích nhất là khoảng thời gian trước lễ hội, khi mọi người cùng chuẩn bị mà chưa vội.',
-                'Mình mong khách đi xong sẽ hiểu rừng cần được giữ sạch, không chỉ đẹp để ngắm.'),
-    },
-    'secret': {
-        'lan': ('Mình có một túi hạt giống của người bạn cũ, vẫn chưa dám gieo. Mỗi lần mở ngăn kéo lại thấy nao.',
-                'Mình sợ gieo rồi hoa sẽ tàn, nhưng cất mãi thì hạt cũng ngủ quên. Có lẽ mình cần một người cùng quyết.',
-                'Mình đang học cách giữ ký ức mà không biến nó thành một thứ phải canh chừng.'),
-        'tu': ('Bác có một chỗ trên hồ chưa dẫn ai tới. Không phải vì bí mật, mà vì bác chưa biết có nên mở lòng.',
-               'Bác từng hứa với một người sẽ giữ chỗ ấy yên. Giữ lời hứa đôi khi cũng là giữ một phần của mình.',
-               'Bác nghĩ rồi sẽ có ngày dẫn một người thật đáng tin tới đó.'),
-        'an': ('Mình có một luống hoa không bao giờ cắt. Mẹ mình trồng nó trước khi đi, và mình chưa sẵn sàng thay đổi.',
-                'Mình học được rằng chăm một thứ gì đó không có nghĩa là phải giữ nó mãi như cũ.',
-                'Có lẽ một ngày mình sẽ hái một bông, nhưng hôm nay thì chưa.'),
-        'mai': ('Mình có một cuốn sổ chưa đưa vào thư viện. Trong đó có những chuyện mình nghe được khi chưa xin phép.',
-                 'Mình đang nghĩ cách sửa sai mà không làm người trong chuyện bị tổn thương thêm.',
-                 'Viết chuyện của người khác là một việc nặng hơn mình tưởng lúc mới bắt đầu.'),
-        'son': ('Mình giữ một cây thông già bị sét đánh, chỉ vì chim vẫn làm tổ trong đó. Nó không đẹp theo cách thông thường.',
-                'Có người khuyên mình chặt đi cho gọn lối. Mình vẫn chưa nỡ, dù biết rừng cần được chăm.',
-                'Mình đang tìm cách vừa giữ cây, vừa giữ lối đi an toàn cho người sau.'),
-    },
-    'future': {
-        'lan': ('Mình muốn tiệm có thêm chỗ ngồi uống trà, để người ghé không phải vội đi ngay.',
-                'Mình đang dành dụm và đo lại khoảng hiên. Việc nhỏ thôi, nhưng mình muốn làm cho cẩn thận.',
-                'Mình mong một ngày tiệm là nơi người trong làng ghé không chỉ để mua, mà để kể nhau nghe một chuyện.'),
-        'tu': ('Bác muốn dạy câu cho đứa trẻ trong làng. Không phải để chúng thành thợ câu, chỉ để biết ngồi yên.',
-                'Bác đang chuẩn bị một cần câu ngắn và một chỗ nước cạn. Bắt đầu nhỏ thì dễ đi tiếp.',
-                'Bác mong có thêm người biết nhìn mặt hồ, để câu chuyện của làng không chỉ nằm trong miệng người già.'),
-        'an': ('Mình muốn biến bãi đất sau vườn thành nơi ươm cây. Mình đã vẽ vài kiểu nhà lưới ra giấy.',
-                 'Mình học được rằng vườn không cần đông cây, chỉ cần mỗi cây có chỗ để lớn.',
-                 'Mình mong sau này, người trong làng có thể tới xin một cây con và trồng tiếp ở nhà.'),
-        'mai': ('Mình muốn viết một cuốn sách về Mossbrook Meadow từ những chuyện nhỏ nhất.',
-                'Mình đang thử viết mỗi ngày một trang. Có hôm chỉ được một câu, nhưng vẫn là một câu thật.',
-                'Mình mong cuốn sách ấy không kết thúc bằng một dấu chấm, mà bằng một trang trắng cho người đọc viết tiếp.'),
-        'son': ('Mình muốn trồng thêm cây bản địa ven lối mòn, để rừng vừa đẹp vừa dễ đi.',
-                'Mình đang chọn loại cây không cần chăm nhiều mà vẫn nuôi được chim và côn trùng.',
-                'Mình mong lối đi mình để lại sẽ còn dùng được lâu sau khi mình không còn dọn rừng mỗi ngày.'),
-    },
-}
-
 
 def empty_friendships() -> dict[str, int]:
     return dict.fromkeys(NPCS, 0)
@@ -330,34 +124,6 @@ def empty_talked_on() -> dict[str, int]:
 
 
 NPC_POSITIONS = {npc.position: npc for npc in NPCS.values()}
-
-
-# Family members chat in short everyday beats instead of the branching
-# scripts: they share, tease and remember, they do not interview you.
-_LIGHT_TALK = {
-    'hai': ('Bác vừa pha trà xong, mùi gừng thơm lắm. Cháu ngồi uống chung một chén đi, không cần nói gì cả.',
-            'Hôm qua bác Tư ngồi ngắm mặt hồ đến tối mời. Bác Hai không nhắc, cứ nấu thêm chén trà chờ thế.',
-            'Cháu làm vườn khỏe thế thì bác yên tâm phần nào. Con cái của làng này ai cũng thế cả.'),
-    'minh': ('Sáng nay chở một mẻ hạt lên, xe kêu lục cục suốt đường, anh em làng cười cả dãy.',
-            'Chị Lan dọn kho kỹ lắm, hàng ai cũng nhớ tên. Học được từ chị cả đấy.',
-            'Hôm nay bác Tư gửi lại một nắm sỏi đẹp, bảo mai đem ra hồ trả. Mỗi người một thú, hay ghê.'),
-    'ha': ('Cái ghế này là của quảng trường, khớp gãy mà Sơn vẫn dìu về cho cô sửa. Nhà mình thế đấy.',
-           'Sáng nay sửa xong cánh cửa nhà ai đó, được cảm ơn ba lần. Tay nghề là để giữ lòng người chứ không chỉ giữ tiền.',
-           'Cậu có gỗ vụn nào thì đừng đốt, mang cho cô. Gỗ nhỏ ghép lại vẫn làm được cả tay nắm cửa.'),
-}
-
-
-def _light_line(farm: 'Farm', npc_id: str) -> str:
-    """A short, everyday line for a family member; tier shifts the tone."""
-    pool = _LIGHT_TALK[npc_id]
-    line = pool[(farm.day - 1) % len(pool)]
-    if farm.friendships[npc_id] >= 6:
-        line += ' Lâu lâu ghé cho cô/bác đỡ nhớ, nghe chưa?' \
-            if npc_id in ('hai', 'ha') else ' Lâu lâu ghé nói chuyện cho vui, nghe chưa?'
-    elif farm.friendships[npc_id] >= 3:
-        line += ' Nghe giọng quen nên mình kể dài hơn chút đấy.' \
-            if npc_id == 'minh' else ' Mình kể dài hơn ngày đầu chút, đừng cười.'
-    return line
 
 
 def npc_at(x: int, y: int, area: str = 'village') -> NPC | None:
@@ -383,7 +149,9 @@ def nearby_npc(farm: 'Farm') -> NPC | None:
 
 
 def talk(farm: 'Farm', npc_id: str, topic: str = 'greet') -> str:
+    """API cũ: trả về một câu mở đầu và trạng thái, dùng chung nội dung mới."""
     from .model import GameError
+    from .dialogue import opening_line
 
     if not isinstance(npc_id, str) or npc_id not in NPCS:
         raise GameError('Không có người dân này.')
@@ -394,30 +162,9 @@ def talk(farm: 'Farm', npc_id: str, topic: str = 'greet') -> str:
             or abs(npc.position[0] - farm.player_x)
             + abs(npc.position[1] - farm.player_y) > 1):
         raise GameError(f'Hãy đứng cạnh {npc.name} để trò chuyện.')
+    line = opening_line(farm, npc_id, topic)
     before = farm.friendships[npc_id]
     first_today = farm.talked_on[npc_id] != farm.day
-    if topic == 'greet':
-        if npc_id in _GREETINGS:
-            line = (_RAIN[npc_id] if farm.weather == 'rainy' else
-                    _GREETINGS[npc_id][(farm.day - 1) % len(_GREETINGS[npc_id])])
-        else:
-            line = _light_line(farm, npc_id)
-    elif topic in _STORY:
-        choices = _STORY[topic][npc_id]
-        line = choices[(farm.day - 1) % len(choices)]
-    else:
-        table = {'work': _WORK, 'village': _VILLAGE,
-                 'dream': _DREAMS, 'memory': _MEMORIES}.get(topic)
-        choices = table.get(npc_id) if table else None
-        if not choices:
-            # Family members have no story scripts; they share everyday beats.
-            choices = _LIGHT_TALK[npc_id]
-        line = choices[(farm.day - 1) % len(choices)]
-    if before == 0:
-        line = f'Chào chủ nông trại {farm.name}! {npc.description} {line}'
-    elif before >= 5:
-        line += ' ' + _CLOSE[npc_id]
-    line = f'{bond_title(before)}: {line}' if before >= 3 else line
     if first_today:
         ensure_daily(farm)
         farm.friendships[npc_id] = min(10, before + 1)

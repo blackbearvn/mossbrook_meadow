@@ -62,8 +62,9 @@ class CharacterAndDialogueUITests(unittest.TestCase):
         self.game._reader = Mock(return_value=True)
         self.game.handle_key('e')
         readable = self.game._reader.call_args_list[0].args[1]
-        self.assertIn('Một giỏ đầy màu sắc, nhìn là muốn trồng ngay.', readable)
-        self.assertIn('Mình thích bảng ghi rõ giống và thời gian lớn.', readable)
+        self.assertIn('Giỏ hạt mới xếp', readable)
+        self.assertIn('Bớt bí đi.', readable)
+        self.assertIn('Để nguyên, nhiều loại.', readable)
         self.assertEqual(self.farm.friendships['lan'], 0)
         save.assert_not_called()
 

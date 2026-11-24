@@ -29,7 +29,7 @@ class CursesDialogueBoxTests(unittest.TestCase):
     def test_dialogue_box_types_at_the_bottom_and_then_shows_choices(self):
         game = self.game()
         frames = []
-        sequence = iter([' ', '1', ' ', '1', ' '])
+        sequence = iter([' ', '1', ' ', '1', ' ', ' '])
 
         def read():
             frames.append('\n'.join(game._screen.lines()))
@@ -40,10 +40,10 @@ class CursesDialogueBoxTests(unittest.TestCase):
             game.handle_key('e')
 
         # The first frame is still empty while the typewriter is starting.
-        self.assertNotIn('Một giỏ đầy màu sắc', frames[0])
+        self.assertNotIn('Giỏ hạt mới xếp', frames[0])
         revealed = frames[1]
         self.assertIn('Lan · Chủ tiệm', revealed)
-        self.assertIn('Một giỏ đầy màu sắc', revealed)
+        self.assertIn('Giỏ hạt mới xếp', revealed)
         self.assertIn('( o o )', revealed)
         self.assertIn('› 1.', revealed)
         self.assertIn('trả lời', revealed)
@@ -71,8 +71,9 @@ class TextDialogueBoxTests(unittest.TestCase):
             conversation(game)
         rendered = output.getvalue()
         self.assertIn('╭─ Lan · Chủ tiệm', rendered)
-        self.assertIn('1. Một giỏ đầy màu sắc', rendered)
+        self.assertIn('1. Bớt bí đi.', rendered)
         self.assertIn('Bạn trả lời', rendered)
+        self.assertIn('Chào hỏi · kết thúc', rendered)
         self.assertEqual(farm.friendships['lan'], 1)
         self.assertEqual(farm.xp, 3)
 
