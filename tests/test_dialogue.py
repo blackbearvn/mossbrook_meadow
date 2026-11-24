@@ -71,6 +71,41 @@ class BranchingDialogueTests(unittest.TestCase):
                     lines.extend((branch[2][1], branch[3][1]))
         self.assertEqual(len(lines), len(set(lines)))
 
+    def test_minh_speaks_as_lans_younger_brother(self):
+        from farmgame.dialogue_content import LIGHT_CLOSE, LIGHT_TALK
+        lines = list(LIGHT_TALK['minh']) + list(LIGHT_CLOSE['minh'])
+        joined = ' '.join(lines).lower()
+        self.assertIn('anh/chị', joined)
+        self.assertNotIn('bạn', joined)
+        self.assertNotIn('mình', joined)
+        for line in lines:
+            self.assertIn('em', line.lower().split())
+
+    def test_elders_address_the_player_as_chau(self):
+        from farmgame.dialogue_content import (CLOSE_HELLO, FIRST_MEET, HELLO,
+                                               LIGHT_CLOSE, LIGHT_TALK,
+                                               RAIN_HELLO, SCRIPTS)
+        lines = []
+        for npc_id in ('tu', 'hai'):
+            lines.extend(HELLO.get(npc_id, ()))
+            if npc_id in RAIN_HELLO:
+                lines.append(RAIN_HELLO[npc_id])
+            if npc_id in FIRST_MEET:
+                lines.append(FIRST_MEET[npc_id])
+            if npc_id in CLOSE_HELLO:
+                lines.append(CLOSE_HELLO[npc_id])
+            lines.extend(LIGHT_TALK.get(npc_id, ()))
+            lines.extend(LIGHT_CLOSE.get(npc_id, ()))
+            for topics in SCRIPTS.get(npc_id, {}).values():
+                opening, warm, practical = topics
+                lines.append(opening)
+                for branch in (warm, practical):
+                    lines.append(branch[1])
+                    lines.extend((branch[2][1], branch[3][1]))
+        joined = ' '.join(lines).lower()
+        self.assertNotIn('bạn', joined)
+        self.assertIn('cháu', joined)
+
     def test_extended_story_routes_are_wired_for_every_npc(self):
         extended = ('festival', 'secret', 'future')
         self.assertEqual([TOPICS[key] for key in extended],

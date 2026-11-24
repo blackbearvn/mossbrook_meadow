@@ -4,6 +4,10 @@ Mỗi chủ đề có một câu mở đầu, hai hướng trả lời, và mỗ
 thúc. Câu thoại ngắn, có việc cụ thể, không phải câu hỏi khảo sát nào cũng
 kết bằng một câu triết lý. Phần khung chat nằm ở explore.py và
 text_activities.py; tệp này chỉ giữ nội dung.
+
+Vai vế được giữ đúng: Bác Tư và Bác Hai gọi người chơi là "cháu"; Lan,
+An, Mai, Sơn, Hà là bạn cùng lứa; Minh là em trai Lan, xưng "em" và gọi
+người chơi là "anh/chị".
 """
 
 SCRIPTS = {
@@ -462,16 +466,16 @@ SCRIPTS = {
 HELLO = {
     'lan': ('Chào. Giỏ hạt mới xếp, mình đang rối mắt đây.',
             'À, bạn đấy à. Mình vừa dọn kho xong.',
-            'Ghé muộn thế. Mình tưởng hôm nay không gặp bạn.'),
+            'Ghé muộn thế. Mình dọn hàng gần xong rồi.'),
     'tu': ('Cháu tới rồi. Bác vừa thả cần.',
            'Ngồi đi cháu. Nước hôm nay lặng.',
            'Bác nghe tiếng chân là biết cháu.'),
     'an': ('Chào bạn. Mình vừa nhặt ốc xong.',
            'Bạn tới đúng lúc, mình đang tưới.',
-           'Có bạn ghé, vườn đỡ vắng.'),
+           'Bạn ghé thì cùng xem luống hoa.'),
     'mai': ('Chào. Mình đang đánh dấu một trang.',
             'Bạn tới rồi. Mình vừa đọc xong một chuyện hay.',
-            'Hôm nay mình chờ bạn đấy.'),
+            'Hôm nay mình có chuyện muốn kể.'),
     'son': ('Chào. Tôi vừa dọn lối.',
             'Bạn tới rồi. Lối vừa dọn xong.',
             'Tôi đang nghỉ. Bạn ngồi.'),
@@ -494,33 +498,33 @@ FIRST_MEET = {
 }
 
 CLOSE_HELLO = {
-    'lan': 'Chỗ cạnh cửa sổ mình vẫn để trống cho bạn.',
+    'lan': 'Cứ ngồi cạnh cửa sổ, chỗ ấy mát.',
     'tu': 'Cháu ngồi chỗ đá bác lau sẵn ấy.',
-    'an': 'Mình để sẵn một nhánh hoa cho bạn.',
-    'mai': 'Mình để dành cho bạn một trang.',
+    'an': 'Nhánh hoa ngoài hiên nở rồi. Bạn xem thử.',
+    'mai': 'Mình còn một trang trắng. Bạn kể, mình ghi.',
     'son': 'Bạn cứ ngồi, tôi dọn nốt cành.',
 }
 
 LIGHT_TALK = {
     'hai': ('Bác vừa pha trà gừng. Cháu ngồi uống một chén, không cần nói gì.',
             'Ông Tư lại ngồi ngắm hồ tới tối. Bác nấu cơm xong rồi, kệ ông ấy.',
-            'Cháu làm vườn giỏi thật. Bác nhìn mấy luống là biết tay chăm.',
+            'Mấy luống nhà cháu lên đều. Đất ấy còn tốt.',
             'Hôm nay bác hái được ít lá chanh. Cháu mang về pha nước nhé.',
             'Làng mình nhỏ mà chuyện không thiếu. Cháu cứ ghé, bác kể.'),
-    'minh': ('Sáng nay chở hạt, xe kêu lục cục. Cả dãy cười, mình cũng cười.',
-             'Chị Lan dọn kho kỹ lắm. Mình học được mấy cách xếp, đỡ mệt hơn.',
-             'Bác Tư gửi nắm sỏi đẹp, bảo mai đem ra hồ. Mình quên mất hai lần rồi.',
-             'Mình vừa ăn bánh mì, còn nửa cái. Để phần bạn.',
-             'Chiều nay chị Lan bảo mình nghỉ. Mình định ra quảng trường ngồi.'),
+    'minh': ('Sáng nay em chở hạt, xe kêu lục cục. Cả dãy cười, em cũng cười.',
+             'Chị Lan dọn kho kỹ lắm. Em học được mấy cách xếp, đỡ mệt hơn.',
+             'Bác Tư gửi nắm sỏi đẹp, bảo mai đem ra hồ. Em quên mất hai lần rồi.',
+             'Em vừa ăn bánh mì, còn nửa cái. Để phần anh/chị.',
+             'Chiều nay chị Lan bảo em nghỉ. Em định ra quảng trường ngồi.'),
     'ha': ('Cái ghế này khớp gãy, Sơn vẫn dìu về cho mình sửa. Nhà mình thế đấy.',
-           'Sáng nay sửa xong cánh cửa, được cảm ơn ba lần. Mình vui cả ngày.',
+           'Sáng nay sửa xong cánh cửa. Có người cảm ơn, mình cũng vui.',
            'Có gỗ vụn thì đừng đốt, mang cho mình. Ghép lại làm được tay nắm.',
            'Sơn đi rừng về muộn, mình để cơm trên bếp. Ông ấy ăn nguội hoài.',
-           'Mình mới đóng được cái kệ. Để bạn xem thử.'),
+           'Mình mới đóng được cái kệ. Để khô keo rồi xem.'),
 }
 
 LIGHT_CLOSE = {
     'hai': ('Cháu ghé hoài, bác vui. Mà nhớ ăn cơm đấy.',),
-    'minh': ('Lâu rồi mới có người ngồi nghe mình kể. Cảm ơn nhé.',),
-    'ha': ('Bạn ghé là mình có cớ nghỉ tay. Ngồi thêm chút đi.',),
+    'minh': ('Anh/chị ngồi thêm chút. Em còn chuyện chở hàng kể.',),
+    'ha': ('Ghé chơi thì ngồi thêm chút. Mình sửa nốt cái này.',),
 }
