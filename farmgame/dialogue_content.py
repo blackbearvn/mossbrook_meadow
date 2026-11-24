@@ -27,7 +27,7 @@ SCRIPTS = {
             'Mẻ hạt mới về, tớ đang xếp giá. Cậu trồng lúa mì hay bí?',
             ('Lúa mì, chín nhanh.',
              'Lúa mì ba ngày, bí lâu hơn. Cậu có tưới đều được không?',
-             ('Được, tớ tưới sáng.', 'Vậy tớ để túi lúa mì ra ngoài. Hết hạt thì ghé, đừng ngại.'),
+             ('Được, để tớ tưới buổi sáng.', 'Vậy tớ để túi lúa mì ra ngoài. Hết hạt thì ghé, đừng ngại.'),
              ('Bí cần tưới mấy lần?', 'Bí uống nhiều hơn. Cậu thử một luống thôi, đừng tham.')),
             ('Bí, bán được giá.',
              'Bí lời hơn, nhưng phải chờ. Tớ chừa một luống cho bí.',
@@ -465,7 +465,7 @@ SCRIPTS = {
 
 HELLO = {
     'lan': ('Chào. Giỏ hạt mới xếp, tớ đang rối mắt đây.',
-            'À, cậu đấy à. Tớ vừa dọn kho xong.',
+            'À, cậu đấy à. Tớ vừa dọn kho xong. Mời cậu ngồi.',
             'Ghé muộn thế. Tớ dọn hàng gần xong rồi.'),
     'tu': ('Cháu tới rồi. Bác vừa thả cần.',
            'Ngồi đi cháu. Nước hôm nay lặng.',
@@ -501,7 +501,7 @@ CLOSE_HELLO = {
     'lan': 'Cậu cứ ngồi cạnh cửa sổ, chỗ ấy mát.',
     'tu': 'Cháu ngồi chỗ đá bác lau sẵn ấy.',
     'an': 'Nhánh hoa ngoài hiên nở rồi. Cậu xem thử.',
-    'mai': 'Tớ còn một trang trắng. Cậu kể, tớ ghi.',
+    'mai': 'Tớ còn một trang trắng. Cậu kể, còn tớ ghi nha.',
     'son': 'Cậu cứ ngồi, tớ dọn nốt cành.',
 }
 
@@ -526,5 +526,5 @@ LIGHT_TALK = {
 LIGHT_CLOSE = {
     'hai': ('Cháu ghé hoài, bác vui. Mà nhớ ăn cơm đấy.',),
     'minh': ('Anh/chị ngồi thêm chút. Em còn chuyện chở hàng kể.',),
-    'ha': ('Cậu ngồi thêm chút. Tớ sửa nốt cái này.',),
+    'ha': ('Cậu ngồi thêm chút nữa đi. Đợi tớ sửa nốt cái này.',),
 }
