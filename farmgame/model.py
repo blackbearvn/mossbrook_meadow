@@ -113,6 +113,11 @@ class Farm:
     dungeon_best: int = 0
     mined_total: int = 0
     achievements: dict[str, bool] = field(default_factory=empty_achievements)
+    discovered: dict[str, int] = field(default_factory=dict)
+    gathered_on: dict[str, int] = field(default_factory=dict)
+    restoration: dict[str, int] = field(default_factory=dict)
+    dialogue_memory: dict[str, str] = field(default_factory=dict)
+    festivals_on: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.plots:
@@ -297,10 +302,12 @@ class Farm:
             animal_report = advance_animals(self)
         self.day += 1
         self.energy = self.energy_limit
-        self.hp = self.max_hp
         self.mine_used = {}
         self.weather = next_weather
         self.forecast = random.choices(list(WEATHER), weights=[5, 2, 3], k=1)[0]
+        from .journey import morning_benefits, calendar_line, festival_line
+        community = morning_benefits(self)
+        self.hp = self.max_hp
         # Morning mail: today's help-request letter arrives with the day.
         from .bonds import ensure_request
         letter = ensure_request(self)
@@ -319,6 +326,9 @@ class Farm:
             message += f" {letter}"
         if animal_report:
             message += f" {animal_report}"
+        message += f' {calendar_line(self)}. {festival_line(self)}'
+        if community:
+            message += ' ' + community
         from .tutorial import record_event
         record_event(self, 'sleep')
         return message

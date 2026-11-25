@@ -26,9 +26,13 @@ _NEW_FISH = {'ca_tram', 'ca_mang', 'ca_lang'}
 _NEW_GOODS = {'fur', 'truffle'}
 _NEW_MINING = {'da', 'quang_dong', 'quang_sat', 'quang_vang', 'kim_cuong',
                'thuoc'}
-_COOKED = set(COOKED_ITEMS)
+_NEW_MEALS = {'sup_nam', 'tra_rung', 'mut_rung'}
+_COOKED = set(COOKED_ITEMS) - _NEW_MEALS
+_NEW_FORAGE = {'herb', 'berry', 'mushroom', 'tea_leaf', 'shell', 'honey'}
 _OLD_EXTRAS = (set(EXTRA_ITEMS) - _NEW_FISH - _NEW_GOODS - _COOKED
-               - _NEW_MINING)
+               - _NEW_MINING - _NEW_FORAGE - _NEW_MEALS)
+_JOURNEY_FIELDS = {'discovered', 'gathered_on', 'restoration',
+                   'dialogue_memory', 'festivals_on'}
 
 
 def _historical_sets(field: str) -> set[frozenset[str]]:
@@ -49,7 +53,7 @@ def _historical_sets(field: str) -> set[frozenset[str]]:
     shapes = set()
     from itertools import product
     for (crop_group, fish_group, good_group, cooked_group,
-         mining_group) in product((False, True), repeat=5):
+         mining_group, forage_group, meal_group) in product((False, True), repeat=7):
         keys = set(base)
         if field == 'chest' and crop_group:
             keys |= {f'seed:{key}' for key in _NEW_CROPS}
@@ -62,6 +66,10 @@ def _historical_sets(field: str) -> set[frozenset[str]]:
             keys |= _COOKED
         if mining_group:
             keys |= _NEW_MINING
+        if forage_group:
+            keys |= _NEW_FORAGE
+        if meal_group:
+            keys |= _NEW_MEALS
         shapes.add(frozenset(keys))
     return shapes
 
@@ -140,6 +148,7 @@ def _legacy_fields(data: object, expected: set[str], message: str) -> dict:
                 'mine_used', 'dungeon_best', 'mined_total', 'achievements',
                 'gifted_on', 'helped_on', 'request_day', 'request_npc',
                 'request_item', 'request_count', 'request_done'}
+    optional |= _JOURNEY_FIELDS
     keys = set(data)
     if keys >= expected and keys - expected <= optional:
         data = {key: value for key, value in data.items()
@@ -294,6 +303,9 @@ def _decode_farm(data: object) -> Farm:
                                ('request_done', bool)):
             if field not in data:
                 data = {**data, field: default()}
+        for field in _JOURNEY_FIELDS:
+            if field not in data:
+                data = {**data, field: {}}
     if not isinstance(data, dict) or set(data) != expected:
         raise ValueError("Thiếu dữ liệu nông trại hoặc có trường không hỗ trợ.")
     data = _fill_new_inventory(data)
@@ -350,6 +362,26 @@ def _decode_farm(data: object) -> Farm:
     _integer(data['retired_skill_points'])
     if type(data['map_pages']) is not bool:
         raise ValueError('Chế độ bản đồ không hợp lệ.')
+    from .journey import SITES, PROJECTS, SEASONS
+    from .villagers import TOPICS
+    for key, allowed, maximum in (
+        ('discovered', SITES, data['day']),
+        ('gathered_on', SITES, data['day']),
+        ('restoration', PROJECTS, 3),
+        ('festivals_on', SEASONS, data['day']),
+    ):
+        marks = data[key]
+        if not isinstance(marks, dict) or not set(marks) <= set(allowed):
+            raise ValueError('Dữ liệu hành trình làng không hợp lệ.')
+        for value in marks.values():
+            _integer(value, 1, maximum)
+    memories = data['dialogue_memory']
+    allowed_memories = {f'{npc}:{topic}' for npc in NPCS for topic in TOPICS}
+    if (not isinstance(memories, dict) or not set(memories) <= allowed_memories
+            or any(not isinstance(value, str) or value not in (
+                'warm_try', 'warm_ask', 'practical_try', 'practical_ask')
+                   for value in memories.values())):
+        raise ValueError('Kỷ niệm trò chuyện không hợp lệ.')
     gear = data['gear']
     if not isinstance(gear, dict) or set(gear) != set(GEAR):
         raise ValueError('Dữ liệu trang bị không hợp lệ.')
@@ -489,6 +521,7 @@ def load_game(path: Path) -> Farm:
                         'achievements', 'gifted_on', 'helped_on',
                         'request_day', 'request_npc', 'request_item',
                         'request_count', 'request_done'}
+            optional |= _JOURNEY_FIELDS
             if (not isinstance(data, dict)
                     or not set(data) >= VERSION_SIX_FIELDS
                     or set(data) - VERSION_SIX_FIELDS - optional):

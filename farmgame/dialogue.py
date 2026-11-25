@@ -3,8 +3,11 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .dialogue_content import (CLOSE_HELLO, FIRST_MEET, HELLO, LIGHT_CLOSE,
-                               LIGHT_TALK, RAIN_HELLO, SCRIPTS)
+from .dialogue_content import (CLOSE_HELLO, FAMILIAR_CONTEXT, FIRST_MEET,
+                               GIFT_CONTEXT, HELLO, HELP_CONTEXT, LIGHT_CLOSE,
+                               LIGHT_TALK, MEMORY_CALLBACKS, MEMORY_ROUTES,
+                               RAIN_HELLO, REQUEST_CONTEXT, RESTORED_CONTEXT,
+                               SCRIPTS)
 from .villagers import NPCS, TOPICS, talk
 
 if TYPE_CHECKING:
@@ -69,15 +72,45 @@ def _hello(farm: 'Farm', npc_id: str) -> str:
         parts.append(pool[(farm.day - 1) % len(pool)])
     if farm.friendships.get(npc_id, 0) >= 6:
         parts.append(CLOSE_HELLO[npc_id])
+    elif farm.friendships.get(npc_id, 0) >= 3:
+        parts.append(FAMILIAR_CONTEXT[npc_id])
     return ' '.join(parts)
+
+
+def _visit_context(farm: 'Farm', npc_id: str) -> str:
+    """Acknowledge one concrete recent event, without generating new state."""
+    if (getattr(farm, 'request_day', 0) == farm.day
+            and getattr(farm, 'request_npc', '') == npc_id):
+        from .catalog import ITEMS
+
+        item = ITEMS.get(getattr(farm, 'request_item', ''))
+        if item is not None:
+            pending, delivered = REQUEST_CONTEXT[npc_id]
+            template = delivered if getattr(farm, 'request_done', False) else pending
+            return template.format(item=item.name)
+    if getattr(farm, 'helped_on', {}).get(npc_id) == farm.day:
+        return HELP_CONTEXT[npc_id]
+    if getattr(farm, 'gifted_on', {}).get(npc_id) == farm.day:
+        return GIFT_CONTEXT[npc_id]
+    project, line = RESTORED_CONTEXT[npc_id]
+    if getattr(farm, 'restoration', {}).get(project, 0) >= 3:
+        return line
+    return ''
 
 
 def _light_line(farm: 'Farm', npc_id: str) -> str:
     """Câu kể đời thường của người thân, không phải câu hỏi phỏng vấn."""
     pool = LIGHT_TALK[npc_id]
     line = pool[(farm.day - 1) % len(pool)]
+    context = _visit_context(farm, npc_id)
+    if context:
+        line = context
+    if farm.weather == 'rainy':
+        line = RAIN_HELLO[npc_id] + ' ' + line
     if farm.friendships.get(npc_id, 0) >= 6:
         line += ' ' + LIGHT_CLOSE[npc_id][0]
+    elif farm.friendships.get(npc_id, 0) >= 3:
+        line += ' ' + FAMILIAR_CONTEXT[npc_id]
     return line
 
 
@@ -89,8 +122,20 @@ def begin_dialogue(farm: 'Farm', npc_id: str, topic: str = 'greet') -> Conversat
     if npc_id not in BRANCHING_NPC_IDS:
         raise GameError(f'{NPCS[npc_id].name} chỉ trò chuyện vài câu, không có chủ đề này.')
     question, warm, practical = SCRIPTS[npc_id][topic]
+    route = getattr(farm, 'dialogue_memory', {}).get(f'{npc_id}:{topic}')
+    if route in MEMORY_ROUTES:
+        callback = MEMORY_CALLBACKS[npc_id][topic][MEMORY_ROUTES.index(route)]
+        question = f'{callback} {question}'
+    context = _visit_context(farm, npc_id)
+    if context:
+        question = f'{context} {question}'
     if topic == 'greet':
         question = f'{_hello(farm, npc_id)} {question}'
+    else:
+        if farm.weather == 'rainy':
+            question = f'{RAIN_HELLO[npc_id]} {question}'
+        if farm.friendships.get(npc_id, 0) >= 3:
+            question = f'{FAMILIAR_CONTEXT[npc_id]} {question}'
     nodes = {}
     first_choices = []
     for branch_id, branch in (('warm', warm), ('practical', practical)):
@@ -114,11 +159,11 @@ def begin_light_chat(farm: 'Farm', npc_id: str) -> Conversation:
     _validate_nearby(farm, npc_id, 'greet')
     if npc_id not in LIGHT_NPC_IDS:
         raise GameError(f'{NPCS[npc_id].name} không thuộc nhóm trò chuyện ngắn.')
+    line = _light_line(farm, npc_id)
     xp_reward = ''
     if farm.talked_on[npc_id] != farm.day:
         talk(farm, npc_id, 'greet')
         xp_reward = farm.award_xp(3)
-    line = _light_line(farm, npc_id)
     return Conversation(npc_id, 'greet', 'opening',
                         [f'{NPCS[npc_id].name}: {line}'], done=True,
                         xp_reward=xp_reward,
@@ -165,4 +210,6 @@ def choose_response(farm: 'Farm', conversation: Conversation, choice_id: str) ->
     conversation.history.extend(new_lines)
     conversation.node_id = following.id
     conversation.done = not following.choices
+    if conversation.done:
+        farm.dialogue_memory[f'{conversation.npc_id}:{conversation.topic}'] = following.id
     return '\n'.join(new_lines + reward)

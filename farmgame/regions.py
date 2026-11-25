@@ -143,7 +143,12 @@ def region_name(area: str, x: int, y: int) -> str:
 
 def travel_regions(farm: 'Farm') -> list[Region]:
     """Regions shown in the fast-travel panel, including locked destinations."""
-    return [REGIONS[key] for key in TRAVEL_ORDER]
+    from .pages import PAGES
+    if not farm.map_pages:
+        return [REGIONS[key] for key in TRAVEL_ORDER]
+    return [Region(p.key, p.name, p.icon, p.ascii_icon, p.description,
+                   (108, 50) if p.key == 'beach' else p.spawn, p.bounds)
+            for p in PAGES.values()] + [REGIONS['mine']]
 
 
 def travel_cost(farm: 'Farm', region: Region) -> int:
@@ -152,7 +157,11 @@ def travel_cost(farm: 'Farm', region: Region) -> int:
 
 
 def can_travel(farm: 'Farm', region: Region | str) -> bool:
-    region = REGIONS[region] if isinstance(region, str) else region
+    if isinstance(region, str):
+        region = next((r for r in travel_regions(farm) if r.key == region),
+                      REGIONS.get(region))
+        if region is None:
+            return False
     return farm.level >= region.level
 
 
@@ -161,9 +170,10 @@ def travel(farm: 'Farm', key: str) -> str:
     from .model import GameError
     from .world import walkable
 
-    if key not in REGIONS:
+    choices = {**REGIONS, **{region.key: region for region in travel_regions(farm)}}
+    if not isinstance(key, str) or key not in choices:
         raise GameError('Khu vực không hợp lệ.')
-    region = REGIONS[key]
+    region = choices[key]
     if not can_travel(farm, region):
         raise GameError(f'{region.name} mở ở cấp {region.level}.')
     x, y = region.spawn
@@ -172,7 +182,9 @@ def travel(farm: 'Farm', key: str) -> str:
     farm.area = 'village'
     farm.player_x, farm.player_y = x, y
     farm.facing = 'down'
-    return f'Đã đến {region.name}. {region.description}'
+    from .journey import discover
+    note = discover(farm)
+    return f'Đã đến {region.name}. {region.description}' + (f' {note}' if note else '')
 
 
 def travel_lines(farm: 'Farm', *, unicode: bool = True) -> list[str]:

@@ -569,6 +569,9 @@ def interact(ui: 'TerminalGame') -> bool:
         return fishing(ui)
     elif action == 'forest':
         return ui.work()
+    elif action == 'site':
+        from .journey_ui import text_site
+        return text_site(ui)
     elif action == 'npc':
         return conversation(ui)
     elif action == 'plot':
@@ -759,8 +762,8 @@ def _draw_map(ui: 'TerminalGame') -> str:
     width = max(1, terminal.columns - 1)
     unicode_map = getattr(ui, 'unicode_map', supports_unicode())
     prompts = (
-        'Q về menu · WASD đi · E dùng · R khu vực · Z rộng · N/O · G hình · T dẫn · M bản đồ · B menu > ',
-        'Q · WASD · E · R khu vực · Z rộng · G hình · N/O · T · M · B > ',
+        'Q về menu · WASD đi · E dùng · U sổ · R khu vực · Z rộng · N/O · G hình · T dẫn · M bản đồ · B menu > ',
+        'Q · WASD · E · U sổ · R khu vực · Z rộng · G hình · N/O · T · M · B > ',
         'Q · E · R · G hình · T · M > ',
         'Q · G hình > ',
     )
@@ -876,6 +879,10 @@ def map_mode(ui: 'TerminalGame') -> bool:
                 ui.coach.panel()
             elif command == 'n':
                 ui.activities.daily_menu()
+            elif command == 'u':
+                from .journey_ui import text_journal
+                if text_journal(ui):
+                    ui.persist()
             elif command == 'o':
                 ui.activities.open_auto()
             elif command == 'g':

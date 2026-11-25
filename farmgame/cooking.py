@@ -63,6 +63,18 @@ RECIPES = {
         'tra_hoa_hong', 'Trà hoa hồng',
         {'crop:hoa_hong': 1, 'crop:dau_tay': 1}, 15, 16, 4,
         'Cánh hồng sấy nhẹ pha cùng trà, hương thơm dịu.'),
+    'sup_nam': Recipe(
+        'sup_nam', 'Súp nấm rừng',
+        {'mushroom': 2, 'milk': 1}, 10, 8, 1,
+        'Nấm từ lối rừng nấu cùng sữa, món Hà mang cho người sửa mái.'),
+    'tra_rung': Recipe(
+        'tra_rung', 'Trà rừng mật ong',
+        {'tea_leaf': 2, 'herb': 1, 'honey': 1}, 12, 10, 2,
+        'Búp trà già và mật ong, pha theo cách Bác Hai vẫn mời khách.'),
+    'mut_rung': Recipe(
+        'mut_rung', 'Mứt quả mọng',
+        {'berry': 3, 'honey': 1}, 14, 12, 2,
+        'Giữ lại hương quả trong hũ nhỏ để dành cho ngày lạnh.'),
 }
 
 COOKED_ITEMS = tuple(RECIPES)

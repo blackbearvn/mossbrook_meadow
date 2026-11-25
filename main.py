@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Mossbrook Meadow — game nông trại tiếng Việt trên terminal.",
-        epilog="WASD đi, E tương tác, Z khung rộng, N nhiệm vụ, O auto, G hình, C nhân vật, M bản đồ, I túi, T tân thủ, Q lưu và về menu; mỏ khoáng ở Đồi Gió.",
+        epilog="WASD đi, E tương tác, U hành trình và khôi phục làng, Z khung rộng, N nhiệm vụ, O auto, G hình, C nhân vật, M bản đồ, I túi, T tân thủ, Q lưu và về menu; mỏ khoáng ở Đồi Gió.",
     )
     parser.add_argument("--save", type=Path, default=ROOT / "saves" / "farm.json",
                         metavar="PATH", help="đường dẫn file lưu JSON")

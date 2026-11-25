@@ -581,6 +581,8 @@ def move(farm: 'Farm', direction: str) -> bool:
     if npc_at(x, y, farm.area) is not None:
         return False
     farm.player_x, farm.player_y = x, y
+    from .journey import discover
+    discover(farm)
     return True
 
 
@@ -653,6 +655,10 @@ def context(farm: 'Farm') -> tuple[str, str]:
         rock = target_rock(farm)
         if rock is not None:
             return 'rock', _LABELS['rock']
+    from .journey import nearby_site
+    site = nearby_site(farm)
+    if site is not None:
+        return 'site', f'E: khám phá {site.name} · U: hành trình làng'
     for kind, action in (('water', 'fish'), ('forest', 'forest')):
         if is_near(farm, kind):
             return action, _LABELS[action]

@@ -115,6 +115,9 @@ def overview_rows(farm, width, height, *, unicode=False):
                  else world.HOME_DOOR), farm.avatar)
     for npc in NPCS.values():
         marker(npc.position, npc.glyph)
+    from .journey import SITES
+    for site in SITES.values():
+        marker(site.position, '!')
     for key, (_, position) in world.LANDMARKS.items():
         marker(position, {'farm': ':', 'home': 'H', 'shop': 'M', 'barn': 'B',
                           'meadow': ',', 'square': 'O', 'forest': 'T',
@@ -391,6 +394,9 @@ class ExplorerGame:
             self.coach.panel()
         elif key == "n":
             self.activities.daily_menu()
+        elif key == "u":
+            from .journey_ui import explorer_journal
+            explorer_journal(self)
         elif key == "o":
             self.activities.open_auto()
         elif key == "g":
@@ -823,6 +829,9 @@ class ExplorerGame:
             self._fish()
         elif action == "forest":
             self._action(self.farm.work)
+        elif action == "site":
+            from .journey_ui import explorer_site
+            explorer_site(self)
         else:
             self._log(hint)
 
@@ -3614,6 +3623,8 @@ class ExplorerGame:
             "WASD/mũi tên: đi ngay; S luôn là đi xuống.",
             "T: Lan dẫn từng bước; hiện đường đi, mục tiêu và phím cần nhấn.",
             "N: bốn nhiệm vụ mỗi ngày; làm xong rồi nhận xu/XP, ngủ để đổi nhiệm vụ.",
+            "U: sổ hành trình 31 vùng, 8 công trình cộng đồng, lịch 4 mùa và lễ hội.",
+            "Dấu ! (Unicode ◆): đứng lên hoặc nhìn về dấu rồi E để đọc chuyện, thu thập hay phục hồi.",
             "G: đổi bản đồ Unicode/ASCII; ký hiệu, khung và thanh thể lực tự đổi theo.",
             "O: auto toàn bộ/trồng trọt/chăn nuôi/câu cá/đào khoáng/hang; chọn ngày và tốc độ.",
             "Auto: Space/P tạm dừng, O/Esc dừng, +/- tốc độ; WASD lấy lại điều khiển.",

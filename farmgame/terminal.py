@@ -183,6 +183,7 @@ class TerminalGame:
             "Trong nhà: đứng cạnh bếp K rồi e để nấu ăn",
             "[t] Lan hướng dẫn tân thủ từng bước",
             "[n] Nhiệm vụ hằng ngày   [o] Chế độ auto",
+            "[u] Hành trình: 31 vùng, công trình làng và lễ hội mùa",
             "[g] Đổi hình bản đồ Unicode / ASCII   [z] Khung bản đồ rộng",
         ):
             self.wrapped(line)
@@ -204,12 +205,12 @@ class TerminalGame:
                          f"Bán {sale_price(self.farm, 'crop:' + key)} xu · {crop.days} ngày · "
                          f"Có {self.farm.seeds[key]} hạt {lock}",
                          "dim" if lock else "green")
-        choice = self.ask("Chọn giống [1–5, 0 = hủy]: ")
+        choice = self.ask(f"Chọn giống [1–{len(CROPS)}, 0 = hủy]: ")
         if choice == "0":
             self.messages = ["Đã hủy chọn giống."]
             return None
-        if choice not in {str(i) for i in range(1, 6)}:
-            raise GameError("Chọn một giống từ 1 đến 5, hoặc 0 để hủy.")
+        if choice not in {str(i) for i in range(1, len(CROPS)+1)}:
+            raise GameError(f"Chọn một giống từ 1 đến {len(CROPS)}, hoặc 0 để hủy.")
         key = list(CROPS)[int(choice) - 1]
         if self.farm.level < CROPS[key].level:
             raise GameError(f"{CROPS[key].name} mở khóa ở cấp {CROPS[key].level}.")
@@ -352,6 +353,8 @@ class TerminalGame:
         self.say()
         self.say("SỔ TAY NHÀ NÔNG", "title")
         for line in (
+            "U mở sổ hành trình: khám phá 31 vùng, 8 công trình và lịch lễ hội.",
+            "Dấu !: đứng lên hoặc nhìn về dấu rồi E để đọc chuyện, thu thập hay phục hồi.",
             "1. Trồng: nhấn 1, chọn giống, rồi nhập ô (A1) hoặc nhiều ô (A1 A2).",
             "2. Tưới: nhấn 2 và nhập all để tưới mọi cây cần nước. Mưa tự tưới.",
             "3. Ngủ: nhấn 7. Cây được tưới lớn thêm 1 bước, năng lượng hồi đầy.",
@@ -427,6 +430,7 @@ class TerminalGame:
         return 1
 
     def run(self) -> int:
+        from .journey_ui import text_journal
         from .text_activities import (character_menu, map_mode, show_barn,
                                   show_farm, show_fish_collection, show_inventory,
                                   show_regions)
@@ -441,6 +445,7 @@ class TerminalGame:
             "c": lambda: character_menu(self),
             "t": lambda: self.coach.panel(),
             "n": self.activities.daily_menu,
+            "u": lambda: text_journal(self),
             "o": self.activities.open_auto,
             "g": self.toggle_map_style,
             "z": self.toggle_map_width,

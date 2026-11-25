@@ -82,6 +82,12 @@ EXTRA_ITEMS = {
     "truffle": Item("Nấm củ", 110),
     "feed": Item("Thức ăn vật nuôi", buy_price=5),
     "wood": Item("Gỗ", 4),
+    "herb": Item("Rau thơm rừng", 12),
+    "berry": Item("Quả mọng rừng", 18),
+    "mushroom": Item("Nấm rừng", 22),
+    "tea_leaf": Item("Búp trà", 16),
+    "shell": Item("Vỏ sò", 14),
+    "honey": Item("Mật ong rừng", 35),
     # Cooked dishes.  They are ordinary items so chest, selling and the
     # inventory panel keep one shared model.
     "banh_mi": Item("Bánh mì nướng", 65),
@@ -92,6 +98,9 @@ EXTRA_ITEMS = {
     "sup_bi": Item("Súp bí ngô", 230),
     "sinh_to_dau": Item("Sinh tố dâu", 260),
     "tra_hoa_hong": Item("Trà hoa hồng", 180),
+    "sup_nam": Item("Súp nấm rừng", 105),
+    "tra_rung": Item("Trà rừng mật ong", 130),
+    "mut_rung": Item("Mứt quả mọng", 160),
     # --- mining and forging ---------------------------------------------
     "da": Item("Đá", 6),
     "quang_dong": Item("Quặng đồng", 32),

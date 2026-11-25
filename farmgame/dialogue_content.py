@@ -26,9 +26,9 @@ SCRIPTS = {
         'work': (
             'Mẻ hạt mới về, tớ đang xếp lên giá. Cậu trồng lúa mì hay bí?',
             ('Lúa mì, chín nhanh.',
-             'Lúa mì ba ngày, bí lâu hơn. Cậu có tưới đều được không?',
+             'Lúa mì một ngày, bí năm ngày. Cậu có tưới đều được không?',
              ('Được, để tớ tưới buổi sáng.', 'Vậy tớ để túi lúa mì ra ngoài. Hết hạt thì ghé, đừng ngại.'),
-             ('Bí cần tưới mấy lần?', 'Bí uống nhiều hơn. Cậu thử một luống thôi, đừng tham.')),
+             ('Bí cần tưới mấy lần?', 'Mỗi ngày một lần, hôm mưa thì thôi. Bí cần năm ngày đủ nước. Cậu thử một luống nhé.')),
             ('Bí, bán được giá.',
              'Bí lời hơn, nhưng phải chờ. Tớ chừa một luống cho bí.',
              ('Vậy trồng bí.', 'Vậy tớ gói hạt bí riêng. Nhớ đừng trồng sát hàng rào.'),
@@ -528,3 +528,283 @@ LIGHT_CLOSE = {
     'minh': ('Anh/chị ngồi thêm chút. Em còn chuyện chở hàng kể.',),
     'ha': ('Cậu ngồi thêm chút nữa đi. Đợi tớ sửa nốt cái này.',),
 }
+
+# Completed routes, in this order: warm_try, warm_ask, practical_try,
+# practical_ask. These recall what was actually said, never an unperformed
+# farm action or a gift the player has not handed over.
+MEMORY_ROUTES = ('warm_try', 'warm_ask', 'practical_try', 'practical_ask')
+MEMORY_CALLBACKS = {
+    'lan': {
+        'greet': (
+            'Cậu đã giúp tớ chọn chỗ cho cà rốt với hoa. Lần này tớ bày lại giỏ hạt nhé.',
+            'Cậu thích hoa ở giữa; tớ vẫn lo khách chạm phải cánh. Cậu xem lại với tớ nhé.',
+            'Tớ nhớ lời cậu: ghi giá to lên để khách khỏi ngại hỏi. Giỏ hạt lại cần xếp rồi.',
+            'Cậu từng gợi ý xếp hạt theo mùa. Tớ muốn thử cách ấy với giỏ hàng mới.'),
+        'work': (
+            'Cậu chọn lúa mì và định tưới mỗi sáng. Lần này tớ sẽ ghi rõ ngày chín trên túi.',
+            'Lần trước cậu hỏi chuyện tưới bí. Bí cần năm ngày đủ nước, lúa mì chỉ một ngày.',
+            'Cậu đã chọn bí dù phải chờ. Túi hạt hôm nay tớ vẫn chia riêng từng loại.',
+            'Cậu từng ngại chờ bí lớn. Tớ ghi một ngày cho lúa mì, năm ngày cho bí để cậu dễ tính.'),
+        'village': (
+            'Tớ nhớ cậu muốn ngắm hoa yên một lát, để An chăm cây. Chiều nay tớ lại định đi dạo.',
+            'Cậu định hỏi An cách chăm hoa. Tớ cũng muốn nghe, chứ hạt bán được chưa chắc tớ trồng giỏi.',
+            'Lần trước cậu chọn ngồi nghe Mai. Tớ thích có người cùng nán lại sau giờ dọn tiệm.',
+            'Cậu hỏi Mai kể chuyện gì; tớ nghĩ chuyện người ghé tiệm cũng đáng kể. Hôm nay cậu đi đâu?'),
+        'dream': (
+            'Cậu chọn trà gừng cho bàn ngoài hiên. Nghĩ tới mùi gừng, tớ lại muốn kê bàn sớm.',
+            'Cậu nhắc trà hoa, tớ liền nghĩ tới mấy luống của An. Cái bàn nhỏ ấy còn trong dự tính.',
+            'Tớ nhớ cậu bảo cửa tiệm cần chỗ ngồi. Có người muốn ở lại làm tớ đỡ sốt ruột chuyện bán.',
+            'Cậu muốn bán nhanh, còn tớ muốn khách ngồi lâu. Tớ vẫn đang tính chỗ kê bàn.'),
+        'memory': (
+            'Cậu hỏi tớ đã xin lỗi nhà nhận nhầm hạt chưa. Nhờ câu ấy mà tớ kể được đoạn khó nhất.',
+            'Cậu lo nhà ấy có giận không. Tớ còn nhớ bữa cơm họ mời hơn cả túi hạt đem đền.',
+            'Tớ nhớ cậu muốn biết cách tớ sửa nhãn túi. Lỗi ngày ấy vẫn nhắc tớ đọc nhãn hai lần.',
+            'Cậu hỏi tớ có nhầm hạt nữa không. Tớ nhớ đã kể lần phát hiện kịp, khi khách còn ở cửa.'),
+        'festival': (
+            'Cậu chọn tờ hướng dẫn ngắn cho trẻ mua hạt. Tớ nhớ nhờ Mai viết chữ cho dễ đọc.',
+            'Cậu hỏi trẻ con có đọc hướng dẫn không. Tớ nghĩ thêm hình cây sẽ giúp được nhiều đứa.',
+            'Cậu muốn chỉ nhận hạt đổi còn nảy. Tớ nhớ phải thử trước mặt người mang đến, cho rõ ràng.',
+            'Cậu bảo nhận hết hạt cũ cho vui. Tớ thích ý tốt ấy, chỉ sợ trao lại ai túi hạt chẳng nảy.'),
+        'secret': (
+            'Cậu khuyên gieo túi hạt kỷ niệm để nó sống. Tớ muốn nghĩ tới chồi non thay vì sợ mất túi cũ.',
+            'Cậu bảo cứ cất túi hạt kỷ niệm. Được cậu hiểu, tớ bớt thấy việc giữ nó là vô ích.',
+            'Cậu gợi ý thử một nắm hạt sau nhà. Tớ nhớ lời ấy, nhưng mới đếm đi đếm lại thôi.',
+            'Cậu hỏi còn bao nhiêu hạt kỷ niệm. Mười bảy hạt thôi; nói ra rồi tớ thấy ít quá.'),
+        'future': (
+            'Cậu chọn cúc cho bàn nhìn ra vườn. Tớ cứ nhìn cửa sổ rồi tưởng tượng màu hoa bên cạnh.',
+            'Cậu thích hồng thơm bên cửa sổ. Tớ còn nhớ đã hỏi cậu chuyện giúp tỉa cành.',
+            'Cậu nghĩ bàn sát đường sẽ kéo khách ghé. Tớ đang cân nhắc cả bụi bám lên túi hạt.',
+            'Cậu muốn giữ góc hiên yên tĩnh. Tớ thấy tiệm cần chỗ nghe rõ giọng người quen.'),
+    },
+    'tu': {
+        'greet': (
+            'Cháu từng chọn ngồi nghe nước. Bác thích có người ngồi mà không giục phao động.',
+            'Lần trước cháu để ý tiếng gió qua lau. Bác nghe tiếng ấy lại nhớ buổi cháu ghé.',
+            'Cháu đã muốn thử cần của bác. Hôm nay bác vẫn nhắc: cá kéo thì hạ tay, đừng giật.',
+            'Cháu bảo chỉ hỏi thăm thôi. Bác nhớ chứ; đâu phải đến hồ là cần mang cá về.'),
+        'work': (
+            'Cháu kể hay giữ cần lâu khi kéo cá. Bác vẫn muốn cháu thử nhấp nhẹ từng nhịp.',
+            'Cháu đã biết nhấp cần, chỉ sợ nhanh tay quá. Nhìn phao một nhịp rồi hãy kéo, cháu nhé.',
+            'Cháu từng nói câu mãi không nghỉ. Bác nhớ nên để chén nước cạnh cần cho cháu thấy.',
+            'Cháu lo nghỉ lâu thì cá đi mất. Cá đi còn trở lại được, cổ tay mỏi thì nên nghỉ.'),
+        'village': (
+            'Cháu chọn tới Hồ Sen để câu. Bác còn nhớ, nên nhắc trước chuyện đá trơn ven bờ đông.',
+            'Cháu muốn ngắm sen chứ không câu. Bác nghĩ một buổi sớm như vậy cũng đủ vui rồi.',
+            'Cháu hỏi lối nhanh sau đồi. Bác vẫn dặn men bờ rào, đừng đi tắt qua ruộng người ta.',
+            'Cháu chọn qua cầu cho dễ đi. Bác đi chậm nên quý người chịu chọn đường ấy cùng bác.'),
+        'dream': (
+            'Cháu bảo sổ cá chỉ nên ghi chỗ chắc. Bác thích người cầm sổ tới nơi còn tin được bác.',
+            'Cháu muốn ghi cả chỗ đoán. Bác nhớ phải phân biệt dấu hỏi với chỗ bác đã câu.',
+            'Cháu nghĩ nên nhờ Mai giữ bản sổ. Bác nhẹ lòng khi nghĩ nét vẽ ấy còn người đọc.',
+            'Cháu bảo bác tự giữ sổ. Bác vẫn tiếc, nhưng ngăn kéo kín quá thì chẳng ai học được gì.'),
+        'memory': (
+            'Cháu hỏi kỹ chuyện bác ngã hồ. Đến giờ bác còn nhớ tiếng cần gãy trước tiếng nước.',
+            'Cháu hỏi bác có sợ không. Bác nói thật với cháu được: hồi ấy bác run mãi mới về.',
+            'Cháu kể hay giật cần khi cá mạnh. Chuyện bác ngã hồ chính là để cháu khỏi thử lại.',
+            'Cháu nói giữ cần đều. Bác nhớ rồi, giờ chỉ còn canh lúc cá đổi hướng nữa thôi.'),
+        'festival': (
+            'Cháu thích nghe chuyện cá kể thật. Bác đang tập kể ngắn, bỏ bớt mấy đoạn khoe khoang.',
+            'Cháu cho bác thêm thắt chút ở lễ hội. Bác nhớ phải báo trước đâu là đoạn nói vui.',
+            'Cháu muốn bác mở chuyện trước. Bác sẽ bắt đầu ngắn thôi để người khác còn có lượt.',
+            'Cháu chọn để người khác kể trước. Bác ngồi nghe cũng được, miễn chuyện cũ còn có người kể.'),
+        'secret': (
+            'Cháu muốn dẫn người tới khúc hồ yên ấy. Bác còn đang nghĩ làm sao giữ lối khỏi đông quá.',
+            'Cháu bảo bác cứ giữ khúc hồ riêng. Được cháu hiểu, bác bớt áy náy chuyện ấy.',
+            'Cháu nhận lời xem lối hẹp cùng bác. Bác chưa quên lời dặn mang ủng, bờ ở đó lầy.',
+            'Cháu hẹn hôm khác tới khúc hồ ấy. Bác không giục; có nơi phải rảnh lòng mới ngắm được.'),
+        'future': (
+            'Cháu chọn dạy lũ nhỏ ở mương trước. Bác thấy bắt đầu bằng con rô bé cũng đáng vui.',
+            'Cháu muốn lũ nhỏ quen hồ lớn. Bác vẫn nghiêng về mương, để tụi nó nhìn thấy cá đã.',
+            'Cháu bảo chỉ mặt nước lặng cho trẻ. Bác nghĩ có thể dạy bằng mắt trước, khỏi cần nhớ tên.',
+            'Cháu muốn để tụi nhỏ tự nhìn nước. Bác sẽ phải tập đứng sau và bớt chỉ tay đấy.'),
+    },
+    'an': {
+        'greet': (
+            'Cậu bảo mang ốc ra bờ cỏ. Tớ nhớ phải đi xa luống hơn, kẻo tối chúng lại quay về.',
+            'Cậu đùa cho ốc sang luống rau. Tớ còn buồn cười, nhưng rau của ai thì cũng tiếc chứ.',
+            'Cậu muốn học rải tro chắn ốc. Tớ sẽ chỉ ở mép đất, tránh phủ tro lên lá non.',
+            'Cậu bảo tự chắn ốc được. Tớ chỉ nhắc lại chuyện mưa rửa trôi tro, rồi để cậu thử.'),
+        'work': (
+            'Cậu từng bảo tỉa sát thân. Tớ vẫn muốn xem mắt lá trước khi đặt kéo, chậm một chút.',
+            'Cậu nói sợ tỉa hỏng. Tớ cũng thế; đứng cạnh nhau chắc bớt run tay hơn.',
+            'Cậu chọn lưới thưa để che nắng. Tớ nhớ phải chừa ánh sáng cho đọt non vươn lên.',
+            'Cậu muốn tưới thêm thay vì che. Tớ vẫn lo úng, nên cứ sờ đất trước rồi mới tính.'),
+        'village': (
+            'Cậu chọn nghe Mai kể chuyện. Tớ thích ngồi cạnh chị ấy, tay không phải giữ cuốn sách nào.',
+            'Cậu muốn đọc sách cùng Mai. Tớ nghĩ đem một cuốn mỏng sẽ dễ ngồi lâu hơn.',
+            'Cậu thích truyện ngắn mang về. Một trang lúc nghỉ tay cũng đủ đổi cả buổi làm vườn.',
+            'Cậu muốn cuốn sách về cây. Tớ muốn chọn cuốn có hình, để cậu mở ngay ngoài luống cũng được.'),
+        'dream': (
+            'Cậu chọn cúc cho vườn ươm. Tớ thích ý ấy vì lúc cây mọc, có thể chia hạt cho người khác.',
+            'Cậu muốn có hồng trước hiên. Tớ cứ tưởng tượng một bông đủ để căn cửa sáng hơn.',
+            'Cậu bảo bắt đầu bằng rau nhanh lớn. Có cái hái sớm chắc tớ đỡ sốt ruột chờ cây con.',
+            'Cậu nghĩ tới cây ăn trái lâu năm. Tớ muốn học kiên nhẫn, dù trước giờ hay ngóng từng lá.'),
+        'memory': (
+            'Cậu bảo khóc vì mất luống hoa không buồn cười. Tớ nhớ câu đó hơn cả mấy vỏ ốc giữ lại.',
+            'Cậu hỏi tớ đã chắn ốc ra sao. Nhờ vậy tớ kể được phần trồng lại, thay vì chỉ chuyện mất hoa.',
+            'Cậu định thử tro quanh gốc. Tớ mong lần thử của cậu đỡ phải bắt đầu bằng một luống trụi.',
+            'Cậu hỏi có cách khác ngoài tro. Tớ thích việc đi nhặt ốc chậm chậm, dù hơi mất công.'),
+        'festival': (
+            'Cậu chọn chừa lối giữa hai hàng cúc trắng. Tớ nghĩ hoa đẹp hơn khi người đi không phải né.',
+            'Cậu bảo đi sát mép cũng được. Tớ vẫn sợ chân trẻ nhỏ chạm hoa, nên muốn cắm cọc thấp.',
+            'Cậu muốn mỗi đứa trẻ một luống màu. Tớ thích nghĩ tụi nó sẽ tìm đúng luống của nó.',
+            'Cậu chọn trộn màu cho tự nhiên. Tớ muốn thử một đoạn nhỏ rồi xem ong có thích không.'),
+        'secret': (
+            'Cậu khuyên hái một bông từ luống của mẹ. Tớ đang tập nghĩ đem vào nhà cũng là giữ gìn.',
+            'Cậu hiểu vì sao tớ muốn để nguyên luống ấy. Không phải giải thích thêm làm tớ nhẹ hẳn.',
+            'Cậu bảo cắt bớt bông già. Tớ vẫn cần chậm một chút, nhưng tớ nhớ lời cậu.',
+            'Cậu nói cứ giữ hoa già cũng được. Tớ thấy được phép lưu luyến thêm một mùa.'),
+        'future': (
+            'Cậu chọn che cây lúc mưa rồi mở ra. Tớ thích kiểu mái có thể đổi theo trời ấy.',
+            'Cậu muốn thử cây bản địa khỏe. Tớ tò mò xem cây tự chọn chỗ sống giỏi đến đâu.',
+            'Cậu bảo làm khung lưới nhỏ trước. Một góc vừa tay chắc tớ còn đủ sức chăm cây trong đó.',
+            'Cậu muốn dựng xong nhà lưới một lượt. Tớ vẫn tính làm dần, sợ cây chờ còn người kiệt sức.'),
+    },
+    'mai': {
+        'greet': (
+            'Cậu chọn nghe chuyện giếng cũ. Tớ thích cách một dấu đất nhỏ dẫn ra được cả trang sổ.',
+            'Cậu muốn nghe về người đào giếng. Tớ nhớ rồi; tên người thường bị quên trước tên công trình.',
+            'Cậu thích chuyện người giúp nhau. Tớ sẽ để ý những trang chẳng có ai được gọi là anh hùng.',
+            'Cậu hỏi chuyện lạ trong sổ. Nhờ cậu mà tớ lại nghĩ tới con gà đi lạc tận đồi.'),
+        'work': (
+            'Cậu muốn để riêng chuyện làng. Tớ thích cái kệ mà thư viết tay không phải chen sách in.',
+            'Cậu chọn kệ truyện ngắn. Tớ nghĩ người chỉ nghỉ được một lát cũng cần có thứ để đọc.',
+            'Cậu nhắc bảng chỉ mục ngoài cửa. Một dòng dễ hiểu có thể giúp người mới bớt ngại bước vào.',
+            'Cậu đã nhận lời chỉ sách giúp tớ. Nghĩ tới có người ngồi cùng, việc xếp kệ bớt lặng quá.'),
+        'village': (
+            'Cậu chọn nghe chuyện người bán ở chợ. Tớ muốn hỏi họ mang món đầu tiên tới làng ra sao.',
+            'Cậu muốn ghi lời trẻ con. Tớ sẽ phải viết nhanh, tụi nhỏ đâu chờ người lớn tìm bút.',
+            'Cậu định ghé tiệm Lan trước. Tớ thích chợ có cả đoạn đường ghé hỏi thăm người quen.',
+            'Cậu chọn ra chợ trước tiệm hạt. Tớ sẽ để một trang trống cho những cuộc gặp giữa đường.'),
+        'dream': (
+            'Cậu chọn bác Tư mở đầu cuốn sách làng. Tớ đang nghĩ nên mang sổ hay chỉ ngồi nghe trước.',
+            'Cậu muốn tớ hỏi Lan trước. Có lẽ một cửa tiệm kể về làng bằng những người đi qua cửa.',
+            'Cậu khuyên kể chuyện thay vì xếp mốc. Tớ muốn giữ được giọng người nói trên trang giấy.',
+            'Cậu muốn có bảng mốc để tra. Tớ nhớ sách còn cần giúp người đọc tìm lại một điều.'),
+        'memory': (
+            'Cậu hỏi vì sao tớ không trả sách ngay. Câu hỏi ấy chạm đúng nỗi ngại mà tớ hay tránh.',
+            'Cậu muốn biết cuốn sách đã về chủ chưa. Kể tới lá thư trả sách, tớ mới thở nhẹ được.',
+            'Cậu thấy lá thư xin lỗi là đủ nếu thật lòng. Tớ giữ câu ấy, để lần sau khỏi trì hoãn.',
+            'Cậu khuyên tớ nói lời xin lỗi trực tiếp. Tớ nhớ cảm giác nhẹ đi khi kể chuyện ấy với cậu.'),
+        'festival': (
+            'Cậu chọn đọc truyện to cho trẻ ở lễ hội. Tớ muốn tìm chuyện đủ ngắn để đứa bé nhất nghe hết.',
+            'Cậu muốn trẻ tự chọn sách. Tớ nhớ phải để sách thấp, đừng bắt tụi nó chờ người lớn lấy.',
+            'Cậu bảo mời bác Tư với Lan kể thêm. Hai giọng nói cạnh cuốn sổ chắc sẽ vui hơn.',
+            'Cậu nghĩ chỉ sổ làng đã đủ. Tớ vẫn muốn có người kể, vì nét bút không giữ nổi tiếng cười.'),
+        'secret': (
+            'Cậu khuyên tớ xin phép người trong sổ trước. Tớ đang tập hỏi mà không viện cớ giữ chuyện làng.',
+            'Cậu muốn tớ xin lỗi cả làng. Tớ vẫn nghĩ phải bắt đầu từ người có chuyện bị ghi lại.',
+            'Cậu bảo mang sổ tới nói thật với họ. Tớ nhớ đó là chuyện của họ trước khi là trang viết của tớ.',
+            'Cậu muốn xóa những trang chưa xin phép. Tớ còn nghĩ lời xin lỗi phải đi cùng việc ấy.'),
+        'future': (
+            'Cậu chọn góc yên cho phòng đọc trẻ. Tớ đang nghĩ tiếng lật trang sẽ nghe rõ ở đó thế nào.',
+            'Cậu muốn phòng đọc gần nhà trẻ. Tớ nhớ đường tới sách cũng quyết định ai đọc được sách.',
+            'Cậu khuyên mở thêm giờ chiều. Tớ thích nghĩ đèn còn sáng khi trẻ đi học về.',
+            'Cậu lo tớ mệt nếu giữ phòng đọc muộn. Được cậu nhớ tới người giữ sách, tớ thấy ấm lòng.'),
+    },
+    'son': {
+        'greet': (
+            'Cậu chọn lên đồi với tớ. Đoạn dốc ấy cứ đi chậm, đâu cần chứng tỏ chân khỏe.',
+            'Cậu thích lối ra suối. Tớ còn nhớ phải chỉ cậu mấy phiến đá trơn trước.',
+            'Cậu bảo có giày chắc rồi. Tớ yên tâm hơn, nhưng đoạn giữa lối vẫn phải nhìn chân.',
+            'Cậu nói đang đi dép. Tớ nhớ lời hẹn đợi cậu đổi giày, không giục đâu.'),
+        'work': (
+            'Cậu đã muốn mang dây vải cứu nhánh gãy. Tớ quý cách cậu nghĩ tới phần cây còn sống.',
+            'Cậu gợi ý dây thừng, tớ vẫn lo cọ vỏ cây. Có mối buộc giữ được mà vẫn làm đau đấy.',
+            'Cậu chọn để gốc cho cây ra chồi. Tớ cũng muốn đường sạch mà cây còn cơ hội.',
+            'Cậu muốn chặt cả cây gãy cho an toàn. Tớ hiểu, nên phải nhìn lại thế nghiêng trước khi tính.'),
+        'village': (
+            'Cậu nói đã mang áo để đi rừng. Nhớ vậy rồi tớ đỡ phải ngoái lại nhắc suốt lối.',
+            'Cậu muốn về lấy áo trước. Tớ thích người biết chuẩn bị hơn là cố chịu lạnh.',
+            'Cậu bảo kịp đi vòng ngắn. Tớ sẽ vẫn chừa giờ quay về, rừng tối xuống nhanh lắm.',
+            'Cậu không chắc đủ giờ đi rừng. Tớ nhớ chọn tới suối rồi quay, không kéo cậu đi thêm.'),
+        'dream': (
+            'Cậu chọn trồng hoa rừng từng cụm. Tớ thấy cách ấy chừa được chỗ cỏ tự mọc lại.',
+            'Cậu muốn rải hoa đều dọc lối. Tớ còn đang tính đường mang nước cho khỏi giẫm cây.',
+            'Cậu chọn cây bóng ở một bên đường. Tớ cũng muốn có bóng mà vẫn nhìn rõ lối phía trước.',
+            'Cậu thích cây che cả hai bên. Tớ còn lo lối ẩm, phải ngó hướng nắng kỹ hơn.'),
+        'memory': (
+            'Cậu đoán tớ theo tiếng suối mà về. Đúng là nghe được nước rồi mới biết nên bước hướng nào.',
+            'Cậu bảo ngồi yên khi lạc. Tớ nhớ khoảng đứng lại ấy đã cứu tớ khỏi đi sâu thêm.',
+            'Cậu thấy xếp đá đều là đủ. Tớ vẫn nghĩ dấu đường phải dễ thấy cả lúc người ta sợ.',
+            'Cậu muốn thêm dây đánh dấu. Tớ nhớ phải có cọc gỗ nữa, để dây đứt còn lối nhìn.'),
+        'festival': (
+            'Cậu chọn đặt ghế nghỉ trên đường lên đồi. Người đi chậm cũng nên được xem cả làng.',
+            'Cậu bảo cứ đi chậm, khỏi cần ghế. Tớ vẫn nghĩ tới đầu gối bác Tư, nên muốn có chỗ nghỉ.',
+            'Cậu thích cầu gỗ cho lối lễ hội. Tớ sẽ hỏi Hà kỹ từng mối, không chỉ nhìn mặt ván.',
+            'Cậu chọn bước đá qua suối. Tớ còn lo nước mưa dâng, nên phải xem lại độ cao.'),
+        'secret': (
+            'Cậu đồng ý tỉa cành khô, giữ cây thông có tổ. Tớ quý việc cậu nhìn thấy cả cây lẫn chim.',
+            'Cậu muốn để cây thông nguyên vẹn. Tớ hiểu, nhưng vẫn phải ngó cành khô phía trên lối.',
+            'Cậu chọn tỉa cây dần. Tớ nghĩ làm chậm mà nhìn kỹ tổ chim sẽ ít gây hại hơn.',
+            'Cậu khuyên chặt cây sét đánh. Tớ nhớ điều cậu lo, nhưng vẫn muốn chờ chim rời tổ.'),
+        'future': (
+            'Cậu chọn dẫn người mới đi một vòng ngắn. Tớ thích dạy bằng những chỗ chân họ đã bước.',
+            'Cậu muốn ngồi nghe về rừng trước. Tớ sẽ phải nói chậm, đừng chỉ tay rồi quên giải thích.',
+            'Cậu chọn nhận cây độc qua dấu lá. Tớ nhớ phải cho xem cả mùi, để người mới khỏi nhầm.',
+            'Cậu muốn có tên cây trong sổ. Tớ thấy ghi lại cũng tốt, nhất là khi người ta cần hỏi thêm.'),
+    },
+}
+
+# A recent action gets one relevant acknowledgment instead of a stack of
+# status messages. Each voice refers to its own work and relationships.
+GIFT_CONTEXT = {
+    'lan': 'Quà cậu tặng còn trên quầy. Tớ chưa cất, cứ nhìn lại thấy vui.',
+    'tu': 'Bác cất quà cháu tặng trong giỏ, cạnh cần câu. Để về khoe bà Hai.',
+    'an': 'Có quà cậu đem tới, lúc nghỉ tay tớ lại có chuyện kể với chị Mai.',
+    'mai': 'Tớ đã nhớ món quà của cậu; trang sổ hôm nay có thêm một chuyện vui.',
+    'son': 'Quà cậu tặng, tớ để riêng khỏi lẫn đồ đi rừng. Cảm ơn cậu.',
+    'hai': 'Cháu vừa tặng quà lại còn nán lại. Bác rót thêm chén trà nhé.',
+    'minh': 'Em chưa khoe chị Lan món quà anh/chị tặng đâu. Em muốn kể từ đầu cho vui.',
+    'ha': 'Nhận quà của cậu, tớ phải lau tay hết bụi cưa mới dám chạm vào.'}
+HELP_CONTEXT = {
+    'lan': 'Giỏ hạt cậu vừa giúp xếp gọn rồi. Tớ đỡ phải giữ cả quầy lẫn kho.',
+    'tu': 'Cháu giúp thu cần, châm trà rồi thì ngồi nghỉ với bác. Đừng làm thêm nữa.',
+    'an': 'Luống hoa vừa được cậu giúp tưới, tớ đỡ lo khô gốc. Ngồi đây phủi đất nhé.',
+    'mai': 'Thùng sách cậu giúp nâng đã ra chỗ đọc. Tớ cứ quên sách nặng hơn giấy rời.',
+    'son': 'Có cậu dọn cành khô, lối mòn thoáng hơn. Tớ khỏi phải quay lại khuân thêm chuyến.',
+    'hai': 'Nhờ cháu giúp ấm chén trà, bác có giờ ngồi cạnh ông Tư một lát.',
+    'minh': 'Anh/chị giúp em dỡ hàng, lưng em nhẹ hẳn. Chị Lan cũng đỡ phải chờ chuyến xe.',
+    'ha': 'Cậu giúp sửa ghế rồi, ngồi thử cùng tớ. Mối nối chịu lực được mới tính là xong.'}
+REQUEST_CONTEXT = {
+    'lan': ('Trong thư tớ nhờ {item}. Cậu cứ lo xong ruộng rồi ghé, tớ đợi được.',
+            '{item} cậu mang theo thư nhờ, tớ đã nhận đủ. Chuyện hàng hóa hôm nay đỡ rối rồi.'),
+    'tu': ('Bác còn nhờ {item} trong thư. Cháu không cần chạy vội từ ruộng sang hồ đâu.',
+           'Bác nhận đủ {item} trong thư rồi. Cháu ngồi, bác kể nghe chuyện sáng nay.'),
+    'an': ('Tớ có viết thư nhờ {item}. Cậu cứ từ từ, tớ còn đang chăm nốt luống.',
+           'Nhận đủ {item} cậu mang, tớ gạch việc nhờ trong sổ rồi. Cảm ơn cậu nhé.'),
+    'mai': ('Thư tớ nhờ {item} còn đó. Tớ hay ghi cẩn thận vì sợ nói miệng rồi quên.',
+            '{item} cậu giao đã đủ. Tớ đánh dấu lá thư xong việc, giờ có thể nghe chuyện cậu.'),
+    'son': ('Tớ nhờ {item} trong thư. Nếu cậu ghé thì đưa, đừng đi đường tắt cho nhanh.',
+            'Đủ {item} như thư rồi. Tớ thu xếp việc ấy được, cậu nghỉ chân đi.'),
+    'hai': ('Bác viết thư nhờ {item}. Cháu còn thiếu thì cứ ghé uống trà, đâu cần ngại.',
+            '{item} cháu đem theo thư đã đủ. Bác nhận được món cần, còn được gặp cháu nữa.'),
+    'minh': ('Em có gửi thư nhờ {item}. Anh/chị đừng quên ăn trưa vì lo việc cho em nhé.',
+             'Em nhận đủ {item} rồi! Giờ em gấp thư lại, khỏi nhìn đi nhìn lại sợ quên nữa.'),
+    'ha': ('Tớ có thư nhờ {item}. Cậu cứ mang khi tiện, tớ tranh thủ sửa việc khác trước.',
+           '{item} đã đủ như thư nhờ. Tớ đỡ phải bỏ dở bàn sửa để đi tìm, cảm ơn cậu.')}
+
+RESTORED_CONTEXT = {
+    'lan': ('greenhouse', 'Nhà kính đã sửa xong. Giờ nghĩ tới hạt giống mới, tớ có chỗ nhờ cậu thử rồi.'),
+    'tu': ('pier', 'Bến câu đã sửa xong, bác không phải lựa từng tấm ván nữa. Cháu cũng yên chân hơn.'),
+    'an': ('orchard', 'Vườn cây đã hồi lại. Tớ muốn đứng dưới tán mà nhìn xem lá non đón nắng thế nào.'),
+    'mai': ('archive', 'Kho lưu trữ đã sửa xong. Tớ có chỗ giữ thư cũ, khỏi lo mưa hắt vào trang giấy.'),
+    'son': ('sanctuary', 'Khu bảo tồn đã dựng lại. Tớ yên tâm hơn khi dẫn người mới tới mép rừng.'),
+    'hai': ('mill', 'Cối xay đã hoạt động lại. Bác lại nghĩ tới mẻ bột làm bánh cho ông Tư mang ra hồ.'),
+    'minh': ('lighthouse', 'Hải đăng sáng lại rồi. Em muốn chở chị Lan ra ngắm một buổi, khỏi chỉ nghe người ta kể.'),
+    'ha': ('workshop', 'Xưởng đã sửa xong. Tớ có bàn phẳng để kê mối nối, không phải chèn chân bàn bằng đá nữa.')}
+
+FAMILIAR_CONTEXT = {
+    'lan': 'Cậu quen tiệm rồi, cứ kéo ghế lại. Tớ vừa xếp hạt vừa nghe được.',
+    'tu': 'Cháu biết chỗ bác để chén rồi đấy. Cứ tự lấy, khỏi đợi bác mời.',
+    'an': 'Giờ cậu ghé, tớ không phải phủi hết đất mới dám ngồi cạnh nữa.',
+    'mai': 'Cậu đã nghe tớ kể nhiều rồi. Hôm nay tớ muốn để cả khoảng im lặng trong chuyện nữa.',
+    'son': 'Cậu thuộc đoạn lối này rồi. Tớ đi chậm lại để hai người khỏi nói vọng.',
+    'hai': 'Cháu quen vị trà bác pha rồi. Bác để chén nhỏ ngay chỗ cháu hay ngồi.',
+    'minh': 'Anh/chị nghe em kể mấy chuyến xe rồi mà vẫn ghé. Em đỡ ngại nói cả chuyện vụng về.',
+    'ha': 'Cậu quen tiếng bào gỗ rồi nhỉ. Tớ để sẵn ghế sạch, cậu khỏi đứng chờ.'}
+
+RAIN_HELLO.update({
+    'hai': 'Mưa thế này trà nguội nhanh. Cháu ngồi sát bình ủ của bác nhé.',
+    'minh': 'Mưa làm đường trơn, em buộc lại bao hạt hai lượt. Anh/chị vào hiên cho khô.',
+    'ha': 'Mưa hắt vào mối keo chưa khô. Cậu giúp tớ tránh chỗ tấm bạt là được.'})

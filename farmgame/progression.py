@@ -68,7 +68,8 @@ def action_cost(farm: 'Farm', action: str) -> int:
     if action in ('plant', 'harvest'):
         return 1 if farm.attributes['dexterity'] >= 3 else 2
     if action == 'fish':
-        return max(1, 3 - farm.skills['fishing'] // 2)
+        pier_bonus = int(farm.restoration.get('pier', 0) == 3)
+        return max(1, 3 - farm.skills['fishing'] // 2 - pier_bonus)
     if action == 'work':
         return max(1, 4 - farm.skills['foraging'] // 2)
     if action in ('water', 'clear'):

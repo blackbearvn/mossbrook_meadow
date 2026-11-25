@@ -60,6 +60,34 @@ lĩnh vực đã chọn nhưng vẫn tự mua vật nuôi và nâng cấp khi đ
 Game chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói và không cần
 kết nối mạng.
 
+## Hành trình và khôi phục làng
+
+Nhấn **U** trong bản terminal để mở sổ hành trình. Cả **31 vùng** đều có
+một điểm khám phá riêng, câu chuyện, tọa độ và sản vật thu thập mỗi ngày.
+Chọn *Đi tới điểm khám phá*, rồi nhấn **E** tại dấu **◆** (ASCII: **!**)
+để đọc chuyện và hái lượm. Sổ cũng ghi vùng đã ghé và ngày đã thu thập.
+
+**8 công trình cộng đồng**, mỗi nơi có **3 chặng**, kết nối việc khám phá
+với nông sản, cá, sản phẩm chuồng và khoáng sản: nhà ươm, cối xay, cầu tàu,
+xưởng sửa đồ, vườn quả, tủ chuyện làng, lối rừng và đèn biển. Sổ ghi rõ
+nguyên liệu, xu, ngày bắt đầu và các vùng cần ghé; chỉ trừ đồ khi xác nhận
+đóng góp tại công trình, dùng đồ trong túi trước rồi mới lấy từ rương.
+Hoàn thành sẽ có tiện ích lâu dài như hạt giống/thức ăn mỗi sáng, thêm
+sản vật hoặc giảm sức thu thập/câu cá.
+
+Một năm có **4 mùa, mỗi mùa 28 ngày**. Sản vật hái lượm đổi theo mùa;
+mưa giúp rau thơm và nấm mọc nhiều hơn. Cây đang trồng tiếp tục phát triển
+theo luật cũ. Lễ hội diễn ra tại **Sân hội bên giếng** ở Quảng Trường:
+Xuân ngày 7, Hạ ngày 14, Thu ngày 21, Đông ngày 28. Mang món góp ghi
+trong sổ rồi E để cùng dự hội; mỗi hội tham gia một lần mỗi năm.
+
+Thêm **6 sản vật** (rau thơm, quả mọng, nấm rừng, búp trà, vỏ sò, mật ong)
+và **3 món nấu** (súp nấm, trà rừng mật ong, mứt quả mọng), dùng chung
+túi đồ, rương, quà tặng và quầy bán hàng. NPC nhớ lựa chọn sau cuộc trò
+chuyện hoàn chỉnh, đồng thời nhắc việc giúp đỡ, quà, thư và công trình
+đã phục hồi. Mở hội thoại hay hủy giữa chừng không ghi đè kỷ niệm.
+Tiến trình mới được lưu cùng ván chơi; file lưu phiên bản cũ vẫn được đọc.
+
 ## Yêu cầu
 
 - **Python 3.10 trở lên**
@@ -124,6 +152,7 @@ Mặc định tiến trình được lưu tại `saves/farm.json`.
 | `Enter` / click | Mở tooltip trang bị |
 | `I` | Mở túi đồ |
 | `N` | Nhiệm vụ hằng ngày |
+| `U` | Hành trình 31 vùng, công trình cộng đồng và lịch lễ hội |
 | `O` | Bật/tắt và chọn chế độ Auto |
 | `M` | Bản đồ tổng quan |
 | `R` | Danh sách khu vực và đi nhanh |

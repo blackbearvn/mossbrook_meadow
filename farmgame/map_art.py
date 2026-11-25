@@ -178,6 +178,10 @@ def _nature_cell(x: int, y: int, tile: str, unicode: bool,
 def _static_cell(area: str, size: int, unicode: bool, x: int, y: int,
                  tile: str) -> MapCell:
     """Cache terrain art that does not depend on changing farm state."""
+    if area == 'village':
+        from .journey import SITE_POSITIONS
+        if (x, y) in SITE_POSITIONS:
+            return MapCell('◆' if unicode else '!', 'yellow', True)
     if tile == '=':
         return _line_cell(area, size, x, y, unicode=unicode)
     if tile == '#':
@@ -252,6 +256,9 @@ def map_cell(farm: Farm, x: int, y: int, *, unicode: bool = True,
         npc = npc_at(x, y, farm.area)
         if npc is not None:
             return MapCell(npc.glyph, 'magenta', True)
+        from .journey import SITE_POSITIONS
+        if (x, y) in SITE_POSITIONS:
+            return MapCell('◆' if unicode else '!', 'yellow', True)
     if farm.area == 'village' and tile == ':':
         coordinate = world.plot_at(x, y, farm.size)
         plot = farm.plots[coordinate]
@@ -309,7 +316,7 @@ def map_legend(farm: Farm, *, unicode: bool = True) -> list[str]:
     else:
         tree, flower, water, sand = 'T/Y', ',/*', '~', 's'
     return [
-        f'{player} | {len(NPCS)} dân làng | H nhà  M tiệm  B chuồng | {guide} lối dẫn',
+        f'{player} | {len(NPCS)} dân làng | H nhà M tiệm B chuồng | ! khám phá | U sổ',
         f'{soil} đất  {seedling} mầm  {growing} lớn  {ripe} chín  {wilt} héo | '
         f'{tree} cây  {flower} hoa  {water} hồ/biển  {sand} cát | ~ ướt',
     ]
